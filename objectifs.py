@@ -204,13 +204,6 @@ def objectifs_page():
         }
     }
     """))
-    gb.configure_column("Taux 2024", editable=False, cellStyle=JsCode("""
-    function(params) {
-        return {
-            'backgroundColor': 'gray'
-        }
-    }
-    """))
     gb.configure_grid_options(domLayout='normal', onCellValueChanged=js_code)
 
     grid_options = gb.build()
@@ -246,3 +239,6 @@ def objectifs_page():
     if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
+
+if __name__ == '__main__':
+    objectifs_page()
