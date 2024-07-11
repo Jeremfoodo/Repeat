@@ -104,3 +104,12 @@ def account_analysis(df):
 
     st.header(f'Détails des Clients - {account_manager}')
     AgGrid(df_display, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
+
+    # Bouton de téléchargement
+    csv = df_display.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Télécharger les données en CSV",
+        data=csv,
+        file_name=f'{account_manager}_clients.csv',
+        mime='text/csv',
+    )
