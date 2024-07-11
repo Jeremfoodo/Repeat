@@ -3,6 +3,7 @@ from streamlit_option_menu import option_menu
 from src.data_processing import load_data, download_files, reassign_account_manager
 from global_analysis import global_analysis
 from account_analysis import account_analysis
+from objectifs import objectifs_page
 
 # Fonction pour vider le cache
 def clear_cache():
@@ -23,8 +24,8 @@ st.set_page_config(page_title="Analyse de la Rétention", layout="wide")
 # Menu de navigation
 selected = option_menu(
     menu_title=None,
-    options=["Analyse Globale", "Par Account"],
-    icons=["bar-chart", "person-circle"],
+    options=["Analyse Globale", "Par Account", "Objectifs"],
+    icons=["bar-chart", "person-circle", "bullseye"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal"
@@ -35,6 +36,7 @@ historical_data, df = get_data()
 
 if selected == "Analyse Globale":
     global_analysis(historical_data, df)
-
 elif selected == "Par Account":
     account_analysis(df)
+elif selected == "Objectifs":
+    objectifs_page()
