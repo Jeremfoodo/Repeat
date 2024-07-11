@@ -65,16 +65,6 @@ def objectifs_page():
     df_objectifs = prepare_data(historical_data)
     df_objectifs = calculate_repeat(df_objectifs)
 
-    # JavaScript pour recalculer automatiquement Repeat Juillet
-    js_code = JsCode("""
-    function(params) {
-        let taux2024 = params.data['Taux 2024'];
-        let moisDernier = params.data['Mois Dernier'];
-        params.data['Repeat Juillet'] = Math.round(moisDernier * (taux2024 / 100));
-        return params.data;
-    }
-    """)
-
     # Tableau interactif
     gb = GridOptionsBuilder.from_dataframe(df_objectifs)
     gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Taux 2023", "Repeat Juillet"], editable=False)
@@ -85,8 +75,15 @@ def objectifs_page():
         }
     }
     """))
-    gb.configure_column("Repeat Juillet", valueGetter=js_code)
-    gb.configure_grid_options(domLayout='normal')
+    gb.configure_grid_options(domLayout='normal', onCellValueChanged=JsCode("""
+    function(event) {
+        if (event.colDef.field === 'Taux 2024') {
+            let taux2024 = event.newValue;
+            let moisDernier = event.data['Mois Dernier'];
+            event.data['Repeat Juillet'] = Math.round(moisDernier * (taux2024 / 100));
+        }
+    }
+    """))
 
     grid_options = gb.build()
     grid_response = AgGrid(df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
