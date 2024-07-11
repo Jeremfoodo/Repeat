@@ -75,9 +75,11 @@ def calculate_segments_for_month(df, target_month):
         ],
         'Nombre de Clients Actifs (Mois Précédent)': [
             0,
-            len(nouveaux_clients['Restaurant ID'].unique()),
-            len(clients_recents['Restaurant ID'].unique()),
-            len(anciens_clients['Restaurant ID'].unique())
+            len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month)]['Restaurant ID'].unique()),
+            len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
+                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
+            ))]['Restaurant ID'].unique()),
+            len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
         ],
         'Rapport (%)': [0, 0, 0, 0]
     }
@@ -106,15 +108,16 @@ def prepare_objectifs_data(historical_data, df):
                 'Segment': segment,
                 'Possible': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Possible'].values[0],
                 'Mois Dernier': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Actifs (Mois Précédent)'].values[0],
+                'Juillet NOW': segments_data[segments_data['Segment'] == segment]['Nombre de Clients'].values[0],
                 'Taux 2023': calculate_repeat_rate_2023(historical_data, segment)[country],
                 'Taux 2024': 0,
-                'Repeat Juillet': 0
+                'OBJ Juillet': 0
             }
             data.append(row)
     return pd.DataFrame(data)
 
 def calculate_repeat(df):
-    df['Repeat Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
+    df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
     return df
 
 def objectifs_page():
@@ -129,13 +132,13 @@ def objectifs_page():
     df_objectifs = prepare_objectifs_data(historical_data, df_recent)
     df_objectifs = calculate_repeat(df_objectifs)
 
-    # JavaScript pour recalculer automatiquement Repeat Juillet
+    # JavaScript pour recalculer automatiquement OBJ Juillet
     js_code = JsCode("""
     function(params) {
         if (params.colDef.field === 'Taux 2024') {
             let taux2024 = params.newValue;
             let moisDernier = params.data['Mois Dernier'];
-            params.data['Repeat Juillet'] = Math.round(moisDernier * (taux2024 / 100));
+            params.data['OBJ Juillet'] = Math.round(moisDernier * (taux2024 / 100));
             params.api.applyTransaction({update: [params.data]});
         }
     }
@@ -143,7 +146,7 @@ def objectifs_page():
 
     # Tableau interactif
     gb = GridOptionsBuilder.from_dataframe(df_objectifs)
-    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Taux 2023", "Repeat Juillet"], editable=False)
+    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet"], editable=False)
     gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
     function(params) {
         return {
@@ -170,7 +173,7 @@ def objectifs_page():
             if password == 'foodostreamlit':
                 updated_df = calculate_repeat(updated_df)
                 st.success('Les objectifs ont été enregistrés.')
-                total_clients_actifs = updated_df['Repeat Juillet'].sum()
+                total_clients_actifs = updated_df['OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
                 # Sauvegarder les objectifs dans un fichier ou une base de données
                 updated_df.to_csv('data/objectifs.csv', index=False)
@@ -185,4 +188,3 @@ def objectifs_page():
         st.write(objectifs_precedents)
     except FileNotFoundError:
         st.write('Aucun objectif précédemment enregistré.')
-
