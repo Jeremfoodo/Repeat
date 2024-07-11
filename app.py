@@ -23,7 +23,7 @@ def generate_summary_boxes(june_2024_results):
         'Clients Récents': '#CCCCFF',
         'Anciens Clients': '#FFCC99'
     }
-    
+
     boxes = []
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
@@ -62,8 +62,15 @@ june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
 st.header('Résumé des Segments pour Juillet 2024')
 summary_boxes = generate_summary_boxes(june_2024_results)
-for box in summary_boxes:
-    st.markdown(box, unsafe_allow_html=True)
+
+# Afficher les boîtes dans une grille 2x2
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown(summary_boxes[0], unsafe_allow_html=True)
+    st.markdown(summary_boxes[1], unsafe_allow_html=True)
+with col2:
+    st.markdown(summary_boxes[2], unsafe_allow_html=True)
+    st.markdown(summary_boxes[3], unsafe_allow_html=True)
 
 st.header('Graphiques des Segments')
 for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
