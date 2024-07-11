@@ -1,14 +1,28 @@
 import streamlit as st
 import pandas as pd
-from src.data_processing import load_data
-from src.calculations import process_country_data
+from src.data_processing import load_data, download_files
+from src.calculations import process_country_data, calculate_segments_for_month
 from src.plots import plot_ratios
 
-# Charger les données
-historical_data, df = load_data()
+# Fonction pour vider le cache
+def clear_cache():
+    st.caching.clear_cache()
+    st.experimental_rerun()
+
+# Télécharger et charger les données avec mise en cache
+@st.cache(allow_output_mutation=True)
+def get_data():
+    download_files()
+    return load_data()
 
 # Interface utilisateur avec Streamlit
 st.title('Analyse de la Rétention des Clients')
+
+# Bouton pour mettre à jour les données
+if st.button('Mettre à jour'):
+    clear_cache()
+
+historical_data, df = get_data()
 
 country_code = st.selectbox('Sélectionner un pays', list(historical_data.keys()) + ['Global'])
 
