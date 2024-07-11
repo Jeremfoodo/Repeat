@@ -39,5 +39,10 @@ def load_data():
     
     return historical_data, df
 
-def filter_data_by_account(df, account_email):
-    return df[df['Owner email'] == account_email]
+def reassign_account_manager(df):
+    df = df.sort_values(by=['Restaurant ID', 'Date de commande'])
+    df['Owner email'] = df.groupby('Restaurant ID')['Owner email'].transform(lambda x: x.ffill().bfill())
+    return df
+
+def filter_data_by_account(df, account_manager):
+    return df[df['Owner email'] == account_manager]
