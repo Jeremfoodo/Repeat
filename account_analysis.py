@@ -5,11 +5,11 @@ from src.calculations import calculate_segments_for_month
 from src.plots import plot_ratios
 from global_analysis import generate_summary_boxes
 
-@st.cache(allow_output_mutation=True)
+@st.cache_data
 def get_filtered_data(df, account_manager):
     return filter_data_by_account(df, account_manager)
 
-@st.cache(allow_output_mutation=True)
+@st.cache_data
 def get_account_results(df_account, recent_months):
     return pd.concat([calculate_segments_for_month(df_account, month) for month in recent_months], ignore_index=True)
 
@@ -27,7 +27,7 @@ def account_analysis(df):
 
     # Bouton pour mettre à jour les données
     if st.button('Mettre à jour'):
-        st.caching.clear_cache()
+        st.cache_data.clear()
         st.experimental_rerun()
 
     # Filtrer les données par account manager
