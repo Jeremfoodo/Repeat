@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from streamlit_option_menu import option_menu
-from src.data_processing import load_data, download_files
+from src.data_processing import load_data, download_files, filter_data_by_account
 from src.calculations import process_country_data, calculate_segments_for_month
 from src.plots import plot_ratios
 
@@ -101,6 +101,28 @@ elif selected == "Par Account":
         sorted(df['Owner email'].unique())
     )
 
-    st.write(f"Analyse pour l'account manager : {account_manager}")
+    # Filtrer les données par account manager
+    df_account = filter_data_by_account(df, account_manager)
 
-    # Vous pouvez continuer à développer l'analyse spécifique pour l'account manager ici...
+    # Calculer les segments pour chaque mois depuis avril 2024 pour l'account manager
+    recent_months = pd.date_range(start='2024-04-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+    account_results = pd.concat([calculate_segments_for_month(df_account, month) for month in recent_months], ignore_index=True)
+
+    june_2024_results_account = account_results[account_results['Mois'] == '2024-07']
+
+    st.header(f'Résumé des Segments pour Juillet 2024 - {account_manager}')
+    summary_boxes_account = generate_summary_boxes(june_2024_results_account)
+
+    # Afficher les boîtes dans une grille 2x2
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(summary_boxes_account[0], unsafe_allow_html=True)
+        st.markdown(summary_boxes_account[1], unsafe_allow_html=True)
+    with col2:
+        st.markdown(summary_boxes_account[2], unsafe_allow_html=True)
+        st.markdown(summary_boxes_account[3], unsafe_allow_html=True)
+
+    st.header(f'Graphiques des Segments - {account_manager}')
+    for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        fig = plot_ratios(segment, account_results, account_manager)
+        st.plotly_chart(fig)
