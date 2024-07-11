@@ -1,11 +1,30 @@
 import pandas as pd
+import gdown
+import os
+
+# URLs de Google Drive pour chaque fichier
+gdrive_files = {
+    'FR': 'https://drive.google.com/uc?id=1HSagRx3aiT3Jb9idOYtdINlYfp4SsqUE',
+    'US': 'https://drive.google.com/uc?id=1Ls5d_1G9E3XeiktLzZs6MXTxGzRv7jTb',
+    'BE': 'https://drive.google.com/uc?id=1pLdrmiP715kfG_7ToVhXKXqp5lo8-X48',
+    'GB': 'https://drive.google.com/uc?id=1j_GSC0NtbI1ozRBA1w1Vp9cpfp974syN',
+    'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
+}
+
+def download_files():
+    data_dir = 'data'
+    os.makedirs(data_dir, exist_ok=True)
+    
+    for key, url in gdrive_files.items():
+        output = os.path.join(data_dir, f"{key}.csv")
+        gdown.download(url, output, quiet=False)
 
 def load_data():
     historical_files = {
-        'FR': 'data/historical_retention_analysis_FR.csv',
-        'US': 'data/historical_retention_analysis_US.csv',
-        'BE': 'data/historical_retention_analysis_BE.csv',
-        'GB': 'data/historical_retention_analysis_GB.csv'
+        'FR': 'data/FR.csv',
+        'US': 'data/US.csv',
+        'BE': 'data/BE.csv',
+        'GB': 'data/GB.csv'
     }
 
     historical_data = {country: pd.read_csv(file) for country, file in historical_files.items()}
