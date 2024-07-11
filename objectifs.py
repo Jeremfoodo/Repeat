@@ -116,21 +116,23 @@ def prepare_objectifs_data(historical_data, df):
             }
             data.append(row)
     
+    df_objectifs = pd.DataFrame(data)
+
     # Ajouter une ligne de total
-    total_row = {
+    total_row = pd.Series({
         'Pays': 'Total',
         'Segment': '',
-        'Possible': data['Possible'].sum(),
-        'Mois Dernier': data['Mois Dernier'].sum(),
-        'Juillet NOW': data['Juillet NOW'].sum(),
+        'Possible': df_objectifs['Possible'].sum(),
+        'Mois Dernier': df_objectifs['Mois Dernier'].sum(),
+        'Juillet NOW': df_objectifs['Juillet NOW'].sum(),
         'Taux 2023': '',
         'Taux 2024': '',
-        'OBJ Juillet': data['OBJ Juillet'].sum(),
-        'Reste à faire': data['Reste à faire'].sum()
-    }
-    data.append(total_row)
+        'OBJ Juillet': df_objectifs['OBJ Juillet'].sum(),
+        'Reste à faire': df_objectifs['Reste à faire'].sum()
+    })
+    df_objectifs = df_objectifs.append(total_row, ignore_index=True)
     
-    return pd.DataFrame(data)
+    return df_objectifs
 
 def calculate_repeat(df):
     df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
@@ -225,7 +227,7 @@ def objectifs_page():
             if password == 'foodostreamlit':
                 st.session_state.df_objectifs = calculate_repeat(st.session_state.df_objectifs)
                 st.success('Les objectifs ont été enregistrés.')
-                total_clients_actifs = st.session_state.df_objectifs['OBJ Juillet'].sum()
+                total_clients_actifs = st.session_state.df_objectifs.loc[st.session_state.df_objectifs['Pays'] != 'Total', 'OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
                 # Sauvegarder les objectifs dans un fichier ou une base de données
                 st.session_state.df_objectifs.to_csv('data/objectifs.csv', index=False)
