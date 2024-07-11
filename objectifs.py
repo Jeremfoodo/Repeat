@@ -1,32 +1,48 @@
 import os
+import io
+import requests
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
-import gdown
+from github import Github
 
-# URL de Google Drive pour le fichier objectifs.csv
-csv_url = 'https://drive.google.com/uc?id=1tOrd7UN9sgnoKBKadbV4vIu3vHIB3tEr'
+# URL du fichier CSV sur GitHub
+CSV_URL = 'https://raw.githubusercontent.com/jeremfoodo/Repeat/main/data/objectifs.csv'
+# Token d'accès personnel GitHub
+GITHUB_TOKEN = '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'
+# Chemin vers le fichier dans le dépôt GitHub
+GITHUB_FILE_PATH = 'data/objectifs.csv'
 
-# Télécharger le fichier CSV depuis Google Drive
+# Télécharger le fichier CSV depuis GitHub
 def download_csv():
-    output = 'data/objectifs.csv'
-    gdown.download(csv_url, output, quiet=False)
-    return output
+    response = requests.get(CSV_URL)
+    response.raise_for_status()
+    with open('data/objectifs.csv', 'wb') as f:
+        f.write(response.content)
+    return 'data/objectifs.csv'
 
 # Charger les objectifs précédemment enregistrés
 def load_objectifs():
     output = download_csv()
     return pd.read_csv(output)
 
-# Sauvegarder les objectifs dans le fichier CSV et le re-télécharger sur Google Drive
+# Sauvegarder les objectifs dans le fichier CSV et le re-télécharger sur GitHub
 def save_objectifs(df):
     output = 'data/objectifs.csv'
     df[['Pays', 'Segment', 'Taux 2024']].to_csv(output, index=False)
-    upload_csv_to_drive(output)
+    upload_csv_to_github(output)
 
-# Téléverser le fichier CSV mis à jour sur Google Drive
-def upload_csv_to_drive(file_path):
-    gdown.upload(file_path, csv_url, quiet=False)
+# Téléverser le fichier CSV mis à jour sur GitHub
+def upload_csv_to_github(file_path):
+    g = Github(GITHUB_TOKEN)
+    repo = g.get_user().get_repo('YOUR_REPO_NAME')
+    with open(file_path, 'r') as file:
+        content = file.read()
+    try:
+        contents = repo.get_contents(GITHUB_FILE_PATH)
+        repo.update_file(contents.path, "Mise à jour des objectifs", content, contents.sha)
+    except:
+        repo.create_file(GITHUB_FILE_PATH, "Ajout du fichier objectifs", content)
 
 # Charger les données historiques
 def load_historical_data():
@@ -154,9 +170,12 @@ def update_totals(df):
 def objectifs_page():
     st.title('Définir les Objectifs des Account Managers')
 
+    # Authentification et création du service Google Drive
+    service = authenticate_gdrive()
+
     # Charger les objectifs précédemment enregistrés
     try:
-        objectifs_precedents = load_objectifs()
+        objectifs_precedents = load_objectifs(service)
     except Exception as e:
         st.error(f"Erreur lors du chargement des objectifs: {e}")
         objectifs_precedents = None
@@ -240,8 +259,8 @@ def objectifs_page():
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
                 # Sauvegarder les objectifs dans un fichier ou une base de données
                 try:
-                    save_objectifs(st.session_state.df_objectifs)
-                    st.success('Les objectifs ont été enregistrés sur Google Drive.')
+                    save_objectifs(st.session_state.df_objectifs, service)
+                    st.success('Les objectifs ont été enregistrés sur GitHub.')
                 except Exception as e:
                     st.error(f"Erreur lors de l'enregistrement des objectifs: {e}")
                 st.session_state.show_password_field = False
