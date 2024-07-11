@@ -21,7 +21,7 @@ def load_objectifs():
 # Sauvegarder les objectifs dans le fichier CSV et le re-télécharger sur Google Drive
 def save_objectifs(df):
     output = 'data/objectifs.csv'
-    df.to_csv(output, index=False)
+    df[['Pays', 'Segment', 'Taux 2024']].to_csv(output, index=False)
     upload_csv_to_drive(output)
 
 # Téléverser le fichier CSV mis à jour sur Google Drive
@@ -161,14 +161,18 @@ def objectifs_page():
         st.error(f"Erreur lors du chargement des objectifs: {e}")
         objectifs_precedents = None
 
-    # Charger les données historiques et récentes
+    # Télécharger et charger les données historiques et récentes
     historical_data = load_historical_data()
     df_recent = load_recent_data()
     df_recent = preprocess_data(df_recent)
 
     if 'df_objectifs' not in st.session_state:
         if objectifs_precedents is not None:
-            st.session_state.df_objectifs = objectifs_precedents
+            df_objectifs = prepare_objectifs_data(historical_data, df_recent)
+            df_objectifs = df_objectifs.merge(objectifs_precedents, on=['Pays', 'Segment'], how='left')
+            df_objectifs['Taux 2024'] = df_objectifs['Taux 2024_y'].combine_first(df_objectifs['Taux 2024_x'])
+            df_objectifs.drop(columns=['Taux 2024_x', 'Taux 2024_y'], inplace=True)
+            st.session_state.df_objectifs = df_objectifs
         else:
             df_objectifs = prepare_objectifs_data(historical_data, df_recent)
             st.session_state.df_objectifs = df_objectifs
@@ -249,4 +253,5 @@ def objectifs_page():
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
 
-
+if __name__ == '__main__':
+    objectifs_page()
