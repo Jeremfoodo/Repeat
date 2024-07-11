@@ -39,8 +39,8 @@ def account_analysis(df):
 
     june_2024_results_account = account_results[account_results['Mois'] == '2024-07']
 
-    st.header(f'Résumé des Segments pour Juillet 2024')
-    st.subheader(f'<span style="font-size:14px; color:black; text-decoration:none;">{account_manager}</span>', unsafe_allow_html=True)
+    st.header('Résumé des Segments pour Juillet 2024')
+    st.markdown(f'<span style="font-size:14px; color:black; text-decoration:none;">{account_manager}</span>', unsafe_allow_html=True)
     summary_boxes_account = generate_summary_boxes(june_2024_results_account)
 
     # Afficher les boîtes dans une grille 2x2
