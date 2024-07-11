@@ -161,8 +161,7 @@ def objectifs_page():
         st.error(f"Erreur lors du chargement des objectifs: {e}")
         objectifs_precedents = None
 
-    # Télécharger et charger les données historiques et récentes
-    download_files()
+    # Charger les données historiques et récentes
     historical_data = load_historical_data()
     df_recent = load_recent_data()
     df_recent = preprocess_data(df_recent)
@@ -249,4 +248,5 @@ def objectifs_page():
     if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
+
 
