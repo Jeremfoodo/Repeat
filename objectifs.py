@@ -65,6 +65,16 @@ def objectifs_page():
     df_objectifs = prepare_data(historical_data)
     df_objectifs = calculate_repeat(df_objectifs)
 
+    # JavaScript pour recalculer automatiquement Repeat Juillet
+    js_code = JsCode("""
+    function(params) {
+        let taux2024 = params.data['Taux 2024'];
+        let moisDernier = params.data['Mois Dernier'];
+        params.data['Repeat Juillet'] = Math.round(moisDernier * (taux2024 / 100));
+        return params.data;
+    }
+    """)
+
     # Tableau interactif
     gb = GridOptionsBuilder.from_dataframe(df_objectifs)
     gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Taux 2023", "Repeat Juillet"], editable=False)
@@ -75,6 +85,7 @@ def objectifs_page():
         }
     }
     """))
+    gb.configure_column("Repeat Juillet", valueGetter=js_code)
     gb.configure_grid_options(domLayout='normal')
 
     grid_options = gb.build()
