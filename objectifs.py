@@ -129,8 +129,9 @@ def objectifs_page():
     df_recent = load_recent_data()
     df_recent = preprocess_data(df_recent)
 
-    df_objectifs = prepare_objectifs_data(historical_data, df_recent)
-    df_objectifs = calculate_repeat(df_objectifs)
+    if 'df_objectifs' not in st.session_state:
+        df_objectifs = prepare_objectifs_data(historical_data, df_recent)
+        st.session_state.df_objectifs = df_objectifs
 
     # JavaScript pour recalculer automatiquement OBJ Juillet
     js_code = JsCode("""
@@ -145,7 +146,7 @@ def objectifs_page():
     """)
 
     # Tableau interactif
-    gb = GridOptionsBuilder.from_dataframe(df_objectifs)
+    gb = GridOptionsBuilder.from_dataframe(st.session_state.df_objectifs)
     gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet"], editable=False)
     gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
     function(params) {
@@ -157,8 +158,11 @@ def objectifs_page():
     gb.configure_grid_options(domLayout='normal', onCellValueChanged=js_code)
 
     grid_options = gb.build()
-    grid_response = AgGrid(df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
+    grid_response = AgGrid(st.session_state.df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
     updated_df = pd.DataFrame(grid_response['data'])
+
+    # Mise à jour des données dans le session_state après modification
+    st.session_state.df_objectifs.update(updated_df)
 
     # Bouton pour afficher le champ de mot de passe
     if 'show_password_field' not in st.session_state:
@@ -170,13 +174,13 @@ def objectifs_page():
     if st.session_state.show_password_field:
         password = st.text_input('Entrez le mot de passe pour valider les objectifs:', type='password')
         if st.button('Confirmer'):
-            if password == 'foodostreamlit':
-                updated_df = calculate_repeat(updated_df)
+            if password == 'inesqueenofrepeat':
+                st.session_state.df_objectifs = calculate_repeat(st.session_state.df_objectifs)
                 st.success('Les objectifs ont été enregistrés.')
-                total_clients_actifs = updated_df['OBJ Juillet'].sum()
+                total_clients_actifs = st.session_state.df_objectifs['OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
                 # Sauvegarder les objectifs dans un fichier ou une base de données
-                updated_df.to_csv('data/objectifs.csv', index=False)
+                st.session_state.df_objectifs.to_csv('data/objectifs.csv', index=False)
                 st.session_state.show_password_field = False
             else:
                 st.error('Mot de passe incorrect.')
