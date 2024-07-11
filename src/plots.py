@@ -1,5 +1,6 @@
 import plotly.graph_objs as go
 import pandas as pd
+import numpy as np  # Ajout de l'import de numpy
 
 def plot_ratios(segment, all_results, country_code):
     years = [2022, 2023, 2024]
