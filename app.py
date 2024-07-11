@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from streamlit_option_menu import option_menu
 from src.data_processing import load_data, download_files
 from src.calculations import process_country_data, calculate_segments_for_month
 from src.plots import plot_ratios
@@ -40,39 +41,66 @@ def generate_summary_boxes(june_2024_results):
     return boxes
 
 # Interface utilisateur avec Streamlit
-st.title('Analyse de la Rétention des Clients')
+st.set_page_config(page_title="Analyse de la Rétention", layout="wide")
 
-# Bouton pour mettre à jour les données
-if st.button('Mettre à jour'):
-    clear_cache()
+# Menu de navigation
+selected = option_menu(
+    menu_title=None,
+    options=["Analyse Globale", "Par Account"],
+    icons=["bar-chart", "person-circle"],
+    menu_icon="cast",
+    default_index=0,
+    orientation="horizontal"
+)
 
+# Télécharger et charger les données
 historical_data, df = get_data()
 
-country_code = st.selectbox('Sélectionner un pays', list(historical_data.keys()) + ['Global'])
+if selected == "Analyse Globale":
+    st.title('Analyse de la Rétention des Clients')
 
-if country_code == 'Global':
-    all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
-    recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
-    recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
-    all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
-else:
-    all_results = process_country_data(df, historical_data, country_code)
+    # Bouton pour mettre à jour les données
+    if st.button('Mettre à jour'):
+        clear_cache()
 
-june_2024_results = all_results[all_results['Mois'] == '2024-07']
+    country_code = st.selectbox('Sélectionner un pays', list(historical_data.keys()) + ['Global'])
 
-st.header('Résumé des Segments pour Juillet 2024')
-summary_boxes = generate_summary_boxes(june_2024_results)
+    if country_code == 'Global':
+        all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
+        recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+        recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
+        all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
+    else:
+        all_results = process_country_data(df, historical_data, country_code)
 
-# Afficher les boîtes dans une grille 2x2
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown(summary_boxes[0], unsafe_allow_html=True)
-    st.markdown(summary_boxes[1], unsafe_allow_html=True)
-with col2:
-    st.markdown(summary_boxes[2], unsafe_allow_html=True)
-    st.markdown(summary_boxes[3], unsafe_allow_html=True)
+    june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
-st.header('Graphiques des Segments')
-for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-    fig = plot_ratios(segment, all_results, country_code)
-    st.plotly_chart(fig)
+    st.header('Résumé des Segments pour Juillet 2024')
+    summary_boxes = generate_summary_boxes(june_2024_results)
+
+    # Afficher les boîtes dans une grille 2x2
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(summary_boxes[0], unsafe_allow_html=True)
+        st.markdown(summary_boxes[1], unsafe_allow_html=True)
+    with col2:
+        st.markdown(summary_boxes[2], unsafe_allow_html=True)
+        st.markdown(summary_boxes[3], unsafe_allow_html=True)
+
+    st.header('Graphiques des Segments')
+    for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        fig = plot_ratios(segment, all_results, country_code)
+        st.plotly_chart(fig)
+
+elif selected == "Par Account":
+    st.title('Analyse de la Rétention par Account Manager')
+
+    # Sélection de l'account manager
+    account_manager = st.selectbox(
+        'Sélectionner un account manager',
+        sorted(df['Owner email'].unique())
+    )
+
+    st.write(f"Analyse pour l'account manager : {account_manager}")
+
+    # Vous pouvez continuer à développer l'analyse spécifique pour l'account manager ici...
