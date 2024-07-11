@@ -143,8 +143,8 @@ def calculate_repeat(df):
     df.loc[df['Pays'] == 'Total', 'Possible'] = df['Possible'].sum()
     df.loc[df['Pays'] == 'Total', 'Mois Dernier'] = df['Mois Dernier'].sum()
     df.loc[df['Pays'] == 'Total', 'Juillet NOW'] = df['Juillet NOW'].sum()
-    df.loc[df['Pays'] == 'Total', 'OBJ Juillet'] = df['OBJ Juillet'].sum()
-    df.loc[df['Pays'] == 'Total', 'Reste à faire'] = df['Reste à faire'].sum()
+    df.loc[df['Pays'] == 'Total', 'OBJ Juillet'] = df.loc[df['Pays'] != 'Total', 'OBJ Juillet'].sum()
+    df.loc[df['Pays'] == 'Total', 'Reste à faire'] = df.loc[df['Pays'] != 'Total', 'Reste à faire'].sum()
     
     return df
 
@@ -240,3 +240,4 @@ def objectifs_page():
     if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
+
