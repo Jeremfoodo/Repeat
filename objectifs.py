@@ -115,11 +115,34 @@ def prepare_objectifs_data(historical_data, df):
                 'Reste à faire': 0
             }
             data.append(row)
+    
+    # Ajouter une ligne de total
+    total_row = {
+        'Pays': 'Total',
+        'Segment': '',
+        'Possible': data['Possible'].sum(),
+        'Mois Dernier': data['Mois Dernier'].sum(),
+        'Juillet NOW': data['Juillet NOW'].sum(),
+        'Taux 2023': '',
+        'Taux 2024': '',
+        'OBJ Juillet': data['OBJ Juillet'].sum(),
+        'Reste à faire': data['Reste à faire'].sum()
+    }
+    data.append(total_row)
+    
     return pd.DataFrame(data)
 
 def calculate_repeat(df):
     df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
     df['Reste à faire'] = df['OBJ Juillet'] - df['Juillet NOW']
+    
+    # Mettre à jour la ligne de total
+    df.loc[df['Pays'] == 'Total', 'Possible'] = df['Possible'].sum()
+    df.loc[df['Pays'] == 'Total', 'Mois Dernier'] = df['Mois Dernier'].sum()
+    df.loc[df['Pays'] == 'Total', 'Juillet NOW'] = df['Juillet NOW'].sum()
+    df.loc[df['Pays'] == 'Total', 'OBJ Juillet'] = df['OBJ Juillet'].sum()
+    df.loc[df['Pays'] == 'Total', 'Reste à faire'] = df['Reste à faire'].sum()
+    
     return df
 
 def objectifs_page():
@@ -154,12 +177,18 @@ def objectifs_page():
             params.data['Reste à faire'] = params.data['OBJ Juillet'] - params.data['Juillet NOW'];
             params.api.applyTransaction({update: [params.data]});
 
-            // Update the total OBJ Juillet
+            // Update the total row
             let totalObjJuillet = 0;
+            let totalResteAFaire = 0;
             params.api.forEachNode(function(rowNode) {
-                totalObjJuillet += rowNode.data['OBJ Juillet'];
+                if (rowNode.data.Pays !== 'Total') {
+                    totalObjJuillet += rowNode.data['OBJ Juillet'];
+                    totalResteAFaire += rowNode.data['Reste à faire'];
+                }
             });
-            document.getElementById('total-obj-juillet').innerText = totalObjJuillet;
+            let totalRow = params.api.getRowNode('Total');
+            totalRow.setDataValue('OBJ Juillet', totalObjJuillet);
+            totalRow.setDataValue('Reste à faire', totalResteAFaire);
         }
     }
     """)
@@ -182,10 +211,6 @@ def objectifs_page():
 
     # Mise à jour des données dans le session_state après modification
     st.session_state.df_objectifs.update(updated_df)
-
-    # Afficher le total de la colonne OBJ Juillet
-    total_obj_juillet = st.session_state.df_objectifs['OBJ Juillet'].sum()
-    st.write(f"Total OBJ Juillet: <span id='total-obj-juillet'>{total_obj_juillet}</span>", unsafe_allow_html=True)
 
     # Bouton pour afficher le champ de mot de passe
     if 'show_password_field' not in st.session_state:
