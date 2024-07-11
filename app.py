@@ -6,11 +6,11 @@ from account_analysis import account_analysis
 
 # Fonction pour vider le cache
 def clear_cache():
-    st.caching.clear_cache()
+    st.cache_data.clear()
     st.experimental_rerun()
 
 # Télécharger et charger les données avec mise en cache
-@st.cache(allow_output_mutation=True)
+@st.cache_data
 def get_data():
     download_files()
     return load_data()
