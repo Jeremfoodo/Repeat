@@ -119,18 +119,18 @@ def prepare_objectifs_data(historical_data, df):
     df_objectifs = pd.DataFrame(data)
 
     # Ajouter une ligne de total
-    total_row = pd.Series({
-        'Pays': 'Total',
-        'Segment': '',
-        'Possible': df_objectifs['Possible'].sum(),
-        'Mois Dernier': df_objectifs['Mois Dernier'].sum(),
-        'Juillet NOW': df_objectifs['Juillet NOW'].sum(),
-        'Taux 2023': '',
-        'Taux 2024': '',
-        'OBJ Juillet': df_objectifs['OBJ Juillet'].sum(),
-        'Reste à faire': df_objectifs['Reste à faire'].sum()
+    total_row = pd.DataFrame({
+        'Pays': ['Total'],
+        'Segment': [''],
+        'Possible': [df_objectifs['Possible'].sum()],
+        'Mois Dernier': [df_objectifs['Mois Dernier'].sum()],
+        'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
+        'Taux 2023': [''],
+        'Taux 2024': [''],
+        'OBJ Juillet': [df_objectifs['OBJ Juillet'].sum()],
+        'Reste à faire': [df_objectifs['Reste à faire'].sum()]
     })
-    df_objectifs = df_objectifs.append(total_row, ignore_index=True)
+    df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
     
     return df_objectifs
 
@@ -236,7 +236,7 @@ def objectifs_page():
                 st.error('Mot de passe incorrect.')
 
     # Afficher les objectifs précédemment enregistrés
-    if objectifs_precedents is not None:
+    if objectifs_precedents est not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
 
