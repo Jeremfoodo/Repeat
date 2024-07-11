@@ -93,18 +93,26 @@ def objectifs_page():
     grid_response = AgGrid(df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
     updated_df = pd.DataFrame(grid_response['data'])
 
-    # Bouton de validation
+    # Bouton pour afficher le champ de mot de passe
+    if 'show_password_field' not in st.session_state:
+        st.session_state.show_password_field = False
+
     if st.button('Valider'):
+        st.session_state.show_password_field = True
+
+    if st.session_state.show_password_field:
         password = st.text_input('Entrez le mot de passe pour valider les objectifs:', type='password')
-        if password == 'foodostreamlit':
-            updated_df = calculate_repeat(updated_df)
-            st.success('Les objectifs ont été enregistrés.')
-            total_clients_actifs = updated_df['Repeat Juillet'].sum()
-            st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
-            # Sauvegarder les objectifs dans un fichier ou une base de données
-            updated_df.to_csv('data/objectifs.csv', index=False)
-        else:
-            st.error('Mot de passe incorrect.')
+        if st.button('Confirmer'):
+            if password == 'foodostreamlit':
+                updated_df = calculate_repeat(updated_df)
+                st.success('Les objectifs ont été enregistrés.')
+                total_clients_actifs = updated_df['Repeat Juillet'].sum()
+                st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
+                # Sauvegarder les objectifs dans un fichier ou une base de données
+                updated_df.to_csv('data/objectifs.csv', index=False)
+                st.session_state.show_password_field = False
+            else:
+                st.error('Mot de passe incorrect.')
 
     # Charger les objectifs précédemment enregistrés
     try:
