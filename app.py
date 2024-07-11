@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-from src.data_processing import load_data, download_files
+from src.data_processing import load_data, download_files, reassign_account_manager
 from global_analysis import global_analysis
 from account_analysis import account_analysis
 
@@ -13,7 +13,9 @@ def clear_cache():
 @st.cache_data
 def get_data():
     download_files()
-    return load_data()
+    historical_data, df = load_data()
+    df = reassign_account_manager(df)
+    return historical_data, df
 
 # Interface utilisateur avec Streamlit
 st.set_page_config(page_title="Analyse de la Rétention", layout="wide")
