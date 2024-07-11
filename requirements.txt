@@ -5,4 +5,4 @@ streamlit
 gdown
 streamlit_option_menu
 streamlit-aggrid
-google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+PyGithub requests
