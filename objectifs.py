@@ -4,24 +4,29 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 import gdown
 
-# URLs de Google Drive pour chaque fichier
-gdrive_files = {
-    'FR': 'https://drive.google.com/uc?id=1HSagRx3aiT3Jb9idOYtdINlYfp4SsqUE',
-    'US': 'https://drive.google.com/uc?id=1Ls5d_1G9E3XeiktLzZs6MXTxGzRv7jTb',
-    'BE': 'https://drive.google.com/uc?id=1pLdrmiP715kfG_7ToVhXKXqp5lo8-X48',
-    'GB': 'https://drive.google.com/uc?id=1j_GSC0NtbI1ozRBA1w1Vp9cpfp974syN',
-    'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
-}
+# URL de Google Drive pour le fichier objectifs.csv
+csv_url = 'https://drive.google.com/uc?id=1tOrd7UN9sgnoKBKadbV4vIu3vHIB3tEr'
 
-# Télécharger les fichiers depuis Google Drive
-def download_files():
-    data_dir = 'data'
-    os.makedirs(data_dir, exist_ok=True)
-    
-    for key, url in gdrive_files.items():
-        output = os.path.join(data_dir, f"{key}.csv")
-        if not os.path.exists(output):  # Vérifier si le fichier existe déjà
-            gdown.download(url, output, quiet=True)  # Utiliser quiet=True pour éviter les messages
+# Télécharger le fichier CSV depuis Google Drive
+def download_csv():
+    output = 'data/objectifs.csv'
+    gdown.download(csv_url, output, quiet=False)
+    return output
+
+# Charger les objectifs précédemment enregistrés
+def load_objectifs():
+    output = download_csv()
+    return pd.read_csv(output)
+
+# Sauvegarder les objectifs dans le fichier CSV et le re-télécharger sur Google Drive
+def save_objectifs(df):
+    output = 'data/objectifs.csv'
+    df.to_csv(output, index=False)
+    upload_csv_to_drive(output)
+
+# Téléverser le fichier CSV mis à jour sur Google Drive
+def upload_csv_to_drive(file_path):
+    gdown.upload(file_path, csv_url, quiet=False)
 
 # Charger les données historiques
 def load_historical_data():
@@ -149,17 +154,18 @@ def update_totals(df):
 def objectifs_page():
     st.title('Définir les Objectifs des Account Managers')
 
-    # Télécharger et charger les données
+    # Charger les objectifs précédemment enregistrés
+    try:
+        objectifs_precedents = load_objectifs()
+    except Exception as e:
+        st.error(f"Erreur lors du chargement des objectifs: {e}")
+        objectifs_precedents = None
+
+    # Télécharger et charger les données historiques et récentes
     download_files()
     historical_data = load_historical_data()
     df_recent = load_recent_data()
     df_recent = preprocess_data(df_recent)
-
-    # Charger les objectifs précédemment enregistrés
-    try:
-        objectifs_precedents = pd.read_csv('data/objectifs.csv')
-    except FileNotFoundError:
-        objectifs_precedents = None
 
     if 'df_objectifs' not in st.session_state:
         if objectifs_precedents is not None:
@@ -230,7 +236,11 @@ def objectifs_page():
                 total_clients_actifs = st.session_state.df_objectifs.loc[st.session_state.df_objectifs['Pays'] != 'Total', 'OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
                 # Sauvegarder les objectifs dans un fichier ou une base de données
-                st.session_state.df_objectifs.to_csv('data/objectifs.csv', index=False)
+                try:
+                    save_objectifs(st.session_state.df_objectifs)
+                    st.success('Les objectifs ont été enregistrés sur Google Drive.')
+                except Exception as e:
+                    st.error(f"Erreur lors de l'enregistrement des objectifs: {e}")
                 st.session_state.show_password_field = False
             else:
                 st.error('Mot de passe incorrect.')
@@ -240,5 +250,3 @@ def objectifs_page():
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
 
-if __name__ == '__main__':
-    objectifs_page()
