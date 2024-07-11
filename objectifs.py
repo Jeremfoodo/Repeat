@@ -204,6 +204,13 @@ def objectifs_page():
         }
     }
     """))
+    gb.configure_column("Taux 2024", editable=False, cellStyle=JsCode("""
+    function(params) {
+        return {
+            'backgroundColor': 'gray'
+        }
+    }
+    """))
     gb.configure_grid_options(domLayout='normal', onCellValueChanged=js_code)
 
     grid_options = gb.build()
