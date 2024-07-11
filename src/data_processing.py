@@ -4,11 +4,11 @@ import os
 
 # URLs de Google Drive pour chaque fichier
 gdrive_files = {
-    'FR': 'https://drive.google.com/uc?id=<ID_FILE_FR>',
-    'US': 'https://drive.google.com/uc?id=<ID_FILE_US>',
-    'BE': 'https://drive.google.com/uc?id=<ID_FILE_BE>',
-    'GB': 'https://drive.google.com/uc?id=<ID_FILE_GB>',
-    'prepared_data': 'https://drive.google.com/uc?id=<ID_PREPARED_DATA>'
+        'FR': 'https://drive.google.com/uc?id=1HSagRx3aiT3Jb9idOYtdINlYfp4SsqUE',
+    'US': 'https://drive.google.com/uc?id=1Ls5d_1G9E3XeiktLzZs6MXTxGzRv7jTb',
+    'BE': 'https://drive.google.com/uc?id=1pLdrmiP715kfG_7ToVhXKXqp5lo8-X48',
+    'GB': 'https://drive.google.com/uc?id=1j_GSC0NtbI1ozRBA1w1Vp9cpfp974syN',
+    'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 }
 
 def download_files():
