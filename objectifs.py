@@ -125,8 +125,8 @@ def prepare_objectifs_data(historical_data, df):
         'Possible': [df_objectifs['Possible'].sum()],
         'Mois Dernier': [df_objectifs['Mois Dernier'].sum()],
         'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
-        'Taux 2023': [''],
-        'Taux 2024': [''],
+        'Taux 2023': [0],  # Valeur numérique pour éviter les erreurs de calcul
+        'Taux 2024': [0],  # Valeur numérique pour éviter les erreurs de calcul
         'OBJ Juillet': [df_objectifs['OBJ Juillet'].sum()],
         'Reste à faire': [df_objectifs['Reste à faire'].sum()]
     })
@@ -135,6 +135,7 @@ def prepare_objectifs_data(historical_data, df):
     return df_objectifs
 
 def calculate_repeat(df):
+    df['Taux 2024'] = pd.to_numeric(df['Taux 2024'], errors='coerce').fillna(0)
     df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
     df['Reste à faire'] = df['OBJ Juillet'] - df['Juillet NOW']
     
@@ -239,4 +240,3 @@ def objectifs_page():
     if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
-
