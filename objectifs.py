@@ -111,13 +111,15 @@ def prepare_objectifs_data(historical_data, df):
                 'Juillet NOW': segments_data[segments_data['Segment'] == segment]['Nombre de Clients'].values[0],
                 'Taux 2023': calculate_repeat_rate_2023(historical_data, segment)[country],
                 'Taux 2024': 0,
-                'OBJ Juillet': 0
+                'OBJ Juillet': 0,
+                'Reste à faire': 0
             }
             data.append(row)
     return pd.DataFrame(data)
 
 def calculate_repeat(df):
     df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
+    df['Reste à faire'] = df['OBJ Juillet'] - df['Juillet NOW']
     return df
 
 def objectifs_page():
@@ -142,13 +144,14 @@ def objectifs_page():
             df_objectifs = prepare_objectifs_data(historical_data, df_recent)
             st.session_state.df_objectifs = df_objectifs
 
-    # JavaScript pour recalculer automatiquement OBJ Juillet
+    # JavaScript pour recalculer automatiquement OBJ Juillet et Reste à faire
     js_code = JsCode("""
     function(params) {
         if (params.colDef.field === 'Taux 2024') {
             let taux2024 = params.newValue;
             let moisDernier = params.data['Mois Dernier'];
             params.data['OBJ Juillet'] = Math.round(moisDernier * (taux2024 / 100));
+            params.data['Reste à faire'] = params.data['OBJ Juillet'] - params.data['Juillet NOW'];
             params.api.applyTransaction({update: [params.data]});
         }
     }
@@ -156,7 +159,7 @@ def objectifs_page():
 
     # Tableau interactif
     gb = GridOptionsBuilder.from_dataframe(st.session_state.df_objectifs)
-    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet"], editable=False)
+    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet", "Reste à faire"], editable=False)
     gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
     function(params) {
         return {
@@ -172,6 +175,10 @@ def objectifs_page():
 
     # Mise à jour des données dans le session_state après modification
     st.session_state.df_objectifs.update(updated_df)
+
+    # Afficher le total de la colonne OBJ Juillet
+    total_obj_juillet = st.session_state.df_objectifs['OBJ Juillet'].sum()
+    st.write(f"Total OBJ Juillet: {total_obj_juillet}")
 
     # Bouton pour afficher le champ de mot de passe
     if 'show_password_field' not in st.session_state:
