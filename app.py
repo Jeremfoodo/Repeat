@@ -15,6 +15,30 @@ def get_data():
     download_files()
     return load_data()
 
+# Fonction pour générer des boîtes de résumé
+def generate_summary_boxes(june_2024_results):
+    colors = {
+        'Acquisition': '#FFCCCC',
+        'Nouveaux Clients': '#CCFFCC',
+        'Clients Récents': '#CCCCFF',
+        'Anciens Clients': '#FFCC99'
+    }
+    
+    boxes = []
+    for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
+        box = f"""
+        <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px;">
+            <h3 style="margin: 0;">{segment}</h3>
+            <p style="margin: 5px 0;">Nombre de Clients: {segment_data['Nombre de Clients']}</p>
+            <p style="margin: 5px 0;">Nombre de Clients Possible: {segment_data['Nombre de Clients Possible']}</p>
+            <p style="margin: 5px 0;">Nombre de Clients Actifs (Mois Précédent): {segment_data['Nombre de Clients Actifs (Mois Précédent)']}</p>
+            <p style="margin: 5px 0;">Rapport (%): {segment_data['Rapport (%)']}</p>
+        </div>
+        """
+        boxes.append(box)
+    return boxes
+
 # Interface utilisateur avec Streamlit
 st.title('Analyse de la Rétention des Clients')
 
@@ -37,13 +61,9 @@ else:
 june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
 st.header('Résumé des Segments pour Juillet 2024')
-for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-    segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
-    st.subheader(segment)
-    st.write(f"Nombre de Clients: {segment_data['Nombre de Clients']}")
-    st.write(f"Nombre de Clients Possible: {segment_data['Nombre de Clients Possible']}")
-    st.write(f"Nombre de Clients Actifs (Mois Précédent): {segment_data['Nombre de Clients Actifs (Mois Précédent)']}")
-    st.write(f"Rapport (%): {segment_data['Rapport (%)']}")
+summary_boxes = generate_summary_boxes(june_2024_results)
+for box in summary_boxes:
+    st.markdown(box, unsafe_allow_html=True)
 
 st.header('Graphiques des Segments')
 for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
