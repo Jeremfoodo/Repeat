@@ -127,8 +127,8 @@ def prepare_objectifs_data(historical_data, df):
         'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
         'Taux 2023': [0],  # Valeur numérique pour éviter les erreurs de calcul
         'Taux 2024': [0],  # Valeur numérique pour éviter les erreurs de calcul
-        'OBJ Juillet': [df_objectifs['OBJ Juillet'].sum()],
-        'Reste à faire': [df_objectifs['Reste à faire'].sum()]
+        'OBJ Juillet': [0],  # Initialement à 0
+        'Reste à faire': [0]  # Initialement à 0
     })
     df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
     
@@ -240,4 +240,3 @@ def objectifs_page():
     if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
-
