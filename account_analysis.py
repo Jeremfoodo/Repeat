@@ -20,16 +20,17 @@ def account_analysis(df):
     # Nettoyage de la colonne 'Owner email'
     df['Owner email'] = df['Owner email'].astype(str).dropna()
 
-    # Sélection de l'account manager
-    account_manager = st.selectbox(
-        'Sélectionner un account manager',
-        sorted(df['Owner email'].unique())
-    )
-
-    # Bouton pour mettre à jour les données
-    if st.button('Mettre à jour'):
-        st.cache_data.clear()
-        st.experimental_rerun()
+    # Disposition en colonnes pour la sélection et la mise à jour
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        account_manager = st.selectbox(
+            'Sélectionner un account manager',
+            sorted(df['Owner email'].unique())
+        )
+    with col2:
+        if st.button('Mettre à jour'):
+            st.cache_data.clear()
+            st.experimental_rerun()
 
     # Filtrer les données par account manager
     df_account = get_filtered_data(df, account_manager)
@@ -44,19 +45,17 @@ def account_analysis(df):
     st.markdown(f'<span style="font-size:14px; color:black; text-decoration:none;">{account_manager}</span>', unsafe_allow_html=True)
     summary_boxes_account = generate_summary_boxes(june_2024_results_account)
 
-    # Afficher les boîtes dans une grille 2x2
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(summary_boxes_account[0], unsafe_allow_html=True)
-        st.markdown(summary_boxes_account[1], unsafe_allow_html=True)
-    with col2:
-        st.markdown(summary_boxes_account[2], unsafe_allow_html=True)
-        st.markdown(summary_boxes_account[3], unsafe_allow_html=True)
+    # Afficher les boîtes dans une grille 2x2 ou une seule rangée
+    col1, col2, col3, col4 = st.columns(4)
+    col1.markdown(summary_boxes_account[0], unsafe_allow_html=True)
+    col2.markdown(summary_boxes_account[1], unsafe_allow_html=True)
+    col3.markdown(summary_boxes_account[2], unsafe_allow_html=True)
+    col4.markdown(summary_boxes_account[3], unsafe_allow_html=True)
 
     st.header(f'Graphiques des Segments - {account_manager}')
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         fig = plot_ratios(segment, account_results, account_manager)
-        st.plotly_chart(fig)
+        st.plotly_chart(fig, use_container_width=True)
 
     # Préparer le tableau
     df['Derniere commande'] = df.groupby('Restaurant ID')['Date de commande'].transform('max')
