@@ -5,4 +5,4 @@ streamlit
 gdown
 streamlit_option_menu
 streamlit-aggrid
-PyGithub requests
+PyGithub
