@@ -1,8 +1,8 @@
+import os
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 import gdown
-import os
 
 # URLs de Google Drive pour chaque fichier
 gdrive_files = {
@@ -20,7 +20,8 @@ def download_files():
     
     for key, url in gdrive_files.items():
         output = os.path.join(data_dir, f"{key}.csv")
-        gdown.download(url, output, quiet=False)
+        if not os.path.exists(output):  # Vérifier si le fichier existe déjà
+            gdown.download(url, output, quiet=True)  # Utiliser quiet=True pour éviter les messages
 
 # Charger les données historiques
 def load_historical_data():
