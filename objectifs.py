@@ -153,6 +153,13 @@ def objectifs_page():
             params.data['OBJ Juillet'] = Math.round(moisDernier * (taux2024 / 100));
             params.data['Reste à faire'] = params.data['OBJ Juillet'] - params.data['Juillet NOW'];
             params.api.applyTransaction({update: [params.data]});
+
+            // Update the total OBJ Juillet
+            let totalObjJuillet = 0;
+            params.api.forEachNode(function(rowNode) {
+                totalObjJuillet += rowNode.data['OBJ Juillet'];
+            });
+            document.getElementById('total-obj-juillet').innerText = totalObjJuillet;
         }
     }
     """)
@@ -178,7 +185,7 @@ def objectifs_page():
 
     # Afficher le total de la colonne OBJ Juillet
     total_obj_juillet = st.session_state.df_objectifs['OBJ Juillet'].sum()
-    st.write(f"Total OBJ Juillet: {total_obj_juillet}")
+    st.write(f"Total OBJ Juillet: <span id='total-obj-juillet'>{total_obj_juillet}</span>", unsafe_allow_html=True)
 
     # Bouton pour afficher le champ de mot de passe
     if 'show_password_field' not in st.session_state:
