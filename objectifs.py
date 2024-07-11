@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 import gdown
+import os
 
 # URLs de Google Drive pour chaque fichier
 gdrive_files = {
