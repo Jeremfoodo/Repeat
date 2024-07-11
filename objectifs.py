@@ -139,13 +139,11 @@ def calculate_repeat(df):
     df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
     df['Reste à faire'] = df['OBJ Juillet'] - df['Juillet NOW']
     
-    # Mettre à jour la ligne de total
-    df.loc[df['Pays'] == 'Total', 'Possible'] = df['Possible'].sum()
-    df.loc[df['Pays'] == 'Total', 'Mois Dernier'] = df['Mois Dernier'].sum()
-    df.loc[df['Pays'] == 'Total', 'Juillet NOW'] = df['Juillet NOW'].sum()
+    return df
+
+def update_totals(df):
     df.loc[df['Pays'] == 'Total', 'OBJ Juillet'] = df.loc[df['Pays'] != 'Total', 'OBJ Juillet'].sum()
     df.loc[df['Pays'] == 'Total', 'Reste à faire'] = df.loc[df['Pays'] != 'Total', 'Reste à faire'].sum()
-    
     return df
 
 def objectifs_page():
@@ -227,6 +225,7 @@ def objectifs_page():
         if st.button('Confirmer'):
             if password == 'foodostreamlit':
                 st.session_state.df_objectifs = calculate_repeat(st.session_state.df_objectifs)
+                st.session_state.df_objectifs = update_totals(st.session_state.df_objectifs)
                 st.success('Les objectifs ont été enregistrés.')
                 total_clients_actifs = st.session_state.df_objectifs.loc[st.session_state.df_objectifs['Pays'] != 'Total', 'OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
