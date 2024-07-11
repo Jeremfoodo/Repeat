@@ -28,7 +28,7 @@ def generate_summary_boxes(june_2024_results):
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
         box = f"""
-        <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 150px;">
+        <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 170px;">
             <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
             <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients: {segment_data['Nombre de Clients']}</p>
             <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients Possible: {segment_data['Nombre de Clients Possible']}</p>
