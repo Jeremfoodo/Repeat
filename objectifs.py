@@ -236,7 +236,7 @@ def objectifs_page():
                 st.error('Mot de passe incorrect.')
 
     # Afficher les objectifs précédemment enregistrés
-    if objectifs_precedents est not None:
+    if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
 
