@@ -129,9 +129,18 @@ def objectifs_page():
     df_recent = load_recent_data()
     df_recent = preprocess_data(df_recent)
 
+    # Charger les objectifs précédemment enregistrés
+    try:
+        objectifs_precedents = pd.read_csv('data/objectifs.csv')
+    except FileNotFoundError:
+        objectifs_precedents = None
+
     if 'df_objectifs' not in st.session_state:
-        df_objectifs = prepare_objectifs_data(historical_data, df_recent)
-        st.session_state.df_objectifs = df_objectifs
+        if objectifs_precedents is not None:
+            st.session_state.df_objectifs = objectifs_precedents
+        else:
+            df_objectifs = prepare_objectifs_data(historical_data, df_recent)
+            st.session_state.df_objectifs = df_objectifs
 
     # JavaScript pour recalculer automatiquement OBJ Juillet
     js_code = JsCode("""
@@ -174,7 +183,7 @@ def objectifs_page():
     if st.session_state.show_password_field:
         password = st.text_input('Entrez le mot de passe pour valider les objectifs:', type='password')
         if st.button('Confirmer'):
-            if password == 'inesqueenofrepeat':
+            if password == 'foodostreamlit':
                 st.session_state.df_objectifs = calculate_repeat(st.session_state.df_objectifs)
                 st.success('Les objectifs ont été enregistrés.')
                 total_clients_actifs = st.session_state.df_objectifs['OBJ Juillet'].sum()
@@ -185,10 +194,8 @@ def objectifs_page():
             else:
                 st.error('Mot de passe incorrect.')
 
-    # Charger les objectifs précédemment enregistrés
-    try:
-        objectifs_precedents = pd.read_csv('data/objectifs.csv')
+    # Afficher les objectifs précédemment enregistrés
+    if objectifs_precedents is not None:
         st.write('Objectifs précédemment enregistrés:')
         st.write(objectifs_precedents)
-    except FileNotFoundError:
-        st.write('Aucun objectif précédemment enregistré.')
+
