@@ -109,7 +109,6 @@ def calculate_repeat_rate_2023(historical_data, segment):
     return taux_2023
 
 # Préparer les données pour la page Objectifs
-# Préparer les données pour la page Objectifs
 def prepare_objectifs_data(historical_data, df, objectifs_precedents):
     recent_month = '2024-07'
     segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
@@ -126,7 +125,7 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
                 'Mois Dernier': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Actifs (Mois Précédent)'].values[0],
                 'Juillet NOW': segments_data[segments_data['Segment'] == segment]['Nombre de Clients'].values[0],
                 'Taux 2023': calculate_repeat_rate_2023(historical_data, segment)[country],
-                'Taux 2024': 0,
+                'Taux 2024': objectifs_precedents.loc[(objectifs_precedents['Pays'] == country) & (objectifs_precedents['Segment'] == segment), 'Taux 2024'].values[0] if not objectifs_precedents.empty else 0,
                 'OBJ Juillet': 0,
                 'Reste à faire': 0
             }
@@ -135,9 +134,6 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
     df_objectifs = pd.DataFrame(data)
 
     if not objectifs_precedents.empty:
-        df_objectifs = df_objectifs.merge(objectifs_precedents[['Pays', 'Segment', 'Taux 2024']], on=['Pays', 'Segment'], how='left')
-        df_objectifs['Taux 2024'] = df_objectifs['Taux 2024_y'].combine_first(df_objectifs['Taux 2024_x'])
-        df_objectifs.drop(columns=['Taux 2024_x', 'Taux 2024_y'], inplace=True)
         df_objectifs['OBJ Juillet'] = (df_objectifs['Mois Dernier'] * (df_objectifs['Taux 2024'] / 100)).astype(int)
         df_objectifs['Reste à faire'] = df_objectifs['OBJ Juillet'] - df_objectifs['Juillet NOW']
     
@@ -171,29 +167,27 @@ def update_totals(df):
 def objectifs_page():
     st.title('Définir les Objectifs des Account Managers')
 
-    db = next(get_db())
+    # Charger les objectifs précédemment enregistrés
+    db_gen = get_db()
+    db = next(db_gen)
+    try:
+        objectifs_precedents = load_objectifs(db)
+    except Exception as e:
+        st.error(f"Erreur lors du chargement des objectifs: {e}")
+        objectifs_precedents = pd.DataFrame()
+
+    # Charger et traiter les données historiques et récentes
+    historical_data = load_historical_data()
+    df_recent = load_recent_data()
+    df_recent = preprocess_data(df_recent)
 
     if 'df_objectifs' not in st.session_state:
-        objectifs_precedents = load_objectifs(db)
-        historical_data = load_historical_data()
-        df_recent = load_recent_data()
-        df_recent = preprocess_data(df_recent)
         df_objectifs = prepare_objectifs_data(historical_data, df_recent, objectifs_precedents)
         st.session_state.df_objectifs = df_objectifs
     else:
         df_objectifs = st.session_state.df_objectifs
 
-    # Afficher le tableau interactif et permettre la modification des taux 2024
-    gb = GridOptionsBuilder.from_dataframe(df_objectifs)
-    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet", "Reste à faire"], editable=False)
-    gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
-    function(params) {
-        return {
-            'backgroundColor': 'yellow'
-        }
-    }
-    """))
-
+    # JavaScript pour recalculer automatiquement OBJ Juillet et Reste à faire
     js_code = JsCode("""
     function(params) {
         if (params.colDef.field === 'Taux 2024') {
@@ -219,26 +213,56 @@ def objectifs_page():
     }
     """)
 
+    # Tableau interactif
+    gb = GridOptionsBuilder.from_dataframe(st.session_state.df_objectifs)
+    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet", "Reste à faire"], editable=False)
+    gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
+    function(params) {
+        return {
+            'backgroundColor': 'yellow'
+        }
+    }
+    """))
     gb.configure_grid_options(domLayout='normal', onCellValueChanged=js_code)
 
     grid_options = gb.build()
-    grid_response = AgGrid(df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
+    grid_response = AgGrid(st.session_state.df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
     updated_df = pd.DataFrame(grid_response['data'])
 
+    # Mise à jour des données dans le session_state après modification
     st.session_state.df_objectifs.update(updated_df)
 
+    # Bouton pour afficher le champ de mot de passe
+    if 'show_password_field' not in st.session_state:
+        st.session_state.show_password_field = False
+
     if st.button('Valider'):
+        st.session_state.show_password_field = True
+
+    if st.session_state.show_password_field:
         password = st.text_input('Entrez le mot de passe pour valider les objectifs:', type='password')
         if st.button('Confirmer'):
             if password == 'foodostreamlit':
                 st.session_state.df_objectifs = calculate_repeat(st.session_state.df_objectifs)
                 st.session_state.df_objectifs = update_totals(st.session_state.df_objectifs)
-                save_objectifs(db, st.session_state.df_objectifs)
                 st.success('Les objectifs ont été enregistrés.')
                 total_clients_actifs = st.session_state.df_objectifs.loc[st.session_state.df_objectifs['Pays'] != 'Total', 'OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
+                # Sauvegarder les objectifs dans un fichier ou une base de données
+                try:
+                    save_objectifs(db, st.session_state.df_objectifs)
+                    st.success('Les objectifs ont été enregistrés dans la base de données.')
+                except Exception as e:
+                    st.error(f"Erreur lors de l'enregistrement des objectifs: {e}")
+                st.session_state.show_password_field = False
             else:
                 st.error('Mot de passe incorrect.')
 
+    # Afficher les objectifs précédemment enregistrés
+    if not objectifs_precedents.empty:
+        st.write('Objectifs précédemment enregistrés:')
+        st.write(objectifs_precedents)
+
 if __name__ == '__main__':
     objectifs_page()
+
