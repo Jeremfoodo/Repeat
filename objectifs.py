@@ -7,7 +7,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 from github import Github
 
 # URL du fichier CSV sur GitHub
-CSV_URL = 'https://raw.githubusercontent.com/jeremfoodo/repeat/main/data/objectifs.csv'
+CSV_URL = 'https://raw.githubusercontent.com/jeremfoodo/Repeat/main/data/objectifs.csv'
 # Token d'accès personnel GitHub
 GITHUB_TOKEN = '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'
 # Chemin vers le fichier dans le dépôt GitHub
@@ -147,7 +147,7 @@ def prepare_objectifs_data(historical_data, df):
         'Mois Dernier': [df_objectifs['Mois Dernier'].sum()],
         'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
         'Taux 2023': [0],  # Valeur numérique pour éviter les erreurs de calcul
-        'Taux 2024': [0],  # Valeur numérique pour éviter les erreurs de calcul
+        'Taux 2024': [0], 
         'OBJ Juillet': [0],  # Initialement à 0
         'Reste à faire': [0]  # Initialement à 0
     })
