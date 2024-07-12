@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
@@ -16,7 +15,10 @@ def get_db():
 # Charger les objectifs précédemment enregistrés
 def load_objectifs(db: Session):
     objectifs = db.query(Objectif).all()
-    return pd.DataFrame([o.__dict__ for o in objectifs])
+    if objectifs:
+        return pd.DataFrame([o.__dict__ for o in objectifs])
+    else:
+        return pd.DataFrame()
 
 # Sauvegarder les objectifs dans la base de données
 def save_objectifs(db: Session, df: pd.DataFrame):
@@ -143,7 +145,8 @@ def prepare_objectifs_data(historical_data, df):
         'OBJ Juillet': [0],  # Initialement à 0
         'Reste à faire': [0]  # Initialement à 0
     })
-    df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
+    df_objectifs = pd.concat([df_objectifs, total_row], ignore
+        index=True)
     
     return df_objectifs
 
