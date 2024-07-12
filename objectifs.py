@@ -37,6 +37,9 @@ def save_objectifs(db: Session, df: pd.DataFrame):
         )
         db.add(obj)
     db.commit()
+    # Vérification des données enregistrées
+    for obj in db.query(Objectif).all():
+        st.write(obj)
 
 # Charger les données historiques
 def load_historical_data():
@@ -86,7 +89,7 @@ def calculate_segments_for_month(df, target_month):
             len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
                 [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
             ))]['Restaurant ID'].unique()),
-            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
+            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months-5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
         ],
         'Nombre de Clients Actifs (Mois Précédent)': [
             0,
@@ -118,6 +121,12 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
         df_country = df[df['Pays'] == country]
         segments_data = calculate_segments_for_month(df_country, recent_month)
         for segment in segments:
+            taux_2024 = 0
+            if not objectifs_precedents.empty:
+                taux_2024 = objectifs_precedents.loc[(objectifs_precedents['Pays'] == country) & (objectifs_precedents['Segment'] == segment), 'Taux 2024']
+                if not taux_2024.empty:
+                    taux_2024 = taux_2024.values[0]
+
             row = {
                 'Pays': country,
                 'Segment': segment,
@@ -125,18 +134,18 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
                 'Mois Dernier': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Actifs (Mois Précédent)'].values[0],
                 'Juillet NOW': segments_data[segments_data['Segment'] == segment]['Nombre de Clients'].values[0],
                 'Taux 2023': calculate_repeat_rate_2023(historical_data, segment)[country],
-                                'Taux 2024': objectifs_precedents.loc[(objectifs_precedents['Pays'] == country) & (objectifs_precedents['Segment'] == segment), 'Taux 2024'].values[0] if not objectifs_precedents.empty else 0,
+                'Taux 2024': taux_2024,
                 'OBJ Juillet': 0,
                 'Reste à faire': 0
             }
             data.append(row)
-    
+
     df_objectifs = pd.DataFrame(data)
 
     if not objectifs_precedents.empty:
         df_objectifs['OBJ Juillet'] = (df_objectifs['Mois Dernier'] * (df_objectifs['Taux 2024'] / 100)).astype(int)
         df_objectifs['Reste à faire'] = df_objectifs['OBJ Juillet'] - df_objectifs['Juillet NOW']
-    
+
     # Ajouter une ligne de total
     total_row = pd.DataFrame({
         'Pays': ['Total'],
@@ -248,7 +257,7 @@ def objectifs_page():
                 st.success('Les objectifs ont été enregistrés.')
                 total_clients_actifs = st.session_state.df_objectifs.loc[st.session_state.df_objectifs['Pays'] != 'Total', 'OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
-                # Sauvegarder les objectifs dans un fichier ou une base de données
+                # Sauvegarder les objectifs dans la base de données
                 try:
                     save_objectifs(db, st.session_state.df_objectifs)
                     st.success('Les objectifs ont été enregistrés dans la base de données.')
@@ -265,3 +274,4 @@ def objectifs_page():
 
 if __name__ == '__main__':
     objectifs_page()
+
