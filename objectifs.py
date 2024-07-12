@@ -109,7 +109,7 @@ def calculate_repeat_rate_2023(historical_data, segment):
     return taux_2023
 
 # Préparer les données pour la page Objectifs
-def prepare_objectifs_data(historical_data, df):
+def prepare_objectifs_data(historical_data, df, objectifs_precedents):
     recent_month = '2024-07'
     segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
     data = []
@@ -134,7 +134,7 @@ def prepare_objectifs_data(historical_data, df):
     df_objectifs = pd.DataFrame(data)
 
     # Ajouter une ligne de total
-    total_row = pd.DataFrame({
+       total_row = pd.DataFrame({
         'Pays': ['Total'],
         'Segment': [''],
         'Possible': [df_objectifs['Possible'].sum()],
@@ -146,7 +146,12 @@ def prepare_objectifs_data(historical_data, df):
         'Reste à faire': [0]  # Initialement à 0
     })
     df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
-        
+
+    if not objectifs_precedents.empty:
+        df_objectifs = df_objectifs.merge(objectifs_precedents[['Pays', 'Segment', 'Taux 2024']], on=['Pays', 'Segment'], how='left')
+        df_objectifs['Taux 2024'] = df_objectifs['Taux 2024_y'].combine_first(df_objectifs['Taux 2024_x'])
+        df_objectifs.drop(columns=['Taux 2024_x', 'Taux 2024_y'], inplace=True)
+
     return df_objectifs
 
 def calculate_repeat(df):
@@ -166,18 +171,17 @@ def objectifs_page():
     db = next(get_db())
 
     if 'df_objectifs' not in st.session_state:
-        df_objectifs = load_objectifs(db)
-        if df_objectifs.empty:
-            historical_data = load_historical_data()
-            df_recent = load_recent_data()
-            df_recent = preprocess_data(df_recent)
-            df_objectifs = prepare_objectifs_data(historical_data, df_recent)
+        objectifs_precedents = load_objectifs(db)
+        historical_data = load_historical_data()
+        df_recent = load_recent_data()
+        df_recent = preprocess_data(df_recent)
+        df_objectifs = prepare_objectifs_data(historical_data, df_recent, objectifs_precedents)
         st.session_state.df_objectifs = df_objectifs
-
-    df = st.session_state.df_objectifs
+    else:
+        df_objectifs = st.session_state.df_objectifs
 
     # Afficher le tableau interactif et permettre la modification des taux 2024
-    gb = GridOptionsBuilder.from_dataframe(df)
+    gb = GridOptionsBuilder.from_dataframe(df_objectifs)
     gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet", "Reste à faire"], editable=False)
     gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
     function(params) {
@@ -215,7 +219,7 @@ def objectifs_page():
     gb.configure_grid_options(domLayout='normal', onCellValueChanged=js_code)
 
     grid_options = gb.build()
-    grid_response = AgGrid(df, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
+    grid_response = AgGrid(df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
     updated_df = pd.DataFrame(grid_response['data'])
 
     st.session_state.df_objectifs.update(updated_df)
