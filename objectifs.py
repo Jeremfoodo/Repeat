@@ -125,7 +125,7 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
                 'Mois Dernier': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Actifs (Mois Précédent)'].values[0],
                 'Juillet NOW': segments_data[segments_data['Segment'] == segment]['Nombre de Clients'].values[0],
                 'Taux 2023': calculate_repeat_rate_2023(historical_data, segment)[country],
-                'Taux 2024': objectifs_precedents.loc[(objectifs_precedents['Pays'] == country) & (objectifs_precedents['Segment'] == segment), 'Taux 2024'].values[0] if not objectifs_precedents.empty else 0,
+                                'Taux 2024': objectifs_precedents.loc[(objectifs_precedents['Pays'] == country) & (objectifs_precedents['Segment'] == segment), 'Taux 2024'].values[0] if not objectifs_precedents.empty else 0,
                 'OBJ Juillet': 0,
                 'Reste à faire': 0
             }
@@ -265,4 +265,3 @@ def objectifs_page():
 
 if __name__ == '__main__':
     objectifs_page()
-
