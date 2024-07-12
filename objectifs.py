@@ -134,7 +134,7 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
     df_objectifs = pd.DataFrame(data)
 
     # Ajouter une ligne de total
-       total_row = pd.DataFrame({
+    total_row = pd.DataFrame({
         'Pays': ['Total'],
         'Segment': [''],
         'Possible': [df_objectifs['Possible'].sum()],
