@@ -7,9 +7,9 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 from github import Github
 
 # URL du fichier CSV sur GitHub
-CSV_URL = 'https://raw.githubusercontent.com/jeremfoodo/Repeat/main/data/objectifs.csv'
+CSV_URL = 'https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/data/objectifs.csv'
 # Token d'accès personnel GitHub
-GITHUB_TOKEN = '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'
+GITHUB_TOKEN = 'YOUR_GITHUB_PERSONAL_ACCESS_TOKEN'
 # Chemin vers le fichier dans le dépôt GitHub
 GITHUB_FILE_PATH = 'data/objectifs.csv'
 
@@ -159,7 +159,6 @@ def calculate_repeat(df):
     df['Taux 2024'] = pd.to_numeric(df['Taux 2024'], errors='coerce').fillna(0)
     df['OBJ Juillet'] = (df['Mois Dernier'] * (df['Taux 2024'] / 100)).astype(int)
     df['Reste à faire'] = df['OBJ Juillet'] - df['Juillet NOW']
-    
     return df
 
 def update_totals(df):
@@ -170,12 +169,9 @@ def update_totals(df):
 def objectifs_page():
     st.title('Définir les Objectifs des Account Managers')
 
-    # Authentification et création du service Google Drive
-    service = authenticate_gdrive()
-
     # Charger les objectifs précédemment enregistrés
     try:
-        objectifs_precedents = load_objectifs(service)
+        objectifs_precedents = load_objectifs()
     except Exception as e:
         st.error(f"Erreur lors du chargement des objectifs: {e}")
         objectifs_precedents = None
@@ -259,7 +255,7 @@ def objectifs_page():
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
                 # Sauvegarder les objectifs dans un fichier ou une base de données
                 try:
-                    save_objectifs(st.session_state.df_objectifs, service)
+                    save_objectifs(st.session_state.df_objectifs)
                     st.success('Les objectifs ont été enregistrés sur GitHub.')
                 except Exception as e:
                     st.error(f"Erreur lors de l'enregistrement des objectifs: {e}")
@@ -274,3 +270,4 @@ def objectifs_page():
 
 if __name__ == '__main__':
     objectifs_page()
+
