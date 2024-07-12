@@ -134,7 +134,7 @@ def calculate_repeat_rate_2023(historical_data, segment):
 def prepare_objectifs_data(historical_data, df):
     recent_month = '2024-07'
     segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
-        data = []
+    data = []
 
     for country, df_hist in historical_data.items():
         df_country = df[df['Pays'] == country]
