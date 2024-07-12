@@ -18,7 +18,7 @@ if not GITHUB_TOKEN:
     st.error("Le token GitHub n'a pas été trouvé. Assurez-vous qu'il est correctement défini dans le fichier .env.")
 
 # URL du fichier CSV sur GitHub
-CSV_URL = 'https://raw.githubusercontent.com/Jeremfoodo/Repeat/main/data/objectifs.csv'
+CSV_URL = 'https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/data/objectifs.csv'
 # Chemin vers le fichier dans le dépôt GitHub
 GITHUB_FILE_PATH = 'data/objectifs.csv'
 
@@ -81,7 +81,7 @@ def preprocess_data(df):
     to_exclude_commande = ['CANCELLED', 'ABANDONED', 'FAILED', 'WAITING']
     to_exclude_paiement = ['CANCELLED', 'ERROR']
     df = df[~df['Statut commande'].isin(to_exclude_commande)]
-    df = df[~df['Statut paiement'].isin(to_exclude_paiement)]
+    df = df[~df['Statut paiement'].isin(to_exclure_paiement)]
     df = df[~df['Canal'].str.contains('trading', case=False, na=False)]
     df['Mois'] = df['Date de commande'].dt.strftime('%Y-%m')
     return df
@@ -114,7 +114,7 @@ def calculate_segments_for_month(df, target_month):
             0,
             len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month)]['Restaurant ID'].unique()),
             len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
+                                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
             ))]['Restaurant ID'].unique()),
             len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
         ],
