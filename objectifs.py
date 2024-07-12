@@ -7,7 +7,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 from github import Github
 
 # URL du fichier CSV sur GitHub
-CSV_URL = 'https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/data/objectifs.csv'
+CSV_URL = 'https://raw.githubusercontent.com/jeremfoodo/repeat/main/data/objectifs.csv'
 # Token d'accès personnel GitHub
 GITHUB_TOKEN = 'YOUR_GITHUB_PERSONAL_ACCESS_TOKEN'
 # Chemin vers le fichier dans le dépôt GitHub
