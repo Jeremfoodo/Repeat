@@ -18,7 +18,7 @@ if not GITHUB_TOKEN:
     st.error("Le token GitHub n'a pas été trouvé. Assurez-vous qu'il est correctement défini dans le fichier .env.")
 
 # URL du fichier CSV sur GitHub
-CSV_URL = 'https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/data/objectifs.csv'
+CSV_URL = 'https://raw.githubusercontent.com/Jeremfoodo/Repeat/main/data/objectifs.csv'
 # Chemin vers le fichier dans le dépôt GitHub
 GITHUB_FILE_PATH = 'data/objectifs.csv'
 
