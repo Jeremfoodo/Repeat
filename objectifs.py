@@ -109,6 +109,7 @@ def calculate_repeat_rate_2023(historical_data, segment):
     return taux_2023
 
 # Préparer les données pour la page Objectifs
+# Préparer les données pour la page Objectifs
 def prepare_objectifs_data(historical_data, df, objectifs_precedents):
     recent_month = '2024-07'
     segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
@@ -133,6 +134,13 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
     
     df_objectifs = pd.DataFrame(data)
 
+    if not objectifs_precedents.empty:
+        df_objectifs = df_objectifs.merge(objectifs_precedents[['Pays', 'Segment', 'Taux 2024']], on=['Pays', 'Segment'], how='left')
+        df_objectifs['Taux 2024'] = df_objectifs['Taux 2024_y'].combine_first(df_objectifs['Taux 2024_x'])
+        df_objectifs.drop(columns=['Taux 2024_x', 'Taux 2024_y'], inplace=True)
+        df_objectifs['OBJ Juillet'] = (df_objectifs['Mois Dernier'] * (df_objectifs['Taux 2024'] / 100)).astype(int)
+        df_objectifs['Reste à faire'] = df_objectifs['OBJ Juillet'] - df_objectifs['Juillet NOW']
+    
     # Ajouter une ligne de total
     total_row = pd.DataFrame({
         'Pays': ['Total'],
@@ -142,15 +150,10 @@ def prepare_objectifs_data(historical_data, df, objectifs_precedents):
         'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
         'Taux 2023': [0],  # Non utilisé pour le total
         'Taux 2024': [0],  # Non utilisé pour le total
-        'OBJ Juillet': [0],  # Initialement à 0
-        'Reste à faire': [0]  # Initialement à 0
+        'OBJ Juillet': [df_objectifs['OBJ Juillet'].sum()],
+        'Reste à faire': [df_objectifs['Reste à faire'].sum()]
     })
     df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
-
-    if not objectifs_precedents.empty:
-        df_objectifs = df_objectifs.merge(objectifs_precedents[['Pays', 'Segment', 'Taux 2024']], on=['Pays', 'Segment'], how='left')
-        df_objectifs['Taux 2024'] = df_objectifs['Taux 2024_y'].combine_first(df_objectifs['Taux 2024_x'])
-        df_objectifs.drop(columns=['Taux 2024_x', 'Taux 2024_y'], inplace=True)
 
     return df_objectifs
 
