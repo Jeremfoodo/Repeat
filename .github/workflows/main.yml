@@ -25,6 +25,6 @@ jobs:
 
     - name: Run script
       env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        TOKEN: ${{ secrets.TOKEN }}
       run: |
         python objectifs.py
