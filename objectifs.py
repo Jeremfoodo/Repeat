@@ -1,175 +1,46 @@
-import os
-import io
-import requests
 import streamlit as st
 import pandas as pd
+from sqlalchemy.orm import Session
+from db import SessionLocal, Objectif
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
-from github import Github, GithubException
-from dotenv import load_dotenv
 
-# Charger les variables d'environnement
-load_dotenv()
-
-# Token d'accès personnel GitHub depuis la variable d'environnement
-GITHUB_TOKEN = os.getenv('TOKEN')
-
-# Vérifiez que le token est correctement chargé
-if not GITHUB_TOKEN:
-    st.error("Le token GitHub n'a pas été trouvé. Assurez-vous qu'il est correctement défini dans le fichier .env.")
-
-# URL du fichier CSV sur GitHub
-CSV_URL = 'https://raw.githubusercontent.com/Jeremfoodo/Repeat/main/data/objectifs.csv'
-# Chemin vers le fichier dans le dépôt GitHub
-GITHUB_FILE_PATH = 'data/objectifs.csv'
-
-# Télécharger le fichier CSV depuis GitHub
-def download_csv():
-    response = requests.get(CSV_URL)
-    response.raise_for_status()
-    with open('data/objectifs.csv', 'wb') as f:
-        f.write(response.content)
-    return 'data/objectifs.csv'
-
-# Charger les objectifs précédemment enregistrés
-def load_objectifs():
-    output = download_csv()
-    return pd.read_csv(output)
-
-# Sauvegarder les objectifs dans le fichier CSV et le re-télécharger sur GitHub
-def save_objectifs(df):
-    output = 'data/objectifs.csv'
-    df[['Pays', 'Segment', 'Taux 2024']].to_csv(output, index=False)
-    upload_csv_to_github(output)
-
-# Téléverser le fichier CSV mis à jour sur GitHub
-def upload_csv_to_github(file_path):
-    g = Github(GITHUB_TOKEN)
+def get_db():
+    db = SessionLocal()
     try:
-        repo = g.get_repo('Jeremfoodo/Repeat')
-        with open(file_path, 'r') as file:
-            content = file.read()
-        try:
-            contents = repo.get_contents(GITHUB_FILE_PATH)
-            repo.update_file(contents.path, "Mise à jour des objectifs", content, contents.sha)
-        except GithubException as e:
-            if e.status == 404:
-                repo.create_file(GITHUB_FILE_PATH, "Ajout du fichier objectifs", content)
-            else:
-                raise e
-    except GithubException as e:
-        st.error(f"Erreur lors de l'authentification GitHub: {e}")
-        raise e
+        yield db
+    finally:
+        db.close()
 
-# Charger les données historiques
-def load_historical_data():
-    historical_files = {
-        'FR': 'https://drive.google.com/uc?id=1HSagRx3aiT3Jb9idOYtdINlYfp4SsqUE',
-        'US': 'https://drive.google.com/uc?id=1Ls5d_1G9E3XeiktLzZs6MXTxGzRv7jTb',
-        'BE': 'https://drive.google.com/uc?id=1pLdrmiP715kfG_7ToVhXKXqp5lo8-X48',
-        'GB': 'https://drive.google.com/uc?id=1j_GSC0NtbI1ozRBA1w1Vp9cpfp974syN'
-    }
+def load_objectifs(db: Session):
+    objectifs = db.query(Objectif).all()
+    return pd.DataFrame([o.__dict__ for o in objectifs])
 
-    historical_data = {country: pd.read_csv(file) for country, file in historical_files.items()}
-    return historical_data
+def save_objectifs(db: Session, df: pd.DataFrame):
+    db.query(Objectif).delete()
+    for _, row in df.iterrows():
+        obj = Objectif(
+            pays=row['Pays'],
+            segment=row['Segment'],
+            possible=row['Possible'],
+            mois_dernier=row['Mois Dernier'],
+            juillet_now=row['Juillet NOW'],
+            taux_2023=row['Taux 2023'],
+            taux_2024=row['Taux 2024'],
+            obj_juillet=row['OBJ Juillet'],
+            reste_a_faire=row['Reste à faire']
+        )
+        db.add(obj)
+    db.commit()
 
-# Charger les données récentes
-def load_recent_data():
-    return pd.read_csv('https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM', parse_dates=['date 1ere commande (Restaurant)', 'Date de commande'], decimal='.')
-
-# Nettoyer et traiter les données récentes
-def preprocess_data(df):
-    to_exclude_commande = ['CANCELLED', 'ABANDONED', 'FAILED', 'WAITING']
-    to_exclude_paiement = ['CANCELLED', 'ERROR']
-    df = df[~df['Statut commande'].isin(to_exclude_commande)]
-    df = df[~df['Statut paiement'].isin(to_exclude_paiement)]
-    df = df[~df['Canal'].str.contains('trading', case=False, na=False)]
-    df['Mois'] = df['Date de commande'].dt.strftime('%Y-%m')
-    return df
-
-# Calculer les segments pour un mois donné
-def calculate_segments_for_month(df, target_month):
-    previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
-
-    target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
-
-    acquisition = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
-    nouveaux_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]
-    clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-        [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
-    )]
-    anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
-
-    segment_counts = {
-        'Segment': ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients'],
-        'Nombre de Clients': [len(acquisition['Restaurant ID'].unique()), len(nouveaux_clients['Restaurant ID'].unique()), len(clients_recents['Restaurant ID'].unique()), len(anciens_clients['Restaurant ID'].unique())],
-        'Nombre de Clients Possible': [
-            len(acquisition['Restaurant ID'].unique()),
-            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month)]['Restaurant ID'].unique()),
-            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
-            ))]['Restaurant ID'].unique()),
-            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
-        ],
-        'Nombre de Clients Actifs (Mois Précédent)': [
-            0,
-            len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month)]['Restaurant ID'].unique()),
-            len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
-            ))]['Restaurant ID'].unique()),
-            len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
-        ],
-        'Rapport (%)': [0, 0, 0, 0]
-    }
-    
-    return pd.DataFrame(segment_counts)
-
-# Fonction pour calculer les taux de repeat pour l'année 2023
-def calculate_repeat_rate_2023(historical_data, segment):
-    taux_2023 = {}
-    for country, df in historical_data.items():
-        taux_2023[country] = df[(df['Segment'] == segment) & (df['Mois'] == '2023-07')]['Rapport (%)'].values[0]
-    return taux_2023
-
-# Préparer les données pour la page Objectifs
-def prepare_objectifs_data(historical_data, df):
-    recent_month = '2024-07'
-    segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
-    data = []
-
-    for country, df_hist in historical_data.items():
-        df_country = df[df['Pays'] == country]
-        segments_data = calculate_segments_for_month(df_country, recent_month)
-        for segment in segments:
-            row = {
-                'Pays': country,
-                'Segment': segment,
-                'Possible': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Possible'].values[0],
-                'Mois Dernier': segments_data[segments_data['Segment'] == segment]['Nombre de Clients Actifs (Mois Précédent)'].values[0],
-                'Juillet NOW': segments_data[segments_data['Segment'] == segment]['Nombre de Clients'].values[0],
-                'Taux 2023': calculate_repeat_rate_2023(historical_data, segment)[country],
-                'Taux 2024': 0,
-                'OBJ Juillet': 0,
-                'Reste à faire': 0
-            }
-            data.append(row)
-    
-    df_objectifs = pd.DataFrame(data)
-
-    # Ajouter une ligne de total
-    total_row = pd.DataFrame({
-        'Pays': ['Total'],
-        'Segment': [''],
-        'Possible': [df_objectifs['Possible'].sum()],
-        'Mois Dernier': [df_objectifs['Mois Dernier'].sum()],
-        'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
-        'Taux 2023': [0],  # Non utilisé pour le total
-        'Taux 2024': [0],  # Non utilisé pour le total
-        'OBJ Juillet': [0],  # Initialement à 0
-        'Reste à faire': [0]  # Initialement à 0
-    })
-    df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
-    
-    return df_objectifs
+def prepare_initial_data():
+    # Remplacez cette fonction par la génération initiale de vos données
+    data = [
+        {"Pays": "FR", "Segment": "Nouveaux Clients", "Possible": 100, "Mois Dernier": 90, "Juillet NOW": 80, "Taux 2023": 50.0, "Taux 2024": 0.0, "OBJ Juillet": 0, "Reste à faire": 0},
+        {"Pays": "US", "Segment": "Clients Récents", "Possible": 200, "Mois Dernier": 180, "Juillet NOW": 160, "Taux 2023": 60.0, "Taux 2024": 0.0, "OBJ Juillet": 0, "Reste à faire": 0},
+        {"Pays": "BE", "Segment": "Anciens Clients", "Possible": 150, "Mois Dernier": 140, "Juillet NOW": 130, "Taux 2023": 40.0, "Taux 2024": 0.0, "OBJ Juillet": 0, "Reste à faire": 0},
+        {"Pays": "GB", "Segment": "Nouveaux Clients", "Possible": 120, "Mois Dernier": 110, "Juillet NOW": 100, "Taux 2023": 55.0, "Taux 2024": 0.0, "OBJ Juillet": 0, "Reste à faire": 0},
+    ]
+    return pd.DataFrame(data)
 
 def calculate_repeat(df):
     df['Taux 2024'] = pd.to_numeric(df['Taux 2024'], errors='coerce').fillna(0)
@@ -185,30 +56,27 @@ def update_totals(df):
 def objectifs_page():
     st.title('Définir les Objectifs des Account Managers')
 
-    # Charger les objectifs précédemment enregistrés
-    try:
-        objectifs_precedents = load_objectifs()
-    except Exception as e:
-        st.error(f"Erreur lors du chargement des objectifs: {e}")
-        objectifs_precedents = None
-
-    # Charger et traiter les données historiques et récentes
-    historical_data = load_historical_data()
-    df_recent = load_recent_data()
-    df_recent = preprocess_data(df_recent)
+    db = next(get_db())
 
     if 'df_objectifs' not in st.session_state:
-        if objectifs_precedents is not None:
-            df_objectifs = prepare_objectifs_data(historical_data, df_recent)
-            df_objectifs = df_objectifs.merge(objectifs_precedents, on=['Pays', 'Segment'], how='left')
-            df_objectifs['Taux 2024'] = df_objectifs['Taux 2024_y'].combine_first(df_objectifs['Taux 2024_x'])
-            df_objectifs.drop(columns=['Taux 2024_x', 'Taux 2024_y'], inplace=True)
-            st.session_state.df_objectifs = df_objectifs
-        else:
-            df_objectifs = prepare_objectifs_data(historical_data, df_recent)
-            st.session_state.df_objectifs = df_objectifs
+        df_objectifs = load_objectifs(db)
+        if df_objectifs.empty:
+            df_objectifs = prepare_initial_data()
+        st.session_state.df_objectifs = df_objectifs
 
-    # JavaScript pour recalculer automatiquement OBJ Juillet et Reste à faire
+    df = st.session_state.df_objectifs
+
+    # Afficher le tableau interactif et permettre la modification des taux 2024
+    gb = GridOptionsBuilder.from_dataframe(df)
+    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet", "Reste à faire"], editable=False)
+    gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
+    function(params) {
+        return {
+            'backgroundColor': 'yellow'
+        }
+    }
+    """))
+
     js_code = JsCode("""
     function(params) {
         if (params.colDef.field === 'Taux 2024') {
@@ -234,55 +102,26 @@ def objectifs_page():
     }
     """)
 
-    # Tableau interactif
-    gb = GridOptionsBuilder.from_dataframe(st.session_state.df_objectifs)
-    gb.configure_columns(["Pays", "Segment", "Possible", "Mois Dernier", "Juillet NOW", "Taux 2023", "OBJ Juillet", "Reste à faire"], editable=False)
-    gb.configure_column("Taux 2024", editable=True, cellStyle=JsCode("""
-    function(params) {
-        return {
-            'backgroundColor': 'yellow'
-        }
-    }
-    """))
     gb.configure_grid_options(domLayout='normal', onCellValueChanged=js_code)
 
     grid_options = gb.build()
-    grid_response = AgGrid(st.session_state.df_objectifs, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
+    grid_response = AgGrid(df, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
     updated_df = pd.DataFrame(grid_response['data'])
 
-    # Mise à jour des données dans le session_state après modification
     st.session_state.df_objectifs.update(updated_df)
 
-    # Bouton pour afficher le champ de mot de passe
-    if 'show_password_field' not in st.session_state:
-        st.session_state.show_password_field = False
-
     if st.button('Valider'):
-        st.session_state.show_password_field = True
-
-    if st.session_state.show_password_field:
         password = st.text_input('Entrez le mot de passe pour valider les objectifs:', type='password')
         if st.button('Confirmer'):
             if password == 'foodostreamlit':
                 st.session_state.df_objectifs = calculate_repeat(st.session_state.df_objectifs)
                 st.session_state.df_objectifs = update_totals(st.session_state.df_objectifs)
+                save_objectifs(db, st.session_state.df_objectifs)
                 st.success('Les objectifs ont été enregistrés.')
                 total_clients_actifs = st.session_state.df_objectifs.loc[st.session_state.df_objectifs['Pays'] != 'Total', 'OBJ Juillet'].sum()
                 st.info(f'Cela fait un total de {total_clients_actifs} clients actifs.')
-                # Sauvegarder les objectifs dans un fichier ou une base de données
-                try:
-                    save_objectifs(st.session_state.df_objectifs)
-                    st.success('Les objectifs ont été enregistrés sur GitHub.')
-                except Exception as e:
-                    st.error(f"Erreur lors de l'enregistrement des objectifs: {e}")
-                st.session_state.show_password_field = False
             else:
                 st.error('Mot de passe incorrect.')
-
-    # Afficher les objectifs précédemment enregistrés
-    if objectifs_precedents is not None:
-        st.write('Objectifs précédemment enregistrés:')
-        st.write(objectifs_precedents)
 
 if __name__ == '__main__':
     objectifs_page()
