@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Token d'accès personnel GitHub depuis la variable d'environnement
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+GITHUB_TOKEN = os.getenv('TOKEN')
 
 # Vérifiez que le token est correctement chargé
 if not GITHUB_TOKEN:
@@ -45,7 +45,7 @@ def save_objectifs(df):
 def upload_csv_to_github(file_path):
     g = Github(GITHUB_TOKEN)
     try:
-        repo = g.get_repo('YOUR_GITHUB_USERNAME/YOUR_REPO_NAME')
+        repo = g.get_repo('Jeremfoodo/Repeat')
         with open(file_path, 'r') as file:
             content = file.read()
         try:
@@ -114,7 +114,7 @@ def calculate_segments_for_month(df, target_month):
             0,
             len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month)]['Restaurant ID'].unique()),
             len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-                                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
+                [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
             ))]['Restaurant ID'].unique()),
             len(df[(df['Date de commande'].dt.strftime('%Y-%m') == previous_month) & (df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
         ],
@@ -286,4 +286,3 @@ def objectifs_page():
 
 if __name__ == '__main__':
     objectifs_page()
-
