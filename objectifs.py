@@ -145,9 +145,8 @@ def prepare_objectifs_data(historical_data, df):
         'OBJ Juillet': [0],  # Initialement à 0
         'Reste à faire': [0]  # Initialement à 0
     })
-    df_objectifs = pd.concat([df_objectifs, total_row], ignore
-        index=True)
-    
+    df_objectifs = pd.concat([df_objectifs, total_row], ignore_index=True)
+        
     return df_objectifs
 
 def calculate_repeat(df):
