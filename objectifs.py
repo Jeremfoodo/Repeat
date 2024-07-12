@@ -67,7 +67,6 @@ def preprocess_data(df):
     df['Mois'] = df['Date de commande'].dt.strftime('%Y-%m')
     return df
 
-# Calculer les segments pour un mois donné
 def calculate_segments_for_month(df, target_month):
     previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
 
@@ -89,7 +88,7 @@ def calculate_segments_for_month(df, target_month):
             len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
                 [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
             ))]['Restaurant ID'].unique()),
-            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months-5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
+            len(df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]['Restaurant ID'].unique())
         ],
         'Nombre de Clients Actifs (Mois Précédent)': [
             0,
@@ -103,13 +102,6 @@ def calculate_segments_for_month(df, target_month):
     }
     
     return pd.DataFrame(segment_counts)
-
-# Fonction pour calculer les taux de repeat pour l'année 2023
-def calculate_repeat_rate_2023(historical_data, segment):
-    taux_2023 = {}
-    for country, df in historical_data.items():
-        taux_2023[country] = df[(df['Segment'] == segment) & (df['Mois'] == '2023-07')]['Rapport (%)'].values[0]
-    return taux_2023
 
 # Préparer les données pour la page Objectifs
 def prepare_objectifs_data(historical_data, df, objectifs_precedents):
