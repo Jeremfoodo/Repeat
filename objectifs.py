@@ -81,7 +81,7 @@ def preprocess_data(df):
     to_exclude_commande = ['CANCELLED', 'ABANDONED', 'FAILED', 'WAITING']
     to_exclude_paiement = ['CANCELLED', 'ERROR']
     df = df[~df['Statut commande'].isin(to_exclude_commande)]
-    df = df[~df['Statut paiement'].isin(to_exclure_paiement)]
+    df = df[~df['Statut paiement'].isin(to_exclude_paiement)]
     df = df[~df['Canal'].str.contains('trading', case=False, na=False)]
     df['Mois'] = df['Date de commande'].dt.strftime('%Y-%m')
     return df
