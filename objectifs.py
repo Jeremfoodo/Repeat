@@ -9,7 +9,7 @@ from github import Github
 # URL du fichier CSV sur GitHub
 CSV_URL = 'https://raw.githubusercontent.com/jeremfoodo/repeat/main/data/objectifs.csv'
 # Token d'accès personnel GitHub
-GITHUB_TOKEN = 'YOUR_GITHUB_PERSONAL_ACCESS_TOKEN'
+GITHUB_TOKEN = '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'
 # Chemin vers le fichier dans le dépôt GitHub
 GITHUB_FILE_PATH = 'data/objectifs.csv'
 
