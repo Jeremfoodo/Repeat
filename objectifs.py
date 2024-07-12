@@ -4,12 +4,21 @@ import requests
 import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
-from github import Github
+from github import Github, GithubException
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement
+load_dotenv()
+
+# Token d'accès personnel GitHub depuis la variable d'environnement
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+
+# Vérifiez que le token est correctement chargé
+if not GITHUB_TOKEN:
+    st.error("Le token GitHub n'a pas été trouvé. Assurez-vous qu'il est correctement défini dans le fichier .env.")
 
 # URL du fichier CSV sur GitHub
 CSV_URL = 'https://raw.githubusercontent.com/Jeremfoodo/Repeat/main/data/objectifs.csv'
-# Token d'accès personnel GitHub
-GITHUB_TOKEN = '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'
 # Chemin vers le fichier dans le dépôt GitHub
 GITHUB_FILE_PATH = 'data/objectifs.csv'
 
@@ -35,22 +44,29 @@ def save_objectifs(df):
 # Téléverser le fichier CSV mis à jour sur GitHub
 def upload_csv_to_github(file_path):
     g = Github(GITHUB_TOKEN)
-    repo = g.get_user().get_repo('YOUR_REPO_NAME')
-    with open(file_path, 'r') as file:
-        content = file.read()
     try:
-        contents = repo.get_contents(GITHUB_FILE_PATH)
-        repo.update_file(contents.path, "Mise à jour des objectifs", content, contents.sha)
-    except:
-        repo.create_file(GITHUB_FILE_PATH, "Ajout du fichier objectifs", content)
+        repo = g.get_repo('YOUR_GITHUB_USERNAME/YOUR_REPO_NAME')
+        with open(file_path, 'r') as file:
+            content = file.read()
+        try:
+            contents = repo.get_contents(GITHUB_FILE_PATH)
+            repo.update_file(contents.path, "Mise à jour des objectifs", content, contents.sha)
+        except GithubException as e:
+            if e.status == 404:
+                repo.create_file(GITHUB_FILE_PATH, "Ajout du fichier objectifs", content)
+            else:
+                raise e
+    except GithubException as e:
+        st.error(f"Erreur lors de l'authentification GitHub: {e}")
+        raise e
 
 # Charger les données historiques
 def load_historical_data():
     historical_files = {
-        'FR': 'data/FR.csv',
-        'US': 'data/US.csv',
-        'BE': 'data/BE.csv',
-        'GB': 'data/GB.csv'
+        'FR': 'https://drive.google.com/uc?id=1HSagRx3aiT3Jb9idOYtdINlYfp4SsqUE',
+        'US': 'https://drive.google.com/uc?id=1Ls5d_1G9E3XeiktLzZs6MXTxGzRv7jTb',
+        'BE': 'https://drive.google.com/uc?id=1pLdrmiP715kfG_7ToVhXKXqp5lo8-X48',
+        'GB': 'https://drive.google.com/uc?id=1j_GSC0NtbI1ozRBA1w1Vp9cpfp974syN'
     }
 
     historical_data = {country: pd.read_csv(file) for country, file in historical_files.items()}
@@ -58,7 +74,7 @@ def load_historical_data():
 
 # Charger les données récentes
 def load_recent_data():
-    return pd.read_csv('data/prepared_data.csv', parse_dates=['date 1ere commande (Restaurant)', 'Date de commande'], decimal='.')
+    return pd.read_csv('https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM', parse_dates=['date 1ere commande (Restaurant)', 'Date de commande'], decimal='.')
 
 # Nettoyer et traiter les données récentes
 def preprocess_data(df):
@@ -118,7 +134,7 @@ def calculate_repeat_rate_2023(historical_data, segment):
 def prepare_objectifs_data(historical_data, df):
     recent_month = '2024-07'
     segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
-    data = []
+        data = []
 
     for country, df_hist in historical_data.items():
         df_country = df[df['Pays'] == country]
@@ -146,8 +162,8 @@ def prepare_objectifs_data(historical_data, df):
         'Possible': [df_objectifs['Possible'].sum()],
         'Mois Dernier': [df_objectifs['Mois Dernier'].sum()],
         'Juillet NOW': [df_objectifs['Juillet NOW'].sum()],
-        'Taux 2023': [0],  # Valeur numérique pour éviter les erreurs de calcul
-        'Taux 2024': [0], 
+        'Taux 2023': [0],  # Non utilisé pour le total
+        'Taux 2024': [0],  # Non utilisé pour le total
         'OBJ Juillet': [0],  # Initialement à 0
         'Reste à faire': [0]  # Initialement à 0
     })
@@ -176,7 +192,7 @@ def objectifs_page():
         st.error(f"Erreur lors du chargement des objectifs: {e}")
         objectifs_precedents = None
 
-    # Télécharger et charger les données historiques et récentes
+    # Charger et traiter les données historiques et récentes
     historical_data = load_historical_data()
     df_recent = load_recent_data()
     df_recent = preprocess_data(df_recent)
