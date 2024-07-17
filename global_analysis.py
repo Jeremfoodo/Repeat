@@ -3,6 +3,13 @@ import pandas as pd
 from src.calculations import process_country_data, calculate_segments_for_month
 from src.plots import plot_ratios
 
+def get_combined_regions(countries):
+    combined = []
+    for country in countries:
+        regions = get_regions(country)
+        combined.extend(regions)
+    return combined
+
 def get_regions(country_code):
     if country_code == 'France':
         return ['France', 'Paris', 'Paris EST', 'Paris Ouest', 'Province']
@@ -20,20 +27,24 @@ def global_analysis(historical_data, df):
         st.experimental_rerun()
 
     countries = list(historical_data.keys())
-    country_code = st.selectbox('Sélectionner un pays ou une région', countries + ['Global'])
+    combined_regions = get_combined_regions(countries) + ['Global']
+    selection = st.selectbox('Sélectionner un pays ou une région', combined_regions)
 
-    if country_code == 'Global':
+    if selection == 'Global':
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
         recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
-        regions = get_regions(country_code)
-        region = None
-        if len(regions) > 1:
-            region = st.selectbox('Sélectionner une région', regions)
-            if region == country_code:
-                region = None
+        if selection in get_regions('France'):
+            country_code = 'France'
+            region = selection if selection != 'France' else None
+        elif selection in get_regions('US'):
+            country_code = 'US'
+            region = selection if selection != 'US' else None
+        else:
+            country_code = selection
+            region = None
 
         all_results = process_country_data(df, historical_data, country_code, region)
 
@@ -78,3 +89,4 @@ def generate_summary_boxes(june_2024_results):
         """
         boxes.append(box)
     return boxes
+
