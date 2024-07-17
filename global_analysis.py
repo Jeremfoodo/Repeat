@@ -3,6 +3,14 @@ import pandas as pd
 from src.calculations import process_country_data, calculate_segments_for_month
 from src.plots import plot_ratios
 
+def get_regions(country_code):
+    if country_code == 'France':
+        return ['France', 'Paris', 'Paris EST', 'Paris Ouest', 'Province']
+    elif country_code == 'US':
+        return ['US', 'NY', 'CA']
+    else:
+        return [country_code]
+
 def global_analysis(historical_data, df):
     st.title('Analyse de la Rétention des Clients')
 
@@ -11,7 +19,8 @@ def global_analysis(historical_data, df):
         st.caching.clear_cache()
         st.experimental_rerun()
 
-    country_code = st.selectbox('Sélectionner un pays', list(historical_data.keys()) + ['Global'])
+    countries = list(historical_data.keys())
+    country_code = st.selectbox('Sélectionner un pays ou une région', countries + ['Global'])
 
     if country_code == 'Global':
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
@@ -19,7 +28,14 @@ def global_analysis(historical_data, df):
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
-        all_results = process_country_data(df, historical_data, country_code)
+        regions = get_regions(country_code)
+        region = None
+        if len(regions) > 1:
+            region = st.selectbox('Sélectionner une région', regions)
+            if region == country_code:
+                region = None
+
+        all_results = process_country_data(df, historical_data, country_code, region)
 
     june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
