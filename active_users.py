@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 @st.cache_data
 def calculate_active_users(df, target_month):
@@ -17,6 +18,18 @@ def calculate_active_users(df, target_month):
         'Clients Récents': len(clients_recents['Restaurant ID'].unique()),
         'Anciens Clients': len(anciens_clients['Restaurant ID'].unique())
     }
+
+def add_total_labels(fig, df, x_col, y_cols):
+    df['Total'] = df[y_cols].sum(axis=1)
+    for i, row in df.iterrows():
+        fig.add_annotation(
+            x=row[x_col],
+            y=row['Total'],
+            text=f"{row['Total']}",
+            showarrow=False,
+            font=dict(size=12, color='black'),
+            yshift=10
+        )
 
 def active_users_page(historical_data, df):
     st.title("Active Users")
@@ -39,7 +52,10 @@ def active_users_page(historical_data, df):
     # Graphique pour tous les pays confondus
     fig = px.bar(active_users_df, x='Mois', y=['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'], 
                  title='Nombre de Clients Actifs (Tous les pays)',
-                 labels={'value':'Nombre de Clients', 'variable':'Segment'})
+                 labels={'value':'Nombre de Clients', 'variable':'Segment'},
+                 text_auto=True)
+
+    add_total_labels(fig, active_users_df, 'Mois', ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'])
 
     fig.add_shape(type="line", x0='2024-05', x1='2024-07', y0=1700, y1=1700,
                   line=dict(color="Red", width=2, dash="dash"),
@@ -70,8 +86,11 @@ def active_users_page(historical_data, df):
         # Graphique pour le pays sélectionné
         country_fig = px.bar(country_active_users_df, x='Mois', y=['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'], 
                              title=f'Nombre de Clients Actifs ({country})',
-                             labels={'value':'Nombre de Clients', 'variable':'Segment'})
-        
+                             labels={'value':'Nombre de Clients', 'variable':'Segment'},
+                             text_auto=True)
+
+        add_total_labels(country_fig, country_active_users_df, 'Mois', ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'])
+
         country_fig.update_layout(yaxis=dict(title='Nombre de Clients'), barmode='stack')
         country_fig.update_xaxes(type='category', tickformat='%Y-%m', dtick='M1')
         st.plotly_chart(country_fig)
