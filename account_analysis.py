@@ -75,7 +75,6 @@ def account_analysis(df):
     col3.markdown(summary_boxes_account[2], unsafe_allow_html=True)
     col4.markdown(summary_boxes_account[3], unsafe_allow_html=True)
 
-    st.header(f'Graphiques des Segments - {account_manager}')
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         fig = plot_ratios(segment, account_results, account_manager)
         st.plotly_chart(fig, use_container_width=True)
