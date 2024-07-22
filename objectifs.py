@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from src.data_processing import load_objectifs
+from src.data_processing import load_objectifs, load_data
 from src.calculations import calculate_segments_for_month
 
 # Fonction pour obtenir les clients actuels par segment et par pays
@@ -39,6 +39,18 @@ def objectifs_page(df):
 
     results_df = pd.DataFrame(rows)
 
+    # Calculer les sous-totaux et les totaux
+    sous_totaux = results_df.groupby('Pays').sum().reset_index()
+    sous_totaux['Segment'] = 'Sous-total'
+    
+    total_general = results_df[['Objectif', 'Actuel', 'Écart']].sum()
+    total_general['Pays'] = 'Total Général'
+    total_general['Segment'] = ''
+    total_general = pd.DataFrame(total_general).transpose()
+
+    # Ajouter les sous-totaux et le total général au DataFrame des résultats
+    results_df = pd.concat([results_df, sous_totaux, total_general], ignore_index=True)
+
     # Afficher le tableau
     st.header('Objectifs Actuels et Écarts')
     st.dataframe(results_df)
@@ -51,3 +63,9 @@ def objectifs_page(df):
         file_name='objectifs_clients_actifs.csv',
         mime='text/csv',
     )
+
+# Appel de la fonction pour créer la page des objectifs
+if __name__ == "__main__":
+    # Charger les données
+    historical_data, df = load_data()
+    objectifs_page(df)
