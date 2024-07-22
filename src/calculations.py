@@ -48,10 +48,14 @@ def process_country_data(df, historical_data, country_code, region=None):
     df_country = df[df['Pays'] == country_code]
     
     if region:
-        df_country = df_country[df_country['region'] == region]
-    
+        if 'region' in df_country.columns:
+            df_country = df_country[df_country['region'] == region]
+        else:
+            raise KeyError(f"La colonne 'region' n'existe pas dans le DataFrame. Colonnes disponibles : {df_country.columns}")
+
     recent_months = pd.date_range(start='2024-04-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
     recent_results = pd.concat([calculate_segments_for_month(df_country, month) for month in recent_months], ignore_index=True)
     all_results = pd.concat([historical_results, recent_results], ignore_index=True)
     
     return all_results
+
