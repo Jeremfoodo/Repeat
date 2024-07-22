@@ -30,6 +30,6 @@ if selected == "Analyse Globale":
 elif selected == "Par Account":
     account_analysis(df)
 elif selected == "Objectifs":
-    objectifs_page(historical_data, df)
+    objectifs_page(df)
 elif selected == "Active Users":
     active_users_page(historical_data, df)
