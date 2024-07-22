@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from src.objectifs_storage import load_objectifs, save_objectifs
+from src.objectifs_storage import load_objectifs, save_objectifs, check_json_file, test_write_access
 from src.calculations import calculate_segments_for_month
 
 # Function to get the current number of active clients per segment and country
@@ -19,6 +19,12 @@ def get_active_clients(df, target_month):
 
 def objectifs_page(df):
     st.title('Définir les Objectifs de Clients Actifs pour Juillet 2024')
+
+    # Vérifier l'existence du fichier JSON
+    check_json_file()
+
+    # Tester l'accès en écriture
+    test_write_access()
 
     # Récupérer les objectifs enregistrés
     objectifs = load_objectifs()
