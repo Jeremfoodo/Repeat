@@ -1,23 +1,19 @@
 import pandas as pd
+import gdown
 import os
 
-# Les URLs de Google Drive ne sont plus nécessaires pour le téléchargement manuel
-# gdrive_files = {
-#     'FR': 'https://drive.google.com/uc?id=1HSagRx3aiT3Jb9idOYtdINlYfp4SsqUE',
-#     'US': 'https://drive.google.com/uc?id=1Ls5d_1G9E3XeiktLzZs6MXTxGzRv7jTb',
-#     'BE': 'https://drive.google.com/uc?id=1pLdrmiP715kfG_7ToVhXKXqp5lo8-X48',
-#     'GB': 'https://drive.google.com/uc?id=1j_GSC0NtbI1ozRBA1w1Vp9cpfp974syN',
-#     'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
-# }
+# URL de Google Drive pour le fichier volumineux
+gdrive_files = {
+    'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
+}
 
-def download_files():
+def download_prepared_data():
     data_dir = 'data'
     os.makedirs(data_dir, exist_ok=True)
     
     for key, url in gdrive_files.items():
         output = os.path.join(data_dir, f"{key}.csv")
-        # Désactivé pour téléchargement manuel
-        # gdown.download(url, output, quiet=False)
+        gdown.download(url, output, quiet=False)
 
 def load_data():
     data_dir = 'data'
