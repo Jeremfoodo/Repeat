@@ -56,7 +56,6 @@ def objectifs_page(df):
 
     rows = []
     for objectif in objectifs:
-        print(objectif)  # Ajout d'une impression pour vérifier la structure de chaque objectif
         id, pays, segment, obj = objectif  # Modifiez en fonction de la structure imprimée
         if pays:  # Vérifiez si 'pays' n'est pas NULL
             actuel = active_clients.get(pays, {}).get(segment, 0)
