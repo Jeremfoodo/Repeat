@@ -11,8 +11,8 @@ def get_combined_regions(countries):
     return combined
 
 def get_regions(country_code):
-    if country_code == 'FR':
-        return ['FR', 'Paris', 'Paris EST', 'Paris Ouest', 'Province']
+    if country_code == 'France':
+        return ['France', 'Paris', 'Paris EST', 'Paris Ouest', 'Province']
     elif country_code == 'US':
         return ['US', 'NY', 'CA']
     else:
@@ -23,7 +23,7 @@ def global_analysis(historical_data, df):
 
     # Bouton pour mettre à jour les données
     if st.button('Mettre à jour'):
-        st.caching.clear_cache()
+        st.cache_data.clear()
         st.experimental_rerun()
 
     countries = list(historical_data.keys())
@@ -36,9 +36,9 @@ def global_analysis(historical_data, df):
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
-        if selection in get_regions('FR'):
-            country_code = 'FR'
-            region = selection if selection != 'FR' else None
+        if selection in get_regions('France'):
+            country_code = 'France'
+            region = selection if selection != 'France' else None
         elif selection in get_regions('US'):
             country_code = 'US'
             region = selection if selection != 'US' else None
@@ -64,7 +64,7 @@ def global_analysis(historical_data, df):
 
     st.header('Graphiques des Segments')
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        fig = plot_ratios(segment, all_results, country_code)
+        fig = plot_ratios(segment, all_results, country_code if region is None else region)
         st.plotly_chart(fig)
 
 def generate_summary_boxes(june_2024_results):
@@ -89,4 +89,3 @@ def generate_summary_boxes(june_2024_results):
         """
         boxes.append(box)
     return boxes
-
