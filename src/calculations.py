@@ -4,22 +4,12 @@ import numpy as np
 def calculate_segments_for_month(df, target_month):
     previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
-    print(f"Target orders for {target_month}:\n", target_orders.head())
-    
     acquisition = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
-    print(f"Acquisition for {target_month}:\n", acquisition.head())
-    
     nouveaux_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]
-    print(f"Nouveaux clients for {previous_month}:\n", nouveaux_clients.head())
-    
     clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
     )]
-    print(f"Clients récents for {target_month}:\n", clients_recents.head())
-    
     anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
-    print(f"Anciens clients for {target_month}:\n", anciens_clients.head())
-    
     segment_counts = {
         'Segment': ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients'],
         'Nombre de Clients': [len(acquisition['Restaurant ID'].unique()), len(nouveaux_clients['Restaurant ID'].unique()), len(clients_recents['Restaurant ID'].unique()), len(anciens_clients['Restaurant ID'].unique())]
@@ -52,7 +42,6 @@ def calculate_segments_for_month(df, target_month):
     results_df = pd.DataFrame(segment_counts)
     results_df['Mois'] = target_month
     return results_df
-
 
 def process_country_data(df, historical_data, country_code, region=None):
     historical_results = historical_data[country_code]
