@@ -3,7 +3,6 @@ import pandas as pd
 from src.data_processing import filter_data_by_account
 from src.calculations import calculate_segments_for_month
 from src.plots import plot_ratios
-from global_analysis import generate_summary_boxes
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 @st.cache_data
@@ -13,6 +12,30 @@ def get_filtered_data(df, account_manager):
 @st.cache_data
 def get_account_results(df_account, recent_months):
     return pd.concat([calculate_segments_for_month(df_account, month) for month in recent_months], ignore_index=True)
+
+def generate_summary_boxes(june_2024_results):
+    colors = {
+        'Acquisition': '#FFCCCC',
+        'Nouveaux Clients': '#CCFFCC',
+        'Clients Récents': '#CCCCFF',
+        'Anciens Clients': '#FFCC99'
+    }
+
+    boxes = []
+    for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        if segment in june_2024_results['Segment'].values:
+            segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
+            box = f"""
+            <div style="background-color: {colors[segment]}; padding: 5px; margin: 5px; border-radius: 5px; width: 90%; height: auto;">
+                <h4 style="margin: 0; font-size: 14px; text-align: center;">{segment}</h4>
+                <p style="margin: 2px 0; font-size: 12px;">Nombre de Clients: {segment_data['Nombre de Clients']}</p>
+                <p style="margin: 2px 0; font-size: 12px;">Possible: {segment_data['Nombre de Clients Possible']}</p>
+                <p style="margin: 2px 0; font-size: 12px;">Actifs (Mois Précédent): {segment_data['Nombre de Clients Actifs (Mois Précédent)']}</p>
+                <p style="margin: 2px 0; font-size: 12px;">Rapport (%): {segment_data['Rapport (%)']}</p>
+            </div>
+            """
+            boxes.append(box)
+    return boxes
 
 def account_analysis(df):
     st.title('Analyse de la Rétention par Account Manager')
@@ -43,7 +66,7 @@ def account_analysis(df):
 
     st.header('Résumé des Segments pour Juillet 2024')
     st.markdown(f'<span style="font-size:14px; color:black; text-decoration:none;">{account_manager}</span>', unsafe_allow_html=True)
-    summary_boxes_account = generate_summary_boxes(june_2024_results_account, box_height='200px')
+    summary_boxes_account = generate_summary_boxes(june_2024_results_account)
 
     # Afficher les boîtes dans une grille 2x2 ou une seule rangée
     col1, col2, col3, col4 = st.columns(4)
@@ -112,27 +135,3 @@ def account_analysis(df):
         file_name=f'{account_manager}_clients.csv',
         mime='text/csv',
     )
-
-def generate_summary_boxes(june_2024_results, box_height='350px'):
-    colors = {
-        'Acquisition': '#FFCCCC',
-        'Nouveaux Clients': '#CCFFCC',
-        'Clients Récents': '#CCCCFF',
-        'Anciens Clients': '#FFCC99'
-    }
-
-    boxes = []
-    for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        if segment in june_2024_results['Segment'].values:
-            segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
-            box = f"""
-            <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: {box_height};">
-                <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
-                <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients: {segment_data['Nombre de Clients']}</p>
-                <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients Possible: {segment_data['Nombre de Clients Possible']}</p>
-                <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients Actifs (Mois Précédent): {segment_data['Nombre de Clients Actifs (Mois Précédent)']}</p>
-                <p style="margin: 2px 0; font-size: 14px;">Rapport (%): {segment_data['Rapport (%)']}</p>
-            </div>
-            """
-            boxes.append(box)
-    return boxes
