@@ -57,10 +57,11 @@ def objectifs_page(df):
     rows = []
     for objectif in objectifs:
         print(objectif)  # Ajout d'une impression pour vérifier la structure de chaque objectif
-        pays, segment, obj = objectif  # Modifiez en fonction de la structure imprimée
-        actuel = active_clients.get(pays, {}).get(segment, 0)
-        ecart = obj - actuel
-        rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj, 'Actuel': actuel, 'Écart': ecart})
+        id, pays, segment, obj = objectif  # Modifiez en fonction de la structure imprimée
+        if pays:  # Vérifiez si 'pays' n'est pas NULL
+            actuel = active_clients.get(pays, {}).get(segment, 0)
+            ecart = obj - actuel
+            rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj, 'Actuel': actuel, 'Écart': ecart})
 
     objectifs_df = pd.DataFrame(rows)
     st.dataframe(objectifs_df)
@@ -73,4 +74,5 @@ def objectifs_page(df):
         file_name='objectifs_clients_actifs.csv',
         mime='text/csv',
     )
+
 
