@@ -4,7 +4,7 @@ from src.calculations import process_country_data, calculate_segments_for_month
 from src.plots import plot_ratios
 
 def get_regions(country_code):
-    if country_code == 'France':
+    if country_code == 'FR':
         return ['Paris', 'Paris EST', 'Paris Ouest', 'Province']
     elif country_code == 'US':
         return ['NY', 'CA']
