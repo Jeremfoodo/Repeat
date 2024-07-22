@@ -1,0 +1,109 @@
+Segment,Nombre de Clients,Nombre de Clients Possible,Nombre de Clients Actifs (Mois Précédent),Rapport (%),Mois
+Acquisition,20,20,0,0.0,2022-01
+Nouveaux Clients,8,22,22,36.4,2022-01
+Clients Récents,7,83,8,87.5,2022-01
+Anciens Clients,12,206,11,109.1,2022-01
+Acquisition,22,22,0,0.0,2022-02
+Nouveaux Clients,12,20,20,60.0,2022-02
+Clients Récents,9,58,11,81.8,2022-02
+Anciens Clients,14,212,16,87.5,2022-02
+Acquisition,40,40,0,0.0,2022-03
+Nouveaux Clients,6,22,22,27.3,2022-03
+Clients Récents,13,52,19,68.4,2022-03
+Anciens Clients,21,259,16,131.2,2022-03
+Acquisition,52,52,0,0.0,2022-04
+Nouveaux Clients,8,40,40,20.0,2022-04
+Clients Récents,18,65,19,94.7,2022-04
+Anciens Clients,18,285,21,85.7,2022-04
+Acquisition,21,21,0,0.0,2022-05
+Nouveaux Clients,18,52,52,34.6,2022-05
+Clients Récents,19,104,26,73.1,2022-05
+Anciens Clients,16,294,18,88.9,2022-05
+Acquisition,28,28,0,0.0,2022-06
+Nouveaux Clients,5,21,21,23.8,2022-06
+Clients Récents,27,134,35,77.1,2022-06
+Anciens Clients,20,295,18,111.1,2022-06
+Acquisition,19,19,0,0.0,2022-07
+Nouveaux Clients,7,28,28,25.0,2022-07
+Clients Récents,10,135,26,38.5,2022-07
+Anciens Clients,16,317,26,61.5,2022-07
+Acquisition,27,27,0,0.0,2022-08
+Nouveaux Clients,3,19,19,15.8,2022-08
+Clients Récents,11,141,16,68.8,2022-08
+Anciens Clients,17,337,17,100.0,2022-08
+Acquisition,23,23,0,0.0,2022-09
+Nouveaux Clients,5,27,27,18.5,2022-09
+Clients Récents,11,120,11,100.0,2022-09
+Anciens Clients,24,359,20,120.0,2022-09
+Acquisition,23,23,0,0.0,2022-10
+Nouveaux Clients,7,23,23,30.4,2022-10
+Clients Récents,9,95,13,69.2,2022-10
+Anciens Clients,23,399,27,85.2,2022-10
+Acquisition,25,25,0,0.0,2022-11
+Nouveaux Clients,11,23,23,47.8,2022-11
+Clients Récents,16,97,15,106.7,2022-11
+Anciens Clients,39,451,24,162.5,2022-11
+Acquisition,20,20,0,0.0,2022-12
+Nouveaux Clients,10,25,25,40.0,2022-12
+Clients Récents,19,92,21,90.5,2022-12
+Anciens Clients,47,472,45,104.4,2022-12
+Acquisition,37,37,0,0.0,2023-01
+Nouveaux Clients,7,20,20,35.0,2023-01
+Clients Récents,18,98,27,66.7,2023-01
+Anciens Clients,46,500,49,93.9,2023-01
+Acquisition,23,23,0,0.0,2023-02
+Nouveaux Clients,22,37,37,59.5,2023-02
+Clients Récents,21,91,23,91.3,2023-02
+Anciens Clients,47,519,48,97.9,2023-02
+Acquisition,47,47,0,0.0,2023-03
+Nouveaux Clients,5,23,23,21.7,2023-03
+Clients Récents,40,105,41,97.6,2023-03
+Anciens Clients,57,546,49,116.3,2023-03
+Acquisition,45,45,0,0.0,2023-04
+Nouveaux Clients,26,47,47,55.3,2023-04
+Clients Récents,31,105,35,88.6,2023-04
+Anciens Clients,54,569,67,80.6,2023-04
+Acquisition,35,35,0,0.0,2023-05
+Nouveaux Clients,14,45,45,31.1,2023-05
+Clients Récents,43,127,51,84.3,2023-05
+Anciens Clients,55,592,60,91.7,2023-05
+Acquisition,32,32,0,0.0,2023-06
+Nouveaux Clients,14,35,35,40.0,2023-06
+Clients Récents,49,152,53,92.5,2023-06
+Anciens Clients,52,617,59,88.1,2023-06
+Acquisition,33,33,0,0.0,2023-07
+Nouveaux Clients,11,32,32,34.4,2023-07
+Clients Récents,34,150,53,64.2,2023-07
+Anciens Clients,68,637,62,109.7,2023-07
+Acquisition,41,41,0,0.0,2023-08
+Nouveaux Clients,14,33,33,42.4,2023-08
+Clients Récents,43,159,42,102.4,2023-08
+Anciens Clients,65,674,71,91.5,2023-08
+Acquisition,38,38,0,0.0,2023-09
+Nouveaux Clients,21,41,41,51.2,2023-09
+Clients Récents,39,145,45,86.7,2023-09
+Anciens Clients,74,697,77,96.1,2023-09
+Acquisition,30,30,0,0.0,2023-10
+Nouveaux Clients,18,38,38,47.4,2023-10
+Clients Récents,40,141,54,74.1,2023-10
+Anciens Clients,84,744,80,105.0,2023-10
+Acquisition,15,15,0,0.0,2023-11
+Nouveaux Clients,16,30,30,53.3,2023-11
+Clients Récents,42,144,49,85.7,2023-11
+Anciens Clients,80,789,93,86.0,2023-11
+Acquisition,18,18,0,0.0,2023-12
+Nouveaux Clients,7,15,15,46.7,2023-12
+Clients Récents,37,142,50,74.0,2023-12
+Anciens Clients,69,824,88,78.4,2023-12
+Acquisition,32,32,0,0.0,2024-01
+Nouveaux Clients,7,18,18,38.9,2024-01
+Clients Récents,36,124,37,97.3,2024-01
+Anciens Clients,93,856,76,122.4,2024-01
+Acquisition,30,30,0,0.0,2024-02
+Nouveaux Clients,12,32,32,37.5,2024-02
+Clients Récents,30,101,32,93.8,2024-02
+Anciens Clients,100,889,104,96.2,2024-02
+Acquisition,28,28,0,0.0,2024-03
+Nouveaux Clients,9,30,30,30.0,2024-03
+Clients Récents,30,95,33,90.9,2024-03
+Anciens Clients,102,930,109,93.6,2024-03
