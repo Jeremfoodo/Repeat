@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from src.calculations import process_country_data, calculate_segments_for_month, process_region_data, calculate_segments_for_region
+from src.calculations import process_country_data, calculate_segments_for_month, process_region_data
 from src.plots import plot_ratios
 
 def get_regions(country_code):
@@ -57,7 +57,7 @@ def global_analysis(historical_data, df):
             try:
                 region_results = process_region_data(df, country_code, region=region)
                 region_june_2024_results = region_results[region_results['Mois'] == '2024-07']
-                region_summary_boxes = generate_summary_boxes(region_june_2024_results)
+                region_summary_boxes = generate_region_summary_boxes(region_june_2024_results)
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown(region_summary_boxes[0], unsafe_allow_html=True)
@@ -76,13 +76,10 @@ def generate_summary_boxes(june_2024_results):
         'Anciens Clients': '#FFCC99'
     }
 
-    print("Generating summary boxes for results:\n", june_2024_results)
-
     boxes = []
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         if segment in june_2024_results['Segment'].values:
             segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
-            print(f"Data for segment {segment}:\n", segment_data)
             box = f"""
             <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 170px;">
                 <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
@@ -93,6 +90,28 @@ def generate_summary_boxes(june_2024_results):
             </div>
             """
             boxes.append(box)
-        else:
-            print(f"Segment {segment} not found in results.")
+    return boxes
+
+def generate_region_summary_boxes(region_june_2024_results):
+    colors = {
+        'Acquisition': '#FFCCCC',
+        'Nouveaux Clients': '#CCFFCC',
+        'Clients Récents': '#CCCCFF',
+        'Anciens Clients': '#FFCC99'
+    }
+
+    boxes = []
+    for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        if segment in region_june_2024_results['Segment'].values:
+            segment_data = region_june_2024_results[region_june_2024_results['Segment'] == segment].iloc[0]
+            box = f"""
+            <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 170px;">
+                <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
+                <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients: {segment_data['Nombre de Clients']}</p>
+                <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients Possible: {segment_data['Nombre de Clients Possible']}</p>
+                <p style="margin: 2px 0; font-size: 14px;">Nombre de Clients Actifs (Mois Précédent): {segment_data['Nombre de Clients Actifs (Mois Précédent)']}</p>
+                <p style="margin: 2px 0; font-size: 14px;">Rapport (%): {segment_data['Rapport (%)']}</p>
+            </div>
+            """
+            boxes.append(box)
     return boxes
