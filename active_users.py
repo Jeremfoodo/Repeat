@@ -39,12 +39,12 @@ def active_users_page(historical_data, df):
                  title='Nombre de Clients Actifs (Tous les pays)',
                  labels={'value':'Nombre de Clients', 'variable':'Segment'})
 
-    fig.add_shape(type="line", x0=-0.5, x1=2.5, y0=1700, y1=1700,
+    fig.add_shape(type="line", x0='2024-04-25', x1='2024-07-05', y0=1700, y1=1700,
                   line=dict(color="Red", width=2, dash="dash"),
                   name="Objectif")
     
     fig.update_layout(yaxis=dict(title='Nombre de Clients'), barmode='stack')
-
+    fig.update_xaxes(type='category', tickformat='%Y-%m', dtick='M1')
     st.plotly_chart(fig)
 
     # Dropdown pour sélectionner un pays
@@ -71,5 +71,5 @@ def active_users_page(historical_data, df):
                              labels={'value':'Nombre de Clients', 'variable':'Segment'})
         
         country_fig.update_layout(yaxis=dict(title='Nombre de Clients'), barmode='stack')
-
+        country_fig.update_xaxes(type='category', tickformat='%Y-%m', dtick='M1')
         st.plotly_chart(country_fig)
