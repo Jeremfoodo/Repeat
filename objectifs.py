@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 from src.data_processing import load_objectifs, load_data
 from src.calculations import calculate_segments_for_month
 
@@ -63,6 +64,48 @@ def objectifs_page(df):
         file_name='objectifs_clients_actifs.csv',
         mime='text/csv',
     )
+
+    # Préparer les données pour le graphique en cascade
+    waterfall_data = []
+    for _, row in results_df.iterrows():
+        if row['Pays'] != 'Total Général' and row['Segment'] != 'Sous-total':
+            waterfall_data.append(dict(
+                name=f"{row['Pays']} - {row['Segment']}",
+                measure='relative',
+                x=row['Pays'],
+                y=row['Écart']
+            ))
+
+    waterfall_data.insert(0, dict(
+        name='Objectif Total',
+        measure='absolute',
+        x='Objectif Total',
+        y=total_general['Objectif'].values[0]
+    ))
+
+    waterfall_data.append(dict(
+        name='Réalisé',
+        measure='total',
+        x='Réalisé',
+        y=total_general['Actuel'].values[0]
+    ))
+
+    # Créer le graphique en cascade
+    fig = go.Figure(go.Waterfall(
+        measure=[d['measure'] for d in waterfall_data],
+        x=[d['x'] for d in waterfall_data],
+        textposition='outside',
+        text=[d['y'] for d in waterfall_data],
+        y=[d['y'] for d in waterfall_data]
+    ))
+
+    fig.update_layout(
+        title="Objectif vs Réalisé",
+        showlegend=True
+    )
+
+    # Afficher le graphique en cascade
+    st.plotly_chart(fig)
 
 # Appel de la fonction pour créer la page des objectifs
 if __name__ == "__main__":
