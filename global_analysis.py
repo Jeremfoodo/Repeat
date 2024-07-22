@@ -6,8 +6,7 @@ from src.plots import plot_ratios
 def get_combined_regions(countries):
     combined = []
     for country in countries:
-        regions = get_regions(country)
-        combined.extend(regions)
+        combined.extend(get_regions(country))
     return combined
 
 def get_regions(country_code):
