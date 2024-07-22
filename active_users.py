@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+@st.cache_data
 def calculate_active_users(df, target_month):
     previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
