@@ -55,6 +55,7 @@ def global_analysis(historical_data, df):
         for region in get_regions(country_code):
             st.subheader(f'Région: {region}')
             try:
+                # Calcule les segments pour chaque région sans les données historiques
                 region_results = process_region_data(df, country_code, region=region)
                 region_june_2024_results = region_results[region_results['Mois'] == '2024-07']
                 region_summary_boxes = generate_summary_boxes(region_june_2024_results)
