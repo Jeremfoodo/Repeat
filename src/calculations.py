@@ -62,6 +62,9 @@ def process_country_data(df, historical_data, country_code, region=None):
 def process_region_data(df, country_code, region):
     df_region = df[(df['Pays'] == country_code) & (df['region'] == region)]
     
+    print(f"Processing region data for {region}")
+    print(df_region.head())  # Print the first few rows to check the filtered data
+
     recent_months = pd.date_range(start='2024-06-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
