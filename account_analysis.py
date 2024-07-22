@@ -123,7 +123,6 @@ def account_analysis(df):
 
     grid_options = gb.build()
 
-    st.header(f'Détails des Clients - {account_manager}')
     AgGrid(df_display, gridOptions=grid_options, enable_enterprise_modules=True, fit_columns_on_grid_load=True, allow_unsafe_jscode=True)
 
     # Bouton de téléchargement
