@@ -10,8 +10,8 @@ def get_combined_regions(countries):
     return combined
 
 def get_regions(country_code):
-    if country_code == 'France':
-        return ['France', 'Paris', 'Paris EST', 'Paris Ouest', 'Province']
+    if country_code == 'FR':
+        return ['FR', 'Paris', 'Paris EST', 'Paris Ouest', 'Province']
     elif country_code == 'US':
         return ['US', 'NY', 'CA']
     else:
