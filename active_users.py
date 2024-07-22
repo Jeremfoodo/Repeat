@@ -39,7 +39,7 @@ def active_users_page(historical_data, df):
                  title='Nombre de Clients Actifs (Tous les pays)',
                  labels={'value':'Nombre de Clients', 'variable':'Segment'})
 
-    fig.add_shape(type="line", x0='2024-04-25', x1='2024-07-05', y0=1700, y1=1700,
+    fig.add_shape(type="line", x0='2024-05', x1='2024-07', y0=1700, y1=1700,
                   line=dict(color="Red", width=2, dash="dash"),
                   name="Objectif")
     
