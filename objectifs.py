@@ -1,9 +1,21 @@
 import streamlit as st
 import pandas as pd
-from src.github_storage import load_objectifs, save_objectifs, test_write_access
+from src.google_drive import download_excel_file
 from src.calculations import calculate_segments_for_month
 
-# Function to get the current number of active clients per segment and country
+# URL du fichier Excel sur Google Drive
+spreadsheet_url = "https://drive.google.com/uc?export=download&id=1UaAh3PUaHjBTShTYUGkd-Yw6fUT7TZJN"
+output_file = "data/objectifs.xlsx"
+
+# Télécharger le fichier Excel
+download_excel_file(spreadsheet_url, output_file)
+
+# Fonction pour obtenir les objectifs depuis le fichier Excel
+def get_objectifs():
+    objectifs_df = pd.read_excel(output_file, engine='openpyxl')
+    return objectifs_df
+
+# Fonction pour obtenir les clients actuels par segment et par pays
 @st.cache_data
 def get_active_clients(df, target_month):
     result = {}
@@ -17,97 +29,43 @@ def get_active_clients(df, target_month):
         }
     return result
 
+# Fonction pour créer la page des objectifs
 def objectifs_page(df):
-    st.title('Définir les Objectifs de Clients Actifs pour Juillet 2024')
+    st.title('Objectifs de Clients Actifs pour Juillet 2024')
 
-    # Tester l'accès en écriture
-    test_write_access()
+    # Récupérer les objectifs depuis le fichier Excel
+    objectifs_df = get_objectifs()
 
-    # Récupérer les objectifs enregistrés
-    objectifs = load_objectifs()
+    # Calculer les clients actuels pour juillet 2024
+    active_clients = get_active_clients(df, '2024-07')
 
-    # Filtrer les pays pertinents
-    countries = ['FR', 'BE', 'GB', 'US']
-    segments = ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']
+    # Préparer les données pour l'affichage
+    rows = []
+    for _, row in objectifs_df.iterrows():
+        pays = row['country']
+        segment = row['type']
+        objectif = row['Nb clients']
+        actuel = active_clients.get(pays, {}).get(segment, 0)
+        ecart = objectif - actuel
+        rows.append({'Pays': pays, 'Segment': segment, 'Objectif': objectif, 'Actuel': actuel, 'Écart': ecart})
 
-    if objectifs:
-        st.header('Objectifs Actuels')
-        rows = []
-        for pays, segments_dict in objectifs.items():
-            if pays in countries:
-                for segment, obj in segments_dict.items():
-                    rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj})
-        objectifs_df = pd.DataFrame(rows)
-        st.dataframe(objectifs_df)
+    results_df = pd.DataFrame(rows)
 
-        st.header('Modifier les Objectifs')
-        with st.form(key='objectifs_form'):
-            st.write('Entrer les objectifs par segment et par pays')
-            objectif_data = []
-            for country in countries:
-                for segment in segments:
-                    objectif = st.number_input(f'Objectif {segment} pour {country}', min_value=0, step=1)
-                    objectif_data.append((country, segment, objectif))
+    # Afficher le tableau
+    st.header('Objectifs Actuels et Écarts')
+    st.dataframe(results_df)
 
-            code = st.text_input('Code de validation')
-            submit_button = st.form_submit_button(label='Enregistrer les Objectifs')
+    # Bouton de téléchargement
+    csv = results_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Télécharger les objectifs en CSV",
+        data=csv,
+        file_name='objectifs_clients_actifs.csv',
+        mime='text/csv',
+    )
 
-            if submit_button:
-                if code == 'Inesqueenofrepeat':
-                    for country, segment, objectif in objectif_data:
-                        if country not in objectifs:
-                            objectifs[country] = {}
-                        objectifs[country][segment] = objectif
-                    save_objectifs(objectifs)
-                    st.success('Objectifs enregistrés avec succès!')
-                    st.experimental_rerun()
-                else:
-                    st.error('Code de validation incorrect')
-
-        st.header('Objectifs Actuels et Écarts')
-        active_clients = get_active_clients(df, '2024-07')
-
-        rows = []
-        for pays, segments_dict in objectifs.items():
-            if pays in countries:
-                for segment, obj in segments_dict.items():
-                    actuel = active_clients.get(pays, {}).get(segment, 0)
-                    ecart = obj - actuel
-                    rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj, 'Actuel': actuel, 'Écart': ecart})
-
-        objectifs_df = pd.DataFrame(rows)
-        st.dataframe(objectifs_df)
-
-        # Bouton de téléchargement
-        csv = objectifs_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Télécharger les objectifs en CSV",
-            data=csv,
-            file_name='objectifs_clients_actifs.csv',
-            mime='text/csv',
-        )
-
-    else:
-        st.write("Aucun objectif enregistré.")
-        with st.form(key='objectifs_form'):
-            st.write('Entrer les objectifs par segment et par pays')
-            objectif_data = []
-            for country in countries:
-                for segment in segments:
-                    objectif = st.number_input(f'Objectif {segment} pour {country}', min_value=0, step=1)
-                    objectif_data.append((country, segment, objectif))
-
-            code = st.text_input('Code de validation')
-            submit_button = st.form_submit_button(label='Enregistrer les Objectifs')
-
-            if submit_button:
-                if code == 'Inesqueenofrepeat':
-                    for country, segment, objectif in objectif_data:
-                        if country not in objectifs:
-                            objectifs[country] = {}
-                        objectifs[country][segment] = objectif
-                    save_objectifs(objectifs)
-                    st.success('Objectifs enregistrés avec succès!')
-                    st.experimental_rerun()
-                else:
-                    st.error('Code de validation incorrect')
+# Appel de la fonction pour créer la page des objectifs
+if __name__ == "__main__":
+    # Exemple de DataFrame df à passer à la fonction objectifs_page
+    df = pd.read_csv('path/to/your/prepared_data.csv')
+    objectifs_page(df)
