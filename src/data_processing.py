@@ -2,18 +2,15 @@ import pandas as pd
 import gdown
 import os
 
-# URL de Google Drive pour le fichier volumineu
-gdrive_files = {
-    'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
-}
+# URL de Google Drive pour le fichier volumineux
+prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 
 def download_prepared_data():
     data_dir = 'data'
     os.makedirs(data_dir, exist_ok=True)
     
-    for key, url in gdrive_files.items():
-        output = os.path.join(data_dir, f"{key}.csv")
-        gdown.download(url, output, quiet=False)
+    output = os.path.join(data_dir, 'prepared_data.csv')
+    gdown.download(prepared_data_url, output, quiet=False)
 
 def load_data():
     data_dir = 'data'
