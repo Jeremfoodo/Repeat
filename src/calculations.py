@@ -31,7 +31,7 @@ def calculate_segments_for_month(df, target_month):
     recent_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
     )]['Restaurant ID'].unique())
-    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]['Restaurant ID'].unique())
+    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]['Restaurant ID'].unique()])
     segment_counts['Nombre de Clients Actifs (Mois Précédent)'] = [
         acquisition_previous,
         new_clients_previous,
@@ -89,7 +89,7 @@ def calculate_segments_for_region(df, target_month):
     recent_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
     )]['Restaurant ID'].unique())
-    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]['Restaurant ID'].unique())
+    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]['Restaurant ID'].unique()])
     segment_counts['Nombre de Clients Actifs (Mois Précédent)'] = [
         acquisition_previous,
         new_clients_previous,
