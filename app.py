@@ -6,7 +6,7 @@ from objectifs import objectifs_page
 from active_users import active_users_page
 from src.data_processing import load_data, download_prepared_data, reassign_account_manager
 
-# Télécharger et charger les données
+# Télécharger le fichier volumineux et charger les données
 download_prepared_data()
 historical_data, df = load_data()
 
