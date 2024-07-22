@@ -77,10 +77,13 @@ def generate_summary_boxes(june_2024_results):
         'Anciens Clients': '#FFCC99'
     }
 
+    print("Generating summary boxes for results:\n", june_2024_results)
+
     boxes = []
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         if segment in june_2024_results['Segment'].values:
             segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
+            print(f"Data for segment {segment}:\n", segment_data)
             box = f"""
             <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 170px;">
                 <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
@@ -91,4 +94,6 @@ def generate_summary_boxes(june_2024_results):
             </div>
             """
             boxes.append(box)
+        else:
+            print(f"Segment {segment} not found in results.")
     return boxes
