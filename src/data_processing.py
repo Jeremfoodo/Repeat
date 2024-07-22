@@ -1,10 +1,12 @@
 import pandas as pd
 import gdown
 import os
+import streamlit as st
 
 # URL de Google Drive pour le fichier volumineux
 prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 
+@st.cache_data
 def download_prepared_data():
     data_dir = 'data'
     os.makedirs(data_dir, exist_ok=True)
@@ -12,6 +14,7 @@ def download_prepared_data():
     output = os.path.join(data_dir, 'prepared_data.csv')
     gdown.download(prepared_data_url, output, quiet=False)
 
+@st.cache_data
 def load_data():
     data_dir = 'data'
     historical_files = {
