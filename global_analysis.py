@@ -50,7 +50,7 @@ def global_analysis(historical_data, df):
         st.plotly_chart(fig)
 
     # Afficher l'analyse par région si France est sélectionnée
-    if country_code == 'France':
+    if country_code == 'FR':
         st.header('Analyse par région')
         for region in get_regions(country_code):
             st.subheader(f'Région: {region}')
