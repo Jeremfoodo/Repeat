@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import sqlite3
 from src.database import save_objectif, get_objectifs, update_objectif, init_db
 from src.calculations import calculate_segments_for_month
 
@@ -19,6 +20,29 @@ def get_active_clients(df, target_month):
             'Anciens Clients': active_clients[active_clients['Segment'] == 'Anciens Clients']['Nombre de Clients'].values[0],
         }
     return result
+
+def save_objectif(pays, segment, objectif):
+    if pays not in ['FR', 'BE', 'GB', 'US']:
+        return
+    conn = sqlite3.connect('objectifs.db')
+    c = conn.cursor()
+    c.execute('''
+        SELECT id FROM objectifs WHERE pays = ? AND segment = ?
+    ''', (pays, segment))
+    row = c.fetchone()
+    if row:
+        c.execute('''
+            UPDATE objectifs
+            SET objectif = ?
+            WHERE id = ?
+        ''', (objectif, row[0]))
+    else:
+        c.execute('''
+            INSERT INTO objectifs (pays, segment, objectif)
+            VALUES (?, ?, ?)
+        ''', (pays, segment, objectif))
+    conn.commit()
+    conn.close()
 
 def objectifs_page(df):
     st.title('Définir les Objectifs de Clients Actifs pour Juillet 2024')
