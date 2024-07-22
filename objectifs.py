@@ -1,31 +1,8 @@
-import streamlit as st
-import pandas as pd
-from src.database import save_objectif, get_objectifs, update_objectif, init_db
-from src.calculations import calculate_segments_for_month
-
-# Initialize the database
-init_db()
-
-# Function to get the current number of active clients per segment and country
-@st.cache_data
-def get_active_clients(df, target_month):
-    result = {}
-    for country in df['Pays'].unique():
-        country_df = df[df['Pays'] == country]
-        active_clients = calculate_segments_for_month(country_df, target_month)
-        result[country] = {
-            'Nouveaux Clients': active_clients[active_clients['Segment'] == 'Nouveaux Clients']['Nombre de Clients'].values[0],
-            'Clients Récents': active_clients[active_clients['Segment'] == 'Clients Récents']['Nombre de Clients'].values[0],
-            'Anciens Clients': active_clients[active_clients['Segment'] == 'Anciens Clients']['Nombre de Clients'].values[0],
-        }
-    return result
-
 def objectifs_page(df):
     st.title('Définir les Objectifs de Clients Actifs pour Juillet 2024')
 
     # Récupérer les objectifs enregistrés
     objectifs = get_objectifs()
-    st.write("Objectifs enregistrés:", objectifs)  # Ajout d'une impression pour vérifier la structure
 
     # Filtrer les pays pertinents
     countries = ['FR', 'BE', 'GB', 'US']
