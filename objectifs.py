@@ -1,19 +1,7 @@
 import streamlit as st
 import pandas as pd
-from src.google_drive import download_excel_file
+from src.data_processing import load_objectifs
 from src.calculations import calculate_segments_for_month
-
-# URL du fichier Excel sur Google Drive
-spreadsheet_url = "https://drive.google.com/uc?export=download&id=1UaAh3PUaHjBTShTYUGkd-Yw6fUT7TZJN"
-output_file = "data/objectifs.xlsx"
-
-# Télécharger le fichier Excel
-download_excel_file(spreadsheet_url, output_file)
-
-# Fonction pour obtenir les objectifs depuis le fichier Excel
-def get_objectifs():
-    objectifs_df = pd.read_excel(output_file, engine='openpyxl')
-    return objectifs_df
 
 # Fonction pour obtenir les clients actuels par segment et par pays
 @st.cache_data
@@ -34,7 +22,7 @@ def objectifs_page(df):
     st.title('Objectifs de Clients Actifs pour Juillet 2024')
 
     # Récupérer les objectifs depuis le fichier Excel
-    objectifs_df = get_objectifs()
+    objectifs_df = load_objectifs()
 
     # Calculer les clients actuels pour juillet 2024
     active_clients = get_active_clients(df, '2024-07')
