@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
-from src.database import save_objectif, get_objectifs, update_objectif
+from src.database import save_objectif, get_objectifs, update_objectif, init_db  # Assurez-vous que init_db est importé
 from src.calculations import calculate_segments_for_month
 
 # Initialize the database
