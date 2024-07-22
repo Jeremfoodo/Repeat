@@ -35,9 +35,9 @@ def global_analysis(historical_data, df):
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
-        if selection in get_regions('France'):
-            country_code = 'France'
-            region = selection if selection != 'France' else None
+        if selection in get_regions('FR'):
+            country_code = 'FR'
+            region = selection if selection != 'FR' else None
         elif selection in get_regions('US'):
             country_code = 'US'
             region = selection if selection != 'US' else None
