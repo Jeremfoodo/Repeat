@@ -2,7 +2,7 @@ import pandas as pd
 import gdown
 import os
 
-# URL de Google Drive pour le fichier volumineux
+# URL de Google Drive pour le fichier volumineu
 gdrive_files = {
     'prepared_data': 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 }
