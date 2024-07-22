@@ -3,17 +3,18 @@ import pandas as pd
 import plotly.express as px
 
 def calculate_active_users(df, target_month):
+    previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
-    new_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
-    recent_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
+    nouveaux_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]
+    clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
     )]
-    old_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
+    anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
     
     return {
-        'Nouveaux Clients': len(new_clients['Restaurant ID'].unique()),
-        'Clients Récents': len(recent_clients['Restaurant ID'].unique()),
-        'Anciens Clients': len(old_clients['Restaurant ID'].unique())
+        'Nouveaux Clients': len(nouveaux_clients['Restaurant ID'].unique()),
+        'Clients Récents': len(clients_recents['Restaurant ID'].unique()),
+        'Anciens Clients': len(anciens_clients['Restaurant ID'].unique())
     }
 
 def active_users_page(historical_data, df):
