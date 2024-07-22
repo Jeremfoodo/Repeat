@@ -30,6 +30,10 @@ def active_users_page(historical_data, df):
 
     active_users_df = pd.DataFrame(active_users_data)
 
+    # Vérification des données
+    st.write("Données agrégées pour tous les pays confondus")
+    st.write(active_users_df)
+
     # Graphique pour tous les pays confondus
     fig = px.bar(active_users_df, x='Mois', y=['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'], 
                  title='Nombre de Clients Actifs (Tous les pays)',
@@ -56,6 +60,10 @@ def active_users_page(historical_data, df):
             country_active_users_data.append(monthly_data)
 
         country_active_users_df = pd.DataFrame(country_active_users_data)
+
+        # Vérification des données par pays
+        st.write(f"Données agrégées pour le pays {country}")
+        st.write(country_active_users_df)
 
         # Graphique pour le pays sélectionné
         country_fig = px.bar(country_active_users_df, x='Mois', y=['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'], 
