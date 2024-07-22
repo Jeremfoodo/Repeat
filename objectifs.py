@@ -50,13 +50,17 @@ def objectifs_page(df):
     # Afficher les objectifs actuels et les écarts par rapport aux clients actuels
     st.header('Objectifs Actuels et Écarts')
     objectifs = get_objectifs()
+    st.write("Objectifs enregistrés:", objectifs)  # Ajout d'une impression pour vérifier la structure
+
     active_clients = get_active_clients(df, '2024-07')
 
     rows = []
-    for pays, segment, objectif in objectifs:
+    for objectif in objectifs:
+        print(objectif)  # Ajout d'une impression pour vérifier la structure de chaque objectif
+        pays, segment, obj = objectif  # Modifiez en fonction de la structure imprimée
         actuel = active_clients.get(pays, {}).get(segment, 0)
-        ecart = objectif - actuel
-        rows.append({'Pays': pays, 'Segment': segment, 'Objectif': objectif, 'Actuel': actuel, 'Écart': ecart})
+        ecart = obj - actuel
+        rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj, 'Actuel': actuel, 'Écart': ecart})
 
     objectifs_df = pd.DataFrame(rows)
     st.dataframe(objectifs_df)
@@ -69,3 +73,4 @@ def objectifs_page(df):
         file_name='objectifs_clients_actifs.csv',
         mime='text/csv',
     )
+
