@@ -73,7 +73,7 @@ def objectifs_page(df):
                 name=f"{row['Pays']} - {row['Segment']}",
                 measure='relative',
                 x=f"{row['Pays']} - {row['Segment']}",
-                y=row['Écart']
+                y=-row['Écart']  # Inverser les signes pour refléter correctement les écarts
             ))
 
     waterfall_data.insert(0, dict(
