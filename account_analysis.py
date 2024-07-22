@@ -113,7 +113,7 @@ def account_analysis(df):
         mime='text/csv',
     )
 
-def generate_summary_boxes(june_2024_results, box_height='250px'):
+def generate_summary_boxes(june_2024_results, box_height='350px'):
     colors = {
         'Acquisition': '#FFCCCC',
         'Nouveaux Clients': '#CCFFCC',
