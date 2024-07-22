@@ -51,9 +51,3 @@ def objectifs_page(df):
         file_name='objectifs_clients_actifs.csv',
         mime='text/csv',
     )
-
-# Appel de la fonction pour créer la page des objectifs
-if __name__ == "__main__":
-    # Exemple de DataFrame df à passer à la fonction objectifs_page
-    df = pd.read_csv('path/to/your/prepared_data.csv')
-    objectifs_page(df)
