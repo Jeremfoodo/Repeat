@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from src.calculations import process_country_data, calculate_segments_for_month
+from src.calculations import process_country_data, calculate_segments_for_month, process_region_data
 from src.plots import plot_ratios
 
 def get_regions(country_code):
@@ -49,21 +49,24 @@ def global_analysis(historical_data, df):
         fig = plot_ratios(segment, all_results, country_code)
         st.plotly_chart(fig)
 
-    # Afficher l'analyse par région si France est sélectionnée
-    if country_code == 'FR':
+    # Afficher l'analyse par région si France ou US est sélectionné
+    if country_code in ['France', 'US']:
         st.header('Analyse par région')
         for region in get_regions(country_code):
             st.subheader(f'Région: {region}')
-            region_results = process_country_data(df, historical_data, country_code, region=region)
-            region_june_2024_results = region_results[region_results['Mois'] == '2024-07']
-            region_summary_boxes = generate_summary_boxes(region_june_2024_results)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(region_summary_boxes[0], unsafe_allow_html=True)
-                st.markdown(region_summary_boxes[1], unsafe_allow_html=True)
-            with col2:
-                st.markdown(region_summary_boxes[2], unsafe_allow_html=True)
-                st.markdown(region_summary_boxes[3], unsafe_allow_html=True)
+            try:
+                region_results = process_region_data(df, country_code, region=region)
+                region_june_2024_results = region_results[region_results['Mois'] == '2024-07']
+                region_summary_boxes = generate_summary_boxes(region_june_2024_results)
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(region_summary_boxes[0], unsafe_allow_html=True)
+                    st.markdown(region_summary_boxes[1], unsafe_allow_html=True)
+                with col2:
+                    st.markdown(region_summary_boxes[2], unsafe_allow_html=True)
+                    st.markdown(region_summary_boxes[3], unsafe_allow_html=True)
+            except KeyError as e:
+                st.error(f"Erreur: {e}")
 
 def generate_summary_boxes(june_2024_results):
     colors = {
