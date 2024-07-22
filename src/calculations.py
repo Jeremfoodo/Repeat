@@ -66,5 +66,3 @@ def process_region_data(df, country_code, region):
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
     return recent_results
-
-
