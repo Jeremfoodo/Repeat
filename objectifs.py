@@ -1,11 +1,7 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
-from src.database import save_objectif, get_objectifs, update_objectif, init_db
+from src.objectifs_storage import load_objectifs, save_objectifs
 from src.calculations import calculate_segments_for_month
-
-# Initialize the database
-init_db()
 
 # Function to get the current number of active clients per segment and country
 @st.cache_data
@@ -21,34 +17,11 @@ def get_active_clients(df, target_month):
         }
     return result
 
-def save_objectif(pays, segment, objectif):
-    if pays not in ['FR', 'BE', 'GB', 'US']:
-        return
-    conn = sqlite3.connect('objectifs.db')
-    c = conn.cursor()
-    c.execute('''
-        SELECT id FROM objectifs WHERE pays = ? AND segment = ?
-    ''', (pays, segment))
-    row = c.fetchone()
-    if row:
-        c.execute('''
-            UPDATE objectifs
-            SET objectif = ?
-            WHERE id = ?
-        ''', (objectif, row[0]))
-    else:
-        c.execute('''
-            INSERT INTO objectifs (pays, segment, objectif)
-            VALUES (?, ?, ?)
-        ''', (pays, segment, objectif))
-    conn.commit()
-    conn.close()
-
 def objectifs_page(df):
     st.title('Définir les Objectifs de Clients Actifs pour Juillet 2024')
 
     # Récupérer les objectifs enregistrés
-    objectifs = get_objectifs()
+    objectifs = load_objectifs()
 
     # Filtrer les pays pertinents
     countries = ['FR', 'BE', 'GB', 'US']
@@ -57,10 +30,10 @@ def objectifs_page(df):
     if objectifs:
         st.header('Objectifs Actuels')
         rows = []
-        for objectif in objectifs:
-            id, pays, segment, obj = objectif
-            if pays in countries:  # Vérifiez si 'pays' est parmi les pays pertinents
-                rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj})
+        for pays, segments_dict in objectifs.items():
+            if pays in countries:
+                for segment, obj in segments_dict.items():
+                    rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj})
         objectifs_df = pd.DataFrame(rows)
         st.dataframe(objectifs_df)
 
@@ -79,7 +52,10 @@ def objectifs_page(df):
             if submit_button:
                 if code == 'Inesqueenofrepeat':
                     for country, segment, objectif in objectif_data:
-                        save_objectif(country, segment, objectif)
+                        if country not in objectifs:
+                            objectifs[country] = {}
+                        objectifs[country][segment] = objectif
+                    save_objectifs(objectifs)
                     st.success('Objectifs enregistrés avec succès!')
                     st.experimental_rerun()
                 else:
@@ -89,12 +65,12 @@ def objectifs_page(df):
         active_clients = get_active_clients(df, '2024-07')
 
         rows = []
-        for objectif in objectifs:
-            id, pays, segment, obj = objectif
-            if pays in countries:  # Vérifiez si 'pays' est parmi les pays pertinents
-                actuel = active_clients.get(pays, {}).get(segment, 0)
-                ecart = obj - actuel
-                rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj, 'Actuel': actuel, 'Écart': ecart})
+        for pays, segments_dict in objectifs.items():
+            if pays in countries:
+                for segment, obj in segments_dict.items():
+                    actuel = active_clients.get(pays, {}).get(segment, 0)
+                    ecart = obj - actuel
+                    rows.append({'Pays': pays, 'Segment': segment, 'Objectif': obj, 'Actuel': actuel, 'Écart': ecart})
 
         objectifs_df = pd.DataFrame(rows)
         st.dataframe(objectifs_df)
@@ -124,7 +100,10 @@ def objectifs_page(df):
             if submit_button:
                 if code == 'Inesqueenofrepeat':
                     for country, segment, objectif in objectif_data:
-                        save_objectif(country, segment, objectif)
+                        if country not in objectifs:
+                            objectifs[country] = {}
+                        objectifs[country][segment] = objectif
+                    save_objectifs(objectifs)
                     st.success('Objectifs enregistrés avec succès!')
                     st.experimental_rerun()
                 else:
