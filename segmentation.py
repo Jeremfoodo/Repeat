@@ -8,7 +8,7 @@ def get_clients_by_segment_and_spending(df, target_month):
     
     bins = [0, 500, 1500, 2000, float('inf')]
     labels = ['Basic', 'Silver', 'Gold', 'High Spenders']
-    target_orders['Spending Level'] = pd.cut(target_orders.groupby('Restaurant ID')['Total'].transform('sum'), bins=bins, labels=labels)
+    target_orders['Spending Level'] = pd.cut(target_orders.groupby('Restaurant ID')['Total'].transform('sum'), bins=bins, labels=labels, right=False)
     
     previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
     acquisition = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
@@ -31,7 +31,7 @@ def get_clients_by_segment_and_spending(df, target_month):
     return heatmap_pivot, total_clients, target_orders
 
 def generate_recommendations(df_june, df_july):
-    if 'Segment' not in df_june.columns or 'Spending Level' not in df_june.columns:
+    if 'Segment' not in df_june.columns or 'Spending Level' not in df_july.columns:
         df_june = get_clients_by_segment_and_spending(df_june, '2024-06')[2]
     if 'Segment' not in df_july.columns or 'Spending Level' not in df_july.columns:
         df_july = get_clients_by_segment_and_spending(df_july, '2024-07')[2]
@@ -76,8 +76,8 @@ def generate_recommendations(df_june, df_july):
 
 def plot_heatmap_with_totals(heatmap_data, total_clients, title):
     heatmap_with_totals = heatmap_data.copy()
-    heatmap_with_totals['Total'] = heatmap_with_totals.sum(axis=1)
     heatmap_with_totals.loc['Total'] = heatmap_with_totals.sum(axis=0)
+    heatmap_with_totals['Total'] = heatmap_with_totals.sum(axis=1)
     
     fig = go.Figure(data=go.Heatmap(
         z=heatmap_with_totals.values,
@@ -147,15 +147,9 @@ def segmentation_page(df):
     df_july_account = target_orders_july_account.drop_duplicates('Restaurant ID')
 
     recommendations = generate_recommendations(df_june_account, df_july_account)
+    st.write(recommendations)
 
-    def highlight_recommendations(row):
-        return [row['Color']] * len(row)
-    
-    recommendations_styled = recommendations.style.apply(highlight_recommendations, axis=1)
-    
-    st.write(recommendations_styled)
-
-    csv = recommendations.drop(columns=['Color']).to_csv(index=False).encode('utf-8')
+    csv = recommendations.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="Télécharger les recommandations en CSV",
         data=csv,
