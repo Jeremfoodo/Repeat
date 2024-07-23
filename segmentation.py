@@ -8,8 +8,8 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Filtrer les commandes du mois cible
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
     
-    # Convertir la colonne 'Total' en string puis en numérique
-    target_orders['Total'] = target_orders['Total'].astype(str).str.replace(',', '.').astype(float)
+    # Convertir la colonne 'Total' en numérique
+    target_orders['Total'] = pd.to_numeric(target_orders['Total'].str.replace(',', '.'), errors='coerce')
     
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
@@ -55,7 +55,7 @@ def generate_recommendations(df_june, df_july):
     df_july = df_july[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
         columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
     )
-    df_combined = pd.merge(df_june, df_july, on='Restaurant ID', how='left', indicator=True)
+    df_combined = pd.merge(df_june, df_july, on=['Restaurant ID', 'Restaurant'], how='left', indicator=True)
     df_combined['Actif Juillet'] = df_combined['_merge'] == 'both'
     df_combined = df_combined.drop(columns=['_merge'])
     
@@ -69,8 +69,13 @@ def generate_recommendations(df_june, df_july):
                 return 'Super !'
             else:
                 return 'A upseller pour plus grosse dépense'
+        elif row['Dépense Juin'] == row['Dépense Juillet']:
+            if row['Dépense Juin'] != row['Dépense Juillet']:
+                return 'Clients qui reste dans le même Tier, mais qui ont quand même diminué leurs dépenses'
+            else:
+                return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
         else:
-            return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
+            return 'Super !'
     
     df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
     return df_combined
@@ -156,11 +161,11 @@ def segmentation_page(df):
 
     with col3:
         st.subheader(f'Juin 2024 - {account_manager}')
-        st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
+                st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_june_account.values,
             x=heatmap_data_june_account.columns,
-             y=heatmap_data_june_account.index,
+            y=heatmap_data_june_account.index,
             colorscale='Greens',
             hoverongaps=False,
             showscale=False,
@@ -213,55 +218,48 @@ def segmentation_page(df):
     df_july_account = target_orders_july_account.drop_duplicates('Restaurant ID')
 
     recommendations = generate_recommendations(df_june_account, df_july_account)
-    
-    st.header('Clients pas revenus entre juin et juillet')
-    df_not_returned = recommendations[recommendations['Recommandation'] == 'A réactiver ou comprendre raison du churn']
-    st.write(f"Nombre de clients: {len(df_not_returned)}")
-    st.write("Stratégie: clients à faire un repeat, ou comprendre raison du churn")
-    st.write(df_not_returned)
-    csv = df_not_returned.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Télécharger les clients pas revenus en CSV",
-        data=csv,
-        file_name=f'{account_manager}_clients_pas_revenus.csv',
-        mime='text/csv',
-    )
 
-    st.header('Clients avec dépense inférieure en juillet')
-    df_lower_spending = recommendations[recommendations['Recommandation'] == 'A upseller pour plus grosse dépense']
-    st.write(f"Nombre de clients: {len(df_lower_spending)}")
-    st.write("Stratégie: clients à upseller pour plus grosse dépense")
-    st.write(df_lower_spending)
-    csv = df_lower_spending.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Télécharger les clients avec dépense inférieure en juillet en CSV",
-        data=csv,
-        file_name=f'{account_manager}_clients_depense_inferieure.csv',
-        mime='text/csv',
-    )
+    # Filtrer les recommandations
+    not_returned_clients = recommendations[recommendations['Recommandation'] == 'A réactiver ou comprendre raison du churn']
+    decreased_spending_clients = recommendations[
+        (recommendations['Recommandation'] == 'A upseller pour plus grosse dépense') &
+        (recommendations['Dépense Juin'] != recommendations['Dépense Juillet'])
+    ]
+    same_spending_clients = recommendations[
+        (recommendations['Recommandation'] == 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus') &
+        (recommendations['Dépense Juin'] == recommendations['Dépense Juillet'])
+    ]
+    increased_spending_clients = recommendations[recommendations['Recommandation'] == 'Super !']
 
-    st.header('Clients qui restent dans le même tier mais qui ont quand même diminué leurs dépenses')
-    df_same_tier_lower_spending = recommendations[recommendations['Recommandation'] == 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus']
-    st.write(f"Nombre de clients: {len(df_same_tier_lower_spending)}")
-    st.write("Stratégie: Cross-seller ou comprendre pourquoi il ne peut pas acheter plus")
-    st.write(df_same_tier_lower_spending)
-    csv = df_same_tier_lower_spending.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Télécharger les clients dans le même tier mais avec dépense inférieure en CSV",
-        data=csv,
-        file_name=f'{account_manager}_clients_meme_tier_depense_inferieure.csv',
-        mime='text/csv',
-    )
+    # Afficher les tableaux
+    st.subheader(f'Clients pas revenus entre juin et juillet ({len(not_returned_clients)})')
+    st.markdown('<span style="color:red;">Clients à faire un repeat, ou comprendre raison du churn</span>', unsafe_allow_html=True)
+    st.dataframe(not_returned_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin']].style.applymap(lambda x: 'background-color: red', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin']))
 
-    st.header('Clients avec dépense augmentée')
-    df_higher_spending = recommendations[recommendations['Recommandation'] == 'Super !']
-    st.write(f"Nombre de clients: {len(df_higher_spending)}")
-    st.write("Stratégie: Continuer à encourager ces clients")
-    st.write(df_higher_spending)
-    csv = df_higher_spending.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Télécharger les clients avec dépense augmentée en CSV",
-        data=csv,
-        file_name=f'{account_manager}_clients_depense_augmentee.csv',
-        mime='text/csv',
-    )
+    st.subheader(f'Clients avec une dépense réduite en juillet ({len(decreased_spending_clients)})')
+    st.markdown('<span style="color:orange;">Clients actifs en juin et en juillet, mais dans un niveau de dépense inférieur en juillet</span>', unsafe_allow_html=True)
+    st.dataframe(decreased_spending_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']].style.applymap(lambda x: 'background-color: orange', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']))
+
+    st.subheader(f'Clients qui restent dans le même Tier, mais qui ont quand même diminué leurs dépenses ({len(same_spending_clients)})')
+    st.markdown('<span style="color:yellow;">Clients actifs en juin et en juillet, dans la même catégorie de dépense, mais avec un total inférieur en juillet</span>', unsafe_allow_html=True)
+    st.dataframe(same_spending_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']].style.applymap(lambda x: 'background-color: yellow', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']))
+
+    st.subheader(f'Clients avec une dépense augmentée en juillet ({len(increased_spending_clients)})')
+    st.markdown('<span style="color:green;">Clients actifs en juin et en juillet, avec une augmentation de leur dépense en juillet</span>', unsafe_allow_html=True)
+    st.dataframe(increased_spending_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']].style.applymap(lambda x: 'background-color: green', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']))
+
+    # Boutons de téléchargement pour chaque catégorie
+    def download_button(label, data):
+        csv = data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label=label,
+            data=csv,
+            file_name=f'{account_manager}_{label.replace(" ", "_").lower()}.csv',
+            mime='text/csv',
+        )
+
+    download_button("Télécharger les clients pas revenus", not_returned_clients)
+    download_button("Télécharger les clients avec dépense réduite", decreased_spending_clients)
+    download_button("Télécharger les clients dans même Tier avec dépense réduite", same_spending_clients)
+    download_button("Télécharger les clients avec dépense augmentée", increased_spending_clients)
+
