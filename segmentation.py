@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 
 @st.cache_data
@@ -75,6 +74,29 @@ def generate_recommendations(df_june, df_july):
     
     return df_combined.sort_values('Recommandation')
 
+def plot_heatmap_with_totals(heatmap_data, total_clients, title):
+    heatmap_with_totals = heatmap_data.copy()
+    heatmap_with_totals['Total'] = heatmap_with_totals.sum(axis=1)
+    heatmap_with_totals.loc['Total'] = heatmap_with_totals.sum(axis=0)
+    
+    fig = go.Figure(data=go.Heatmap(
+        z=heatmap_with_totals.values,
+        x=heatmap_with_totals.columns,
+        y=heatmap_with_totals.index,
+        colorscale='Greens',
+        hoverongaps=False,
+        showscale=False,
+        text=heatmap_with_totals.values,
+        texttemplate="%{text}"
+    ))
+    
+    fig.update_layout(
+        title=title,
+        xaxis_title='Niveau de Dépense',
+        yaxis_title='Segment',
+    )
+    return fig
+
 def segmentation_page(df):
     st.title('Segmentation')
 
@@ -90,41 +112,13 @@ def segmentation_page(df):
     with col1:
         st.subheader('Juin 2024')
         st.write(f"Nombre total de clients actifs: {total_clients_june}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_june.values,
-            x=heatmap_data_june.columns,
-            y=heatmap_data_june.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_june.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
+        fig = plot_heatmap_with_totals(heatmap_data_june, total_clients_june, 'Nombre de Clients par Segment et Niveau de Dépense (Juin 2024)')
         st.plotly_chart(fig)
 
     with col2:
         st.subheader('Juillet 2024')
         st.write(f"Nombre total de clients actifs: {total_clients_july}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_july.values,
-            x=heatmap_data_july.columns,
-            y=heatmap_data_july.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_july.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
+        fig = plot_heatmap_with_totals(heatmap_data_july, total_clients_july, 'Nombre de Clients par Segment et Niveau de Dépense (Juillet 2024)')
         st.plotly_chart(fig)
 
     st.header('Segmentation par Account Manager')
@@ -140,41 +134,13 @@ def segmentation_page(df):
     with col3:
         st.subheader(f'Juin 2024 - {account_manager}')
         st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_june_account.values,
-            x=heatmap_data_june_account.columns,
-            y=heatmap_data_june_account.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_june_account.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
+        fig = plot_heatmap_with_totals(heatmap_data_june_account, total_clients_june_account, f'Nombre de Clients par Segment et Niveau de Dépense (Juin 2024) - {account_manager}')
         st.plotly_chart(fig)
 
     with col4:
         st.subheader(f'Juillet 2024 - {account_manager}')
         st.write(f"Nombre total de clients actifs: {total_clients_july_account}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_july_account.values,
-            x=heatmap_data_july_account.columns,
-            y=heatmap_data_july_account.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_july_account.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
+        fig = plot_heatmap_with_totals(heatmap_data_july_account, total_clients_july_account, f'Nombre de Clients par Segment et Niveau de Dépense (Juillet 2024) - {account_manager}')
         st.plotly_chart(fig)
 
     df_june_account = target_orders_june_account.drop_duplicates('Restaurant ID')
@@ -196,4 +162,3 @@ def segmentation_page(df):
         file_name=f'{account_manager}_recommandations.csv',
         mime='text/csv',
     )
-
