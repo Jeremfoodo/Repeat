@@ -41,7 +41,7 @@ def generate_recommendations(df_june, df_july):
         columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
     )
     df_july = df_july[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
-        columns={'Segment': 'Segment Juillet', 'Dépense Juillet': 'Spending Level'}
+        columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
     )
     
     df_combined = pd.merge(df_june, df_july, on=['Restaurant ID', 'Restaurant'], how='left', indicator=True)
