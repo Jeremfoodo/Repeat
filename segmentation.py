@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+
 @st.cache_data
 def get_clients_by_segment_and_spending(df, target_month):
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
