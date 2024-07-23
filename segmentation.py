@@ -42,6 +42,9 @@ def generate_recommendations(df_june, df_july):
         df_june = get_clients_by_segment_and_spending(df_june, '2024-06')[2]
     if 'Segment' not in df_july.columns or 'Spending Level' not in df_july.columns:
         df_july = get_clients_by_segment_and_spending(df_july, '2024-07')[2]
+
+    # Filtrer uniquement les clients actifs en juin
+    df_june = df_june.drop_duplicates('Restaurant ID')
     
     df_june = df_june[['Restaurant ID', 'Segment', 'Spending Level']].rename(
         columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
@@ -175,8 +178,8 @@ def segmentation_page(df):
         st.plotly_chart(fig)
 
     # Générer les recommandations
-    df_june_account = target_orders_june_account
-    df_july_account = target_orders_july_account
+    df_june_account = target_orders_june_account.drop_duplicates('Restaurant ID')
+    df_july_account = target_orders_july_account.drop_duplicates('Restaurant ID')
 
     recommendations = generate_recommendations(df_june_account, df_july_account)
     st.write(recommendations)
