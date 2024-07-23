@@ -9,7 +9,7 @@ def get_clients_by_segment_and_spending(df, target_month):
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
 
     # Convertir la colonne 'Total' en numérique
-    target_orders['Total'] = target_orders['Total'].str.replace(',', '').astype(float)
+    target_orders['Total'] = target_orders['Total'].astype(str).str.replace(',', '').astype(float)
 
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
