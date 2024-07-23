@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+
 @st.cache_data
 def get_clients_by_segment_and_spending(df, target_month):
     # Filtrer les commandes du mois cible
