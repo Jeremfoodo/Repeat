@@ -49,11 +49,11 @@ def generate_recommendations(df_june, df_july):
     # Filtrer uniquement les clients actifs en juin
     df_june = df_june.drop_duplicates('Restaurant ID')
     
-    df_june = df_june[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
-        columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
+    df_june = df_june[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total']].rename(
+        columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin', 'Total': 'Dépense Totale Juin'}
     )
-    df_july = df_july[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
-        columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
+    df_july = df_july[['Restaurant ID', 'Segment', 'Spending Level', 'Total']].rename(
+        columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet', 'Total': 'Dépense Totale Juillet'}
     )
     df_combined = pd.merge(df_june, df_july, on='Restaurant ID', how='left', indicator=True)
     df_combined['Actif Juillet'] = df_combined['_merge'] == 'both'
@@ -63,15 +63,20 @@ def generate_recommendations(df_june, df_july):
         if not row['Actif Juillet']:
             return 'A réactiver ou comprendre raison du churn'
         elif row['Dépense Juin'] != row['Dépense Juillet']:
-            if row['Dépense Juin'] != 'High Spenders' and row['Dépense Juillet'] == 'High Spenders':
+            if row['Dépense Juin'] == 'High Spenders' and row['Dépense Juillet'] != 'High Spenders':
+                return 'A upseller pour plus grosse dépense'
+            elif row['Dépense Juin'] != 'High Spenders' and row['Dépense Juillet'] == 'High Spenders':
                 return 'Super !'
             else:
                 return 'A upseller pour plus grosse dépense'
-        else:
+        elif row['Dépense Totale Juin'] > row['Dépense Totale Juillet']:
             return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
+        else:
+            return 'Super !'
     
     df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
     return df_combined
+
 
 def segmentation_page(df):
     st.title('Segmentation')
