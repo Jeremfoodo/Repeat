@@ -56,7 +56,7 @@ def segmentation_page(df):
             z=heatmap_data_june.values,
             x=heatmap_data_june.columns,
             y=heatmap_data_june.index,
-            colorscale='Viridis',
+            colorscale='Yellows',
             hoverongaps=False,
             text=heatmap_data_june.values,
             texttemplate="%{text}"
@@ -91,7 +91,7 @@ def segmentation_page(df):
             z=heatmap_data_july.values,
             x=heatmap_data_july.columns,
             y=heatmap_data_july.index,
-            colorscale='Viridis',
+            colorscale='Yellows',
             hoverongaps=False,
             text=heatmap_data_july.values,
             texttemplate="%{text}"
