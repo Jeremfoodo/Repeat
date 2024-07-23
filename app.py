@@ -4,6 +4,7 @@ from global_analysis import global_analysis
 from account_analysis import account_analysis
 from objectifs import objectifs_page
 from active_users import active_users_page
+from segmentation import segmentation_page
 from src.data_processing import load_data, download_prepared_data, reassign_account_manager
 
 # Télécharger et charger les données
@@ -14,8 +15,8 @@ historical_data, df = load_data()
 with st.sidebar:
     selected = option_menu(
         "Menu",
-        ["Analyse Globale", "Par Account", "Objectifs", "Active Users"],
-        icons=["bar-chart", "person-circle", "target", "graph-up"],
+        ["Analyse Globale", "Par Account", "Objectifs", "Active Users", "Segmentation"],
+        icons=["bar-chart", "person-circle", "target", "graph-up", "grid"],
         menu_icon="cast",
         default_index=0,
     )
@@ -29,3 +30,5 @@ elif selected == "Objectifs":
     objectifs_page(df)
 elif selected == "Active Users":
     active_users_page(historical_data, df)
+elif selected == "Segmentation":
+    segmentation_page(df)
