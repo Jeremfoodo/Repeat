@@ -7,8 +7,11 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Filtrer les commandes du mois cible
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
     
-    # Convertir la colonne 'Total' en numérique
-    target_orders['Total'] = pd.to_numeric(target_orders['Total'].str.replace(',', '').str.replace('.', ''), errors='coerce')
+    # Vérifier et convertir la colonne 'Total' en numérique
+    try:
+        target_orders['Total'] = pd.to_numeric(target_orders['Total'].astype(str).str.replace(',', '').str.replace('.', ''), errors='coerce')
+    except Exception as e:
+        st.error(f"Erreur de conversion des valeurs dans 'Total': {e}")
     
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
