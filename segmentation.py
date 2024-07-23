@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 
 @st.cache_data
@@ -8,8 +7,9 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Filtrer les commandes du mois cible
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
     
-    # Convertir la colonne 'Total' en numérique
-    target_orders['Total'] = pd.to_numeric(target_orders['Total'].str.replace(',', '').str.replace('€', ''))
+    # Convertir la colonne 'Total' en chaînes de caractères puis en numérique
+    target_orders['Total'] = target_orders['Total'].astype(str).str.replace(',', '').str.replace('€', '')
+    target_orders['Total'] = pd.to_numeric(target_orders['Total'])
     
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
@@ -168,7 +168,7 @@ def segmentation_page(df):
 
         fig.update_layout(
             title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
+            xaxis_title'Niveau de Dépense',
             yaxis_title='Segment',
         )
         st.plotly_chart(fig)
