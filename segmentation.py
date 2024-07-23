@@ -27,14 +27,15 @@ def get_clients_by_segment_and_spending(df, target_month):
     target_orders.loc[clients_recents.index, 'Segment'] = 'Clients Récents'
     target_orders.loc[anciens_clients.index, 'Segment'] = 'Anciens Clients'
     
-    # Compter les clients et les dépenses totales par segment et niveau de dépense
-    heatmap_data = target_orders.groupby(['Segment', 'Spending Level']).agg({'Restaurant ID': 'nunique', 'Total': 'sum'}).reset_index()
+    # Compter les clients par segment et niveau de dépense
+    heatmap_data = target_orders.groupby(['Segment', 'Spending Level']).agg({'Restaurant ID': 'nunique'}).reset_index()
     
     # Pivot pour obtenir le format désiré
     heatmap_pivot = heatmap_data.pivot(index='Segment', columns='Spending Level', values='Restaurant ID').fillna(0)
-    spending_pivot = heatmap_data.pivot(index='Segment', columns='Spending Level', values='Total').fillna(0)
     
-    return heatmap_pivot, spending_pivot
+    total_clients = target_orders['Restaurant ID'].nunique()
+    
+    return heatmap_pivot, total_clients
 
 def segmentation_page(df):
     st.title('Segmentation')
@@ -45,19 +46,21 @@ def segmentation_page(df):
         df = df[df['Pays'] == selected_country]
 
     # Générer les heatmaps pour juin et juillet 2024
-    heatmap_data_june, spending_data_june = get_clients_by_segment_and_spending(df, '2024-06')
-    heatmap_data_july, spending_data_july = get_clients_by_segment_and_spending(df, '2024-07')
+    heatmap_data_june, total_clients_june = get_clients_by_segment_and_spending(df, '2024-06')
+    heatmap_data_july, total_clients_july = get_clients_by_segment_and_spending(df, '2024-07')
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader('Juin 2024')
+        st.write(f"Nombre total de clients actifs: {total_clients_june}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_june.values,
             x=heatmap_data_june.columns,
             y=heatmap_data_june.index,
-            colorscale='blues',
+            colorscale='Greens',
             hoverongaps=False,
+            showscale=False,
             text=heatmap_data_june.values,
             texttemplate="%{text}"
         ))
@@ -68,31 +71,16 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-        st.subheader('Total Dépenses - Juin 2024')
-        fig_spending = go.Figure(data=go.Heatmap(
-            z=spending_data_june.values,
-            x=spending_data_june.columns,
-            y=spending_data_june.index,
-            colorscale='Viridis',
-            hoverongaps=False,
-            text=spending_data_june.values,
-            texttemplate="%{text}"
-        ))
-        fig_spending.update_layout(
-            title='Dépenses Totales par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
-        st.plotly_chart(fig_spending)
-
     with col2:
         st.subheader('Juillet 2024')
+        st.write(f"Nombre total de clients actifs: {total_clients_july}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_july.values,
             x=heatmap_data_july.columns,
             y=heatmap_data_july.index,
-            colorscale='blues',
+            colorscale='Greens',
             hoverongaps=False,
+            showscale=False,
             text=heatmap_data_july.values,
             texttemplate="%{text}"
         ))
@@ -102,20 +90,3 @@ def segmentation_page(df):
             yaxis_title='Segment',
         )
         st.plotly_chart(fig)
-
-        st.subheader('Total Dépenses - Juillet 2024')
-        fig_spending = go.Figure(data=go.Heatmap(
-            z=spending_data_july.values,
-            x=spending_data_july.columns,
-            y=spending_data_july.index,
-            colorscale='Viridis',
-            hoverongaps=False,
-            text=spending_data_july.values,
-            texttemplate="%{text}"
-        ))
-        fig_spending.update_layout(
-            title='Dépenses Totales par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
-        st.plotly_chart(fig_spending)
