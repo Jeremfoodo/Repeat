@@ -7,9 +7,8 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Filtrer les commandes du mois cible
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
     
-    # Convertir la colonne 'Total' en chaînes de caractères puis en numérique
-    target_orders['Total'] = target_orders['Total'].astype(str).str.replace(',', '').str.replace('€', '')
-    target_orders['Total'] = pd.to_numeric(target_orders['Total'])
+    # Convertir la colonne 'Total' en numérique
+    target_orders['Total'] = pd.to_numeric(target_orders['Total'].str.replace(',', '').str.replace('.', ''), errors='coerce')
     
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
@@ -67,13 +66,6 @@ def segmentation_page(df):
             text=heatmap_data_june.values,
             texttemplate="%{text}"
         ))
-        for i, segment in enumerate(heatmap_data_june.index):
-            total_segment = heatmap_data_june.loc[segment].sum()
-            fig.add_annotation(x='Total', y=segment, text=str(total_segment), showarrow=False, font=dict(color="black"))
-
-        total_all_segments = heatmap_data_june.sum().sum()
-        fig.add_annotation(x='Total', y='Total', text=str(total_all_segments), showarrow=False, font=dict(color="black"))
-
         fig.update_layout(
             title='Nombre de Clients par Segment et Niveau de Dépense',
             xaxis_title='Niveau de Dépense',
@@ -94,13 +86,6 @@ def segmentation_page(df):
             text=heatmap_data_july.values,
             texttemplate="%{text}"
         ))
-        for i, segment in enumerate(heatmap_data_july.index):
-            total_segment = heatmap_data_july.loc[segment].sum()
-            fig.add_annotation(x='Total', y=segment, text=str(total_segment), showarrow=False, font=dict(color="black"))
-
-        total_all_segments = heatmap_data_july.sum().sum()
-        fig.add_annotation(x='Total', y='Total', text=str(total_all_segments), showarrow=False, font=dict(color="black"))
-
         fig.update_layout(
             title='Nombre de Clients par Segment et Niveau de Dépense',
             xaxis_title='Niveau de Dépense',
@@ -132,13 +117,6 @@ def segmentation_page(df):
             text=heatmap_data_june_account.values,
             texttemplate="%{text}"
         ))
-        for i, segment in enumerate(heatmap_data_june_account.index):
-            total_segment = heatmap_data_june_account.loc[segment].sum()
-            fig.add_annotation(x='Total', y=segment, text=str(total_segment), showarrow=False, font=dict(color="black"))
-
-        total_all_segments = heatmap_data_june_account.sum().sum()
-        fig.add_annotation(x='Total', y='Total', text=str(total_all_segments), showarrow=False, font=dict(color="black"))
-
         fig.update_layout(
             title='Nombre de Clients par Segment et Niveau de Dépense',
             xaxis_title='Niveau de Dépense',
@@ -159,13 +137,6 @@ def segmentation_page(df):
             text=heatmap_data_july_account.values,
             texttemplate="%{text}"
         ))
-        for i, segment in enumerate(heatmap_data_july_account.index):
-            total_segment = heatmap_data_july_account.loc[segment].sum()
-            fig.add_annotation(x='Total', y=segment, text=str(total_segment), showarrow=False, font=dict(color="black"))
-
-        total_all_segments = heatmap_data_july_account.sum().sum()
-        fig.add_annotation(x='Total', y='Total', text=str(total_all_segments), showarrow=False, font=dict(color="black"))
-
         fig.update_layout(
             title='Nombre de Clients par Segment et Niveau de Dépense',
             xaxis_title='Niveau de Dépense',
