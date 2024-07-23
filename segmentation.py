@@ -168,7 +168,7 @@ def segmentation_page(df):
 
         fig.update_layout(
             title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title'Niveau de Dépense',
+            xaxis_title='Niveau de Dépense',
             yaxis_title='Segment',
         )
         st.plotly_chart(fig)
