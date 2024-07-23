@@ -161,7 +161,7 @@ def segmentation_page(df):
 
     with col3:
         st.subheader(f'Juin 2024 - {account_manager}')
-                st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
+        st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_june_account.values,
             x=heatmap_data_june_account.columns,
