@@ -41,7 +41,7 @@ def generate_recommendations(df_june, df_july):
         columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
     )
     df_july = df_july[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
-        columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
+        columns={'Segment': 'Segment Juillet', 'Dépense Juillet': 'Spending Level'}
     )
     
     df_combined = pd.merge(df_june, df_july, on=['Restaurant ID', 'Restaurant'], how='left', indicator=True)
@@ -65,7 +65,6 @@ def generate_recommendations(df_june, df_july):
     
     df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
     
-    # Color mapping
     color_map = {
         'A réactiver ou comprendre raison du churn': 'background-color: red',
         'A upseller pour plus grosse dépense': 'background-color: orange',
@@ -74,7 +73,7 @@ def generate_recommendations(df_june, df_july):
     }
     df_combined['Color'] = df_combined['Recommandation'].map(color_map)
     
-    return df_combined
+    return df_combined.sort_values('Recommandation')
 
 def segmentation_page(df):
     st.title('Segmentation')
@@ -197,3 +196,4 @@ def segmentation_page(df):
         file_name=f'{account_manager}_recommandations.csv',
         mime='text/csv',
     )
+
