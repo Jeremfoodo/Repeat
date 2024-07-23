@@ -37,14 +37,14 @@ def generate_recommendations(df_june, df_july):
     if 'Segment' not in df_july.columns or 'Spending Level' not in df_july.columns:
         df_july = get_clients_by_segment_and_spending(df_july, '2024-07')[2]
 
-    df_june = df_june[['Restaurant ID', 'Segment', 'Spending Level']].rename(
+    df_june = df_june[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
         columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
     )
-    df_july = df_july[['Restaurant ID', 'Segment', 'Spending Level']].rename(
+    df_july = df_july[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
         columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
     )
     
-    df_combined = pd.merge(df_june, df_july, on='Restaurant ID', how='left', indicator=True)
+    df_combined = pd.merge(df_june, df_july, on=['Restaurant ID', 'Restaurant'], how='left', indicator=True)
     df_combined['Actif Juillet'] = df_combined['_merge'] == 'both'
     df_combined = df_combined.drop(columns=['_merge'])
     
@@ -64,6 +64,16 @@ def generate_recommendations(df_june, df_july):
             return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
     
     df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
+    
+    # Color mapping
+    color_map = {
+        'A réactiver ou comprendre raison du churn': 'background-color: red',
+        'A upseller pour plus grosse dépense': 'background-color: orange',
+        'Super !': 'background-color: green',
+        'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus': 'background-color: yellow'
+    }
+    df_combined['Color'] = df_combined['Recommandation'].map(color_map)
+    
     return df_combined
 
 def segmentation_page(df):
@@ -172,9 +182,15 @@ def segmentation_page(df):
     df_july_account = target_orders_july_account.drop_duplicates('Restaurant ID')
 
     recommendations = generate_recommendations(df_june_account, df_july_account)
-    st.write(recommendations)
 
-    csv = recommendations.to_csv(index=False).encode('utf-8')
+    def highlight_recommendations(row):
+        return [row['Color']] * len(row)
+    
+    recommendations_styled = recommendations.style.apply(highlight_recommendations, axis=1)
+    
+    st.write(recommendations_styled)
+
+    csv = recommendations.drop(columns=['Color']).to_csv(index=False).encode('utf-8')
     st.download_button(
         label="Télécharger les recommandations en CSV",
         data=csv,
