@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 
 @st.cache_data
@@ -34,7 +35,34 @@ def get_clients_by_segment_and_spending(df, target_month):
     
     total_clients = target_orders['Restaurant ID'].nunique()
     
-    return heatmap_pivot, total_clients, target_orders
+    return heatmap_pivot, total_clients
+
+def generate_recommendations(df_june, df_july):
+    df_june = df_june[['Restaurant ID', 'Segment', 'Spending Level']].rename(
+        columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
+    )
+    df_july = df_july[['Restaurant ID', 'Segment', 'Spending Level']].rename(
+        columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
+    )
+    df_combined = pd.merge(df_june, df_july, on='Restaurant ID', how='left', indicator=True)
+    df_combined['Actif Juillet'] = df_combined['_merge'] == 'both'
+    df_combined = df_combined.drop(columns=['_merge'])
+    
+    def recommend(row):
+        if not row['Actif Juillet']:
+            return 'A réactiver ou comprendre raison du churn'
+        elif row['Dépense Juin'] != row['Dépense Juillet']:
+            if row['Dépense Juin'] == 'High Spenders' and row['Dépense Juillet'] != 'High Spenders':
+                return 'A upseller pour plus grosse dépense'
+            elif row['Dépense Juin'] != 'High Spenders' and row['Dépense Juillet'] == 'High Spenders':
+                return 'Super !'
+            else:
+                return 'A upseller pour plus grosse dépense'
+        else:
+            return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
+    
+    df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
+    return df_combined
 
 def segmentation_page(df):
     st.title('Segmentation')
@@ -45,8 +73,8 @@ def segmentation_page(df):
         df = df[df['Pays'] == selected_country]
 
     # Générer les heatmaps pour juin et juillet 2024
-    heatmap_data_june, total_clients_june, target_orders_june = get_clients_by_segment_and_spending(df, '2024-06')
-    heatmap_data_july, total_clients_july, target_orders_july = get_clients_by_segment_and_spending(df, '2024-07')
+    heatmap_data_june, total_clients_june = get_clients_by_segment_and_spending(df, '2024-06')
+    heatmap_data_july, total_clients_july = get_clients_by_segment_and_spending(df, '2024-07')
 
     col1, col2 = st.columns(2)
 
@@ -90,20 +118,14 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-    # Afficher les clients actifs en juin avec leur montant dépensé et segment
-    st.subheader('Clients actifs en juin 2024')
-    clients_june = target_orders_june.groupby(['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']).agg({'Total': 'sum'}).reset_index()
-    clients_june = clients_june.rename(columns={'Total': 'Montant Dépensé', 'Spending Level': 'Segment Dépense'})
-    st.write(clients_june)
-
     # Segmentation par account manager
     st.header('Segmentation par Account Manager')
     account_manager = st.selectbox('Sélectionner un account manager', df['Owner email'].unique())
     
     df_account = df[df['Owner email'] == account_manager]
     
-    heatmap_data_june_account, total_clients_june_account, target_orders_june_account = get_clients_by_segment_and_spending(df_account, '2024-06')
-    heatmap_data_july_account, total_clients_july_account, target_orders_july_account = get_clients_by_segment_and_spending(df_account, '2024-07')
+    heatmap_data_june_account, total_clients_june_account = get_clients_by_segment_and_spending(df_account, '2024-06')
+    heatmap_data_july_account, total_clients_july_account = get_clients_by_segment_and_spending(df_account, '2024-07')
 
     col3, col4 = st.columns(2)
 
@@ -146,9 +168,3 @@ def segmentation_page(df):
             yaxis_title='Segment',
         )
         st.plotly_chart(fig)
-
-    # Afficher les clients actifs en juin pour l'account manager avec leur montant dépensé et segment
-    st.subheader(f'Clients actifs en juin 2024 - {account_manager}')
-    clients_june_account = target_orders_june_account.groupby(['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']).agg({'Total': 'sum'}).reset_index()
-    clients_june_account = clients_june_account.rename(columns={'Total': 'Montant Dépensé', 'Spending Level': 'Segment Dépense'})
-    st.write(clients_june_account)
