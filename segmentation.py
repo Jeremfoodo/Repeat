@@ -41,7 +41,7 @@ def segmentation_page(df):
     st.title('Segmentation')
 
     # Sélectionner le pays
-    selected_country = st.selectbox('Sélectionner un pays', ['Tous les pays'] + df['Pays'].unique().tolist())
+    selected_country = st.selectbox('Sélectionner un pays', ['Tous les pays', 'FR', 'US', 'GB', 'BE'])
     if selected_country != 'Tous les pays':
         df = df[df['Pays'] == selected_country]
 
@@ -82,6 +82,57 @@ def segmentation_page(df):
             hoverongaps=False,
             showscale=False,
             text=heatmap_data_july.values,
+            texttemplate="%{text}"
+        ))
+        fig.update_layout(
+            title='Nombre de Clients par Segment et Niveau de Dépense',
+            xaxis_title='Niveau de Dépense',
+            yaxis_title='Segment',
+        )
+        st.plotly_chart(fig)
+
+    # Segmentation par account manager
+    st.header('Segmentation par Account Manager')
+    account_manager = st.selectbox('Sélectionner un account manager', df['Owner email'].unique())
+    
+    df_account = df[df['Owner email'] == account_manager]
+    
+    heatmap_data_june_account, total_clients_june_account = get_clients_by_segment_and_spending(df_account, '2024-06')
+    heatmap_data_july_account, total_clients_july_account = get_clients_by_segment_and_spending(df_account, '2024-07')
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+        st.subheader(f'Juin 2024 - {account_manager}')
+        st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
+        fig = go.Figure(data=go.Heatmap(
+            z=heatmap_data_june_account.values,
+            x=heatmap_data_june_account.columns,
+            y=heatmap_data_june_account.index,
+            colorscale='Greens',
+            hoverongaps=False,
+            showscale=False,
+            text=heatmap_data_june_account.values,
+            texttemplate="%{text}"
+        ))
+        fig.update_layout(
+            title='Nombre de Clients par Segment et Niveau de Dépense',
+            xaxis_title='Niveau de Dépense',
+            yaxis_title='Segment',
+        )
+        st.plotly_chart(fig)
+
+    with col4:
+        st.subheader(f'Juillet 2024 - {account_manager}')
+        st.write(f"Nombre total de clients actifs: {total_clients_july_account}")
+        fig = go.Figure(data=go.Heatmap(
+            z=heatmap_data_july_account.values,
+            x=heatmap_data_july_account.columns,
+            y=heatmap_data_july_account.index,
+            colorscale='Greens',
+            hoverongaps=False,
+            showscale=False,
+            text=heatmap_data_july_account.values,
             texttemplate="%{text}"
         ))
         fig.update_layout(
