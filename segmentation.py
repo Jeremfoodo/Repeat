@@ -9,7 +9,7 @@ def get_clients_by_segment_and_spending(df, target_month):
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
     
     # Convertir la colonne 'Total' en numérique
-    target_orders['Total'] = pd.to_numeric(target_orders['Total'].str.replace(',', '.'), errors='coerce')
+    target_orders['Total'] = pd.to_numeric(target_orders['Total'].astype(str).str.replace(',', '.'), errors='coerce')
     
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
@@ -55,7 +55,7 @@ def generate_recommendations(df_june, df_july):
     df_july = df_july[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']].rename(
         columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
     )
-    df_combined = pd.merge(df_june, df_july, on=['Restaurant ID', 'Restaurant'], how='left', indicator=True)
+    df_combined = pd.merge(df_june, df_july, on='Restaurant ID', how='left', indicator=True)
     df_combined['Actif Juillet'] = df_combined['_merge'] == 'both'
     df_combined = df_combined.drop(columns=['_merge'])
     
@@ -63,19 +63,12 @@ def generate_recommendations(df_june, df_july):
         if not row['Actif Juillet']:
             return 'A réactiver ou comprendre raison du churn'
         elif row['Dépense Juin'] != row['Dépense Juillet']:
-            if row['Dépense Juin'] == 'High Spenders' and row['Dépense Juillet'] != 'High Spenders':
-                return 'A upseller pour plus grosse dépense'
-            elif row['Dépense Juin'] != 'High Spenders' and row['Dépense Juillet'] == 'High Spenders':
+            if row['Dépense Juin'] != 'High Spenders' and row['Dépense Juillet'] == 'High Spenders':
                 return 'Super !'
             else:
                 return 'A upseller pour plus grosse dépense'
-        elif row['Dépense Juin'] == row['Dépense Juillet']:
-            if row['Dépense Juin'] != row['Dépense Juillet']:
-                return 'Clients qui reste dans le même Tier, mais qui ont quand même diminué leurs dépenses'
-            else:
-                return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
         else:
-            return 'Super !'
+            return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
     
     df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
     return df_combined
@@ -165,7 +158,7 @@ def segmentation_page(df):
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_june_account.values,
             x=heatmap_data_june_account.columns,
-            y=heatmap_data_june_account.index,
+                        y=heatmap_data_june_account.index,
             colorscale='Greens',
             hoverongaps=False,
             showscale=False,
@@ -219,47 +212,45 @@ def segmentation_page(df):
 
     recommendations = generate_recommendations(df_june_account, df_july_account)
 
-    # Filtrer les recommandations
-    not_returned_clients = recommendations[recommendations['Recommandation'] == 'A réactiver ou comprendre raison du churn']
-    decreased_spending_clients = recommendations[
-        (recommendations['Recommandation'] == 'A upseller pour plus grosse dépense') &
-        (recommendations['Dépense Juin'] != recommendations['Dépense Juillet'])
-    ]
-    same_spending_clients = recommendations[
-        (recommendations['Recommandation'] == 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus') &
-        (recommendations['Dépense Juin'] == recommendations['Dépense Juillet'])
-    ]
-    increased_spending_clients = recommendations[recommendations['Recommandation'] == 'Super !']
+    st.header("Recommandations")
 
-    # Afficher les tableaux
-    st.subheader(f'Clients pas revenus entre juin et juillet ({len(not_returned_clients)})')
-    st.markdown('<span style="color:red;">Clients à faire un repeat, ou comprendre raison du churn</span>', unsafe_allow_html=True)
-    st.dataframe(not_returned_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin']].style.applymap(lambda x: 'background-color: red', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin']))
+    def highlight_recommendations(row):
+        if row['Recommandation'] == 'A réactiver ou comprendre raison du churn':
+            return ['background-color: red'] * len(row)
+        elif row['Recommandation'] == 'A upseller pour plus grosse dépense':
+            return ['background-color: orange'] * len(row)
+        elif row['Recommandation'] == 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus':
+            return ['background-color: yellow'] * len(row)
+        elif row['Recommandation'] == 'Super !':
+            return ['background-color: green'] * len(row)
+        else:
+            return [''] * len(row)
 
-    st.subheader(f'Clients avec une dépense réduite en juillet ({len(decreased_spending_clients)})')
-    st.markdown('<span style="color:orange;">Clients actifs en juin et en juillet, mais dans un niveau de dépense inférieur en juillet</span>', unsafe_allow_html=True)
-    st.dataframe(decreased_spending_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']].style.applymap(lambda x: 'background-color: orange', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']))
+    def add_recommendation_strategy(row):
+        if row['Recommandation'] == 'A réactiver ou comprendre raison du churn':
+            return 'Clients à faire un repeat, ou comprendre raison du churn'
+        elif row['Recommandation'] == 'A upseller pour plus grosse dépense':
+            return 'A upseller pour plus grosse dépense'
+        elif row['Recommandation'] == 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus':
+            return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
+        elif row['Recommandation'] == 'Super !':
+            return 'Super !'
 
-    st.subheader(f'Clients qui restent dans le même Tier, mais qui ont quand même diminué leurs dépenses ({len(same_spending_clients)})')
-    st.markdown('<span style="color:yellow;">Clients actifs en juin et en juillet, dans la même catégorie de dépense, mais avec un total inférieur en juillet</span>', unsafe_allow_html=True)
-    st.dataframe(same_spending_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']].style.applymap(lambda x: 'background-color: yellow', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']))
+    recommendations['Stratégie'] = recommendations.apply(add_recommendation_strategy, axis=1)
 
-    st.subheader(f'Clients avec une dépense augmentée en juillet ({len(increased_spending_clients)})')
-    st.markdown('<span style="color:green;">Clients actifs en juin et en juillet, avec une augmentation de leur dépense en juillet</span>', unsafe_allow_html=True)
-    st.dataframe(increased_spending_clients[['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']].style.applymap(lambda x: 'background-color: green', subset=['Restaurant ID', 'Restaurant', 'Segment Juin', 'Dépense Juin', 'Dépense Juillet']))
-
-    # Boutons de téléchargement pour chaque catégorie
-    def download_button(label, data):
-        csv = data.to_csv(index=False).encode('utf-8')
+    for recommendation_type, color in [('A réactiver ou comprendre raison du churn', 'red'),
+                                       ('A upseller pour plus grosse dépense', 'orange'),
+                                       ('Cross-seller ou comprendre pourquoi il ne peut pas acheter plus', 'yellow'),
+                                       ('Super !', 'green')]:
+        recs = recommendations[recommendations['Recommandation'] == recommendation_type]
+        st.subheader(f"{recommendation_type} ({len(recs)})")
+        st.markdown(f"<small>{recs['Stratégie'].iloc[0]}</small>", unsafe_allow_html=True)
+        st.dataframe(recs.style.apply(highlight_recommendations, axis=1))
+        csv = recs.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label=label,
+            label=f"Télécharger les recommandations ({recommendation_type}) en CSV",
             data=csv,
-            file_name=f'{account_manager}_{label.replace(" ", "_").lower()}.csv',
+            file_name=f'{account_manager}_recommandations_{recommendation_type}.csv',
             mime='text/csv',
         )
-
-    download_button("Télécharger les clients pas revenus", not_returned_clients)
-    download_button("Télécharger les clients avec dépense réduite", decreased_spending_clients)
-    download_button("Télécharger les clients dans même Tier avec dépense réduite", same_spending_clients)
-    download_button("Télécharger les clients avec dépense augmentée", increased_spending_clients)
 
