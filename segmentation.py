@@ -169,19 +169,3 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-    # Ajouter un tableau détaillant les clients de l'account manager
-    st.header('Détails des Clients et Recommandations')
-    df_june_account = df_account[df_account['Date de commande'].dt.strftime('%Y-%m') == '2024-06']
-    df_july_account = df_account[df_account['Date de commande'].dt.strftime('%Y-%m') == '2024-07']
-    
-    recommendations = generate_recommendations(df_june_account, df_july_account)
-    st.write(recommendations)
-
-    # Bouton de téléchargement
-    csv = recommendations.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Télécharger les recommandations en CSV",
-        data=csv,
-        file_name=f'{account_manager}_recommandations.csv',
-        mime='text/csv',
-    )
