@@ -368,8 +368,7 @@ def segmentation_page(df):
             total_segment = heatmap_data_july.loc[segment].sum()
             fig.add_annotation(x='Total', y=segment, text=str(total_segment), showarrow=False, font=dict(color="black"))
 
-        total_all
-segments = heatmap_data_july.sum().sum()
+        total_all_segments = heatmap_data_july.sum().sum()
         fig.add_annotation(x='Total', y='Total', text=str(total_all_segments), showarrow=False, font=dict(color="black"))
 
         fig.update_layout(
