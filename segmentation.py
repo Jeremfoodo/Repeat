@@ -37,6 +37,33 @@ def get_clients_by_segment_and_spending(df, target_month):
     
     return heatmap_pivot, total_clients
 
+def generate_recommendations(df_june, df_july):
+    df_june = df_june[['Restaurant ID', 'Segment', 'Spending Level']].rename(
+        columns={'Segment': 'Segment Juin', 'Spending Level': 'Dépense Juin'}
+    )
+    df_july = df_july[['Restaurant ID', 'Segment', 'Spending Level']].rename(
+        columns={'Segment': 'Segment Juillet', 'Spending Level': 'Dépense Juillet'}
+    )
+    df_combined = pd.merge(df_june, df_july, on='Restaurant ID', how='left', indicator=True)
+    df_combined['Actif Juillet'] = df_combined['_merge'] == 'both'
+    df_combined = df_combined.drop(columns=['_merge'])
+    
+    def recommend(row):
+        if not row['Actif Juillet']:
+            return 'A réactiver ou comprendre raison du churn'
+        elif row['Dépense Juin'] != row['Dépense Juillet']:
+            if row['Dépense Juin'] == 'High Spenders' and row['Dépense Juillet'] != 'High Spenders':
+                return 'A upseller pour plus grosse dépense'
+            elif row['Dépense Juin'] != 'High Spenders' and row['Dépense Juillet'] == 'High Spenders':
+                return 'Super !'
+            else:
+                return 'A upseller pour plus grosse dépense'
+        else:
+            return 'Cross-seller ou comprendre pourquoi il ne peut pas acheter plus'
+    
+    df_combined['Recommandation'] = df_combined.apply(recommend, axis=1)
+    return df_combined
+
 def segmentation_page(df):
     st.title('Segmentation')
 
@@ -141,3 +168,20 @@ def segmentation_page(df):
             yaxis_title='Segment',
         )
         st.plotly_chart(fig)
+
+    # Ajouter un tableau détaillant les clients de l'account manager
+    st.header('Détails des Clients et Recommandations')
+    df_june_account = df_account[df_account['Date de commande'].dt.strftime('%Y-%m') == '2024-06']
+    df_july_account = df_account[df_account['Date de commande'].dt.strftime('%Y-%m') == '2024-07']
+    
+    recommendations = generate_recommendations(df_june_account, df_july_account)
+    st.write(recommendations)
+
+    # Bouton de téléchargement
+    csv = recommendations.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Télécharger les recommandations en CSV",
+        data=csv,
+        file_name=f'{account_manager}_recommandations.csv',
+        mime='text/csv',
+    )
