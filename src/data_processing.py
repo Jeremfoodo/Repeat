@@ -5,7 +5,7 @@ import streamlit as st
 
 # URL de Google Drive pour les fichiers
 prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
-objectifs_url = 'https://drive.google.com/uc?id=1UaAh3PUaHjBTShTYUGkd-Yw6fUT7TZJN'
+objectifs_url = 'https://drive.google.com/uc?id=17TDM9d4MqXxmj1JC4pv0G9nDjRqKEtXK'
 
 @st.cache_data
 def download_prepared_data():
