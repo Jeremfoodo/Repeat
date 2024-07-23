@@ -7,12 +7,6 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Filtrer les commandes du mois cible
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
     
-    # Vérifier et convertir la colonne 'Total' en numérique
-    try:
-        target_orders['Total'] = pd.to_numeric(target_orders['Total'].astype(str).str.replace(',', '').str.replace('.', ''), errors='coerce')
-    except Exception as e:
-        st.error(f"Erreur de conversion des valeurs dans 'Total': {e}")
-    
     # Définir le niveau de dépense
     bins = [0, 500, 1500, 2000, float('inf')]
     labels = ['Basic', 'Silver', 'Gold', 'High Spenders']
@@ -98,7 +92,7 @@ def segmentation_page(df):
 
     # Afficher les clients actifs en juin avec leur montant dépensé et segment
     st.subheader('Clients actifs en juin 2024')
-    clients_june = target_orders_june.groupby(['Restaurant ID', 'Segment', 'Spending Level']).agg({'Total': 'sum'}).reset_index()
+    clients_june = target_orders_june.groupby(['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']).agg({'Total': 'sum'}).reset_index()
     clients_june = clients_june.rename(columns={'Total': 'Montant Dépensé', 'Spending Level': 'Segment Dépense'})
     st.write(clients_june)
 
@@ -155,6 +149,6 @@ def segmentation_page(df):
 
     # Afficher les clients actifs en juin pour l'account manager avec leur montant dépensé et segment
     st.subheader(f'Clients actifs en juin 2024 - {account_manager}')
-    clients_june_account = target_orders_june_account.groupby(['Restaurant ID', 'Segment', 'Spending Level']).agg({'Total': 'sum'}).reset_index()
+    clients_june_account = target_orders_june_account.groupby(['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level']).agg({'Total': 'sum'}).reset_index()
     clients_june_account = clients_june_account.rename(columns={'Total': 'Montant Dépensé', 'Spending Level': 'Segment Dépense'})
     st.write(clients_june_account)
