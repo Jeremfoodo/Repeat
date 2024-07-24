@@ -108,6 +108,10 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
+    # Clients actifs en juin mais pas en juillet
+    inactive_clients = get_inactive_clients_july(customer_spending_june_account, customer_spending_july_account)
+    inactive_count = inactive_clients.shape[0]
+    
     # Box rouge pour les clients inactifs en juillet
     st.subheader(f"🔴 Clients actifs en juin mais inactifs en juillet ({inactive_count})")
     st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
@@ -133,4 +137,5 @@ def segmentation_page(df):
         file_name='clients_baisse_tiering.csv',
         mime='text/csv'
     )
+
 
