@@ -35,7 +35,7 @@ def client_info_page(df, df_recent_purchases, client_id):
     days_since_last_order = (datetime.now() - last_order_date).days
     num_orders = client_data.shape[0]
 
-    # Afficher les informations détaillées du client
+    # Style CSS
     st.markdown("""
     <style>
     .card {
@@ -47,22 +47,58 @@ def client_info_page(df, df_recent_purchases, client_id):
     }
     .card h4 {
         margin-top: 0;
+        color: #343a40;
     }
     .card p {
         margin: 5px 0;
     }
+    .icon {
+        font-size: 1.5em;
+        margin-right: 10px;
+    }
+    .info-box {
+        display: flex;
+        align-items: center;
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    .info-box p {
+        margin: 0;
+        color: #495057;
+    }
     </style>
     """, unsafe_allow_html=True)
 
+    # Afficher les informations détaillées du client
     st.markdown("""
     <div class='card'>
         <h4>Informations Client</h4>
-        <p><strong>ID :</strong> {client_id}</p>
-        <p><strong>Nom :</strong> {client_name}</p>
-        <p><strong>Total des dépenses :</strong> {total_spent} €</p>
-        <p><strong>Date de la première commande :</strong> {first_order_date}</p>
-        <p><strong>Date de la dernière commande :</strong> {last_order_date} ({days_since_last_order} jours)</p>
-        <p><strong>Nombre de commandes :</strong> {num_orders}</p>
+        <div class='info-box'>
+            <span class='icon'>📇</span>
+            <p><strong>ID :</strong> {client_id}</p>
+        </div>
+        <div class='info-box'>
+            <span class='icon'>🏢</span>
+            <p><strong>Nom :</strong> {client_name}</p>
+        </div>
+        <div class='info-box'>
+            <span class='icon'>💰</span>
+            <p><strong>Total des dépenses :</strong> {total_spent} €</p>
+        </div>
+        <div class='info-box'>
+            <span class='icon'>📅</span>
+            <p><strong>Date de la première commande :</strong> {first_order_date}</p>
+        </div>
+        <div class='info-box'>
+            <span class='icon'>📅</span>
+            <p><strong>Date de la dernière commande :</strong> {last_order_date} ({days_since_last_order} jours)</p>
+        </div>
+        <div class='info-box'>
+            <span class='icon'>🛒</span>
+            <p><strong>Nombre de commandes :</strong> {num_orders}</p>
+        </div>
     </div>
     """.format(
         client_id=client_id,
@@ -78,34 +114,35 @@ def client_info_page(df, df_recent_purchases, client_id):
     client_recent_purchases = df_recent_purchases[df_recent_purchases["Restaurant_id"] == client_id]
 
     if not client_recent_purchases.empty:
-        st.subheader("Fournisseurs et Catégories")
-
-        # Infos générales
-        client_recent_purchases['Date'] = pd.to_datetime(client_recent_purchases['Date'])
-        total_categories = client_recent_purchases["Product Category"].nunique()
-        july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
-        suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
-
         st.markdown("""
         <div class='card'>
-            <h4>Informations Générales</h4>
-            <p><strong>Total des catégories :</strong> {total_categories}</p>
-            <p><strong>Catégories différentes en juillet 2024 :</strong> {july_categories}</p>
-            <p><strong>Fournisseurs :</strong></p>
+            <h4>Fournisseurs et Catégories</h4>
+            <div class='info-box'>
+                <span class='icon'>📊</span>
+                <p><strong>Total des catégories :</strong> {total_categories}</p>
+            </div>
+            <div class='info-box'>
+                <span class='icon'>📅</span>
+                <p><strong>Catégories différentes en juillet 2024 :</strong> {july_categories}</p>
+            </div>
+            <div class='info-box'>
+                <span class='icon'>🏢</span>
+                <p><strong>Fournisseurs :</strong></p>
+            </div>
             {suppliers_table}
         </div>
         """.format(
-            total_categories=total_categories,
-            july_categories=july_categories,
-            suppliers_table=suppliers.to_html(index=False, classes='table table-striped')
+            total_categories=client_recent_purchases["Product Category"].nunique(),
+            july_categories=client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique(),
+            suppliers_table=client_recent_purchases.groupby('Supplier')['Date'].max().reset_index().to_html(index=False, classes='table table-striped')
         ), unsafe_allow_html=True)
 
         # Graphiques en camembert
         subcat_gmv = client_recent_purchases.groupby('sub_cat')['GMV'].sum().reset_index()
-        fig_subcat = px.pie(subcat_gmv, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
+        fig_subcat = px.pie(subcat_gmv, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)', color_discrete_sequence=px.colors.sequential.RdBu)
         
         supplier_gmv = client_recent_purchases.groupby('Supplier')['GMV'].sum().reset_index()
-        fig_supplier = px.pie(supplier_gmv, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
+        fig_supplier = px.pie(supplier_gmv, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)', color_discrete_sequence=px.colors.sequential.RdBu)
         
         col1, col2 = st.columns(2)
         with col1:
