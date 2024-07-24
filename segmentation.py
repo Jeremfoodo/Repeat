@@ -157,4 +157,21 @@ def segmentation_page(df):
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Clients restés dans le même tiering mais dépensé plus en juillet
+    increased_spending_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
+    increased_spending_clients = increased_spending_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
+    increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Juin'] < increased_spending_clients['Total_Juillet'])]
+    increased_spending_count = increased_spending_clients.shape[0]
+
+    st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo ! ({increased_spending_count})")
+    st.write(increased_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet']])
+    st.download_button(
+        label='Télécharger la liste des clients restés dans le même tiering mais dépensé plus en juillet',
+        data=increased_spending_clients.to_csv(index=False),
+        file_name='clients_meme_tiering_depense_plus.csv',
+        mime='text/csv'
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
