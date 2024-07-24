@@ -113,6 +113,7 @@ def segmentation_page(df):
     inactive_count = inactive_clients.shape[0]
     
     # Box rouge pour les clients inactifs en juillet
+    st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🔴 Clients actifs en juin mais inactifs en juillet ({inactive_count})")
     st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
     st.dataframe(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total']])
@@ -129,6 +130,7 @@ def segmentation_page(df):
     downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Juin'] > downgraded_clients['Spending Level_Juillet']]
     downgraded_count = downgraded_clients.shape[0]
 
+    st.markdown("<div style='background-color: #fff3cd; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟠 Clients actifs en juillet mais qui ont baissé dans le tiering ({downgraded_count})")
     st.markdown("<small>Ces clients ont baissé de categorie de depense, normalement ils peuvent acheter davantage, verifiez qu'ils ont bien fait leur commande et si non faites un repeat. Si oui, verifiez qu'ils ont bien acheté suffisamenet et proposez un upsell.</small>", unsafe_allow_html=True)
     st.write(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet']])
@@ -145,7 +147,7 @@ def segmentation_page(df):
     same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Juin'] == same_tier_less_spending_clients['Spending Level_Juillet']) & (same_tier_less_spending_clients['Total_Juin'] > same_tier_less_spending_clients['Total_Juillet'])]
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
-    st.markdown("<div style='background-color: #fff3cd; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.markdown("<div style='background-color: #ffebcc; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en juillet ({same_tier_less_spending_count})")
     st.markdown("<small>Ces clients ont depensé un peu moins en juillet, meme s'ils sont resté dans le meme segment. Vous pouvez sans doute voir s'ils peuvent racheter un peu plus..</small>", unsafe_allow_html=True)
     st.write(same_tier_less_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet']])
