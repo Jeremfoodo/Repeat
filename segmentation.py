@@ -2,22 +2,30 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+# Fonction pour télécharger les données (à partir de Google Drive, cache, etc.)
 @st.cache_data
+def load_data():
+    # Remplacez l'URL ci-dessous par l'URL de votre fichier Google Drive ou utilisez une autre méthode pour charger les données
+    url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
+    df = pd.read_csv(url, parse_dates=['Date de commande', 'date 1ere commande (Restaurant)'])
+    return df
+
+# Fonction de segmentation des clients par niveau de dépense
 def segment_customers(data, year, month):
-    # Convert 'Date de commande' to datetime
+    # Convertir 'Date de commande' en datetime
     data['Date de commande'] = pd.to_datetime(data['Date de commande'], format='%Y-%m-%d %H:%M:%S')
     
-    # Filter data for the specified month and year
+    # Filtrer les données pour le mois et l'année spécifiés
     filtered_data = data[(data['Date de commande'].dt.year == year) & 
                          (data['Date de commande'].dt.month == month)]
     
-    # Calculate total amount spent by each client in the specified month
+    # Calculer le montant total dépensé par chaque client dans le mois spécifié
     customer_spending = filtered_data.groupby('Restaurant ID').agg({
         'Total': 'sum',
-        'Restaurant': 'first'  # Get the restaurant name
+        'Restaurant': 'first'  # Obtenir le nom du restaurant
     }).reset_index()
     
-    # Define the segmentation criteria
+    # Définir les critères de segmentation
     def categorize_customer(spent):
         if spent <= 500:
             return 'Basic'
@@ -28,17 +36,18 @@ def segment_customers(data, year, month):
         else:
             return 'High Spenders'
     
-    # Apply categorization
+    # Appliquer la catégorisation
     customer_spending['Spending Level'] = customer_spending['Total'].apply(categorize_customer)
     
     return customer_spending
 
+# Fonction pour obtenir les clients par segment et niveau de dépense
 @st.cache_data
 def get_clients_by_segment_and_spending(df, target_month):
     year, month = map(int, target_month.split('-'))
     customer_spending = segment_customers(df, year, month)
     
-    # Define the segments
+    # Définir les segments
     acquisition = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
     nouveaux_clients = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')]
     clients_recents = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
@@ -61,6 +70,7 @@ def get_clients_by_segment_and_spending(df, target_month):
     
     return heatmap_pivot, total_clients, customer_spending
 
+# Fonction principale pour afficher la page de segmentation
 def segmentation_page(df):
     st.title('Segmentation')
 
@@ -170,6 +180,4 @@ def segmentation_page(df):
     st.subheader('Vérification de la segmentation pour juin 2024')
     st.write(customer_spending_june[['Restaurant ID', 'Restaurant', 'Total', 'Spending Level']])
 
-# Charger les données et afficher la page de segmentation
-df = pd.read_csv('/mnt/data/prepared_data.csv', parse_dates=['Date de commande', 'date 1ere commande (Restaurant)'])
-segmentation_page(df)
+#
