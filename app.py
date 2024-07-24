@@ -13,7 +13,6 @@ import pandas as pd
 # Télécharger et charger les données
 download_prepared_data()
 historical_data, df = load_data()
-objectifs_df = load_objectifs()
 
 
 # Charger les achats récents
