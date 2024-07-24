@@ -7,7 +7,6 @@ from account_analysis import account_analysis_page
 from active_users import active_users_page
 from objectifs import objectifs_page
 
-
 # Charger les données
 historical_data, df = load_data()
 df_recent_purchases = load_recent_purchases()
