@@ -55,20 +55,12 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Compter les clients par segment et niveau de dépense
     heatmap_data = customer_spending.groupby(['Segment', 'Spending Level']).agg({'Restaurant ID': 'nunique'}).reset_index()
     
-    # Ajouter une colonne pour le total des clients par segment
-    total_clients_segment = heatmap_data.groupby('Segment')['Restaurant ID'].sum().reset_index().rename(columns={'Restaurant ID': 'Total Clients'})
-    heatmap_data = pd.merge(heatmap_data, total_clients_segment, on='Segment')
-    
     # Pivot pour obtenir le format désiré
     heatmap_pivot = heatmap_data.pivot(index='Segment', columns='Spending Level', values='Restaurant ID').fillna(0)
-    
-    # Ajouter la colonne Total Clients au pivot
-    heatmap_pivot['Total Clients'] = total_clients_segment.set_index('Segment')['Total Clients']
     
     total_clients = customer_spending['Restaurant ID'].nunique()
     
     return heatmap_pivot, total_clients, customer_spending
-
 
 # Fonction pour obtenir les clients à réactiver
 def get_inactive_clients_july(df_june, df_july):
@@ -143,4 +135,3 @@ def process_region_data(df, country_code, region):
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
     return recent_results
-
