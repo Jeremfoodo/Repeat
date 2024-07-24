@@ -33,3 +33,4 @@ elif page == "Client Info" and client_id:
 else:
     st.error("Page not found")
 
+
