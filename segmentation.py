@@ -23,7 +23,7 @@ def segmentation_page(df):
         st.write(f"Nombre total de clients actifs: {total_clients_june}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_june.drop(columns='Total Clients').values,
-            x=heatmap_data_june.drop(columns='Total Clients').columns,
+            x=heatmap_data_june.columns[:-1],  # Exclude the 'Total Clients' column for heatmap
             y=heatmap_data_june.index,
             colorscale='Greens',
             hoverongaps=False,
@@ -55,7 +55,7 @@ def segmentation_page(df):
         st.write(f"Nombre total de clients actifs: {total_clients_july}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_july.drop(columns='Total Clients').values,
-            x=heatmap_data_july.drop(columns='Total Clients').columns,
+            x=heatmap_data_july.columns[:-1],  # Exclude the 'Total Clients' column for heatmap
             y=heatmap_data_july.index,
             colorscale='Greens',
             hoverongaps=False,
@@ -98,7 +98,7 @@ def segmentation_page(df):
         st.write(f"Nombre total de clients actifs: {total_clients_june_account}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_june_account.drop(columns='Total Clients').values,
-            x=heatmap_data_june_account.drop(columns='Total Clients').columns,
+            x=heatmap_data_june_account.columns[:-1],  # Exclude the 'Total Clients' column for heatmap
             y=heatmap_data_june_account.index,
             colorscale='Greens',
             hoverongaps=False,
@@ -130,7 +130,7 @@ def segmentation_page(df):
         st.write(f"Nombre total de clients actifs: {total_clients_july_account}")
         fig = go.Figure(data=go.Heatmap(
             z=heatmap_data_july_account.drop(columns='Total Clients').values,
-            x=heatmap_data_july_account.drop(columns='Total Clients').columns,
+            x=heatmap_data_july_account.columns[:-1],  # Exclude the 'Total Clients' column for heatmap
             y=heatmap_data_july_account.index,
             colorscale='Greens',
             hoverongaps=False,
