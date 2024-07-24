@@ -34,43 +34,7 @@ def client_info_page(df):
     st.subheader("Historique des commandes")
     st.write(client_data[['Date de commande', 'Total', 'Statut commande']])
 
-    # Produits les plus commandés
-    if 'Produit' in client_data.columns:
-        top_products = client_data['Produit'].value_counts().reset_index()
-        top_products.columns = ['Produit', 'Nombre de commandes']
-        st.subheader("Produits les plus commandés")
-        st.write(top_products)
-    else:
-        st.write("La colonne 'Produit' n'existe pas dans les données.")
 
-    # Catégorisation des dépenses
-    total_spent = client_data["Total"].sum().round(2)
-    last_order_date = client_data["Date de commande"].max()
-    num_orders = client_data.shape[0]
-
-    def categorize_customer(spent):
-        if spent <= 500:
-            return 'Basic'
-        elif 500 < spent <= 1500:
-            return 'Silver'
-        elif 1500 < spent <= 2000:
-            return 'Gold'
-        else:
-            return 'High Spenders'
-
-    spending_category = categorize_customer(total_spent)
-
-    st.metric("Total dépensé", f"{total_spent} €")
-    st.metric("Dernière commande", last_order_date.strftime('%Y-%m-%d'))
-    st.metric("Nombre de commandes", num_orders)
-    st.metric("Catégorie de dépense", spending_category)
-
-    # Recommandations
-    st.subheader("Recommandations")
-    if spending_category != 'High Spenders':
-        st.write("Recommandez des produits pour augmenter la dépense du client.")
-    else:
-        st.write("Félicitations ! Ce client est déjà un High Spender. Pensez à lui offrir des récompenses ou des offres exclusives.")
 
 # Charger les données
 df = load_data()
