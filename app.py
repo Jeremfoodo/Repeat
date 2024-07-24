@@ -8,6 +8,7 @@ from segmentation import segmentation_page
 from client_info import client_info_page  # Ajouter cette ligne
 from src.data_processing import load_data, download_prepared_data, reassign_account_manager
 import gdown
+import pandas as pd
 
 # Télécharger et charger les données
 download_prepared_data()
