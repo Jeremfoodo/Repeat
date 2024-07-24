@@ -5,7 +5,7 @@ from account_analysis import account_analysis
 from objectifs import objectifs_page
 from active_users import active_users_page
 from segmentation import segmentation_page
-from src.data_processing import load_data, download_prepared_data, reassign_account_manager
+from src.data_processing import load_data, download_prepared_data
 
 # Télécharger et charger les données
 download_prepared_data()
