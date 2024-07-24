@@ -29,11 +29,15 @@ def client_info_page(df, df_recent_purchases, client_id):
 
     # Vérifier que les colonnes de date sont bien au format datetime
     if not pd.api.types.is_datetime64_any_dtype(df['Date de commande']):
-        df['Date de commande'] = pd.to_datetime(df['Date de commande'])
+        df['Date de commande'] = pd.to_datetime(df['Date de commande'], errors='coerce')
     if not pd.api.types.is_datetime64_any_dtype(df['date 1ere commande (Restaurant)']):
-        df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'])
+        df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'], errors='coerce')
     if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
-        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'])
+        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
+
+    # Supprimer les lignes où la conversion datetime a échoué
+    df = df.dropna(subset=['Date de commande', 'date 1ere commande (Restaurant)'])
+    df_recent_purchases = df_recent_purchases.dropna(subset=['Date'])
 
     # Informations standard du client
     client_name = client_data["Restaurant"].iloc[0]
