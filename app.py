@@ -7,10 +7,20 @@ from active_users import active_users_page
 from segmentation import segmentation_page
 from client_info import client_info_page  # Ajouter cette ligne
 from src.data_processing import load_data, download_prepared_data, reassign_account_manager
+import gdown
 
 # Télécharger et charger les données
 download_prepared_data()
 historical_data, df = load_data()
+
+# Charger les achats récents
+@st.cache_data
+def load_recent_purchases():
+    url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
+    df = pd.read_excel(gdown.download(url, None, quiet=False), parse_dates=['Date'])
+    return df
+
+df_recent_purchases = load_recent_purchases()
 
 # Menu vertical
 with st.sidebar:
@@ -34,5 +44,4 @@ elif selected == "Active Users":
 elif selected == "Segmentation":
     segmentation_page(df)
 elif selected == "Client Info":  # Ajouter cette section
-    df_recent_purchases = load_recent_purchases()  # Charger les achats récents
     client_info_page(df, df_recent_purchases, 44290)  # Appeler la fonction avec un ID de client en dur
