@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import gdown
+from datetime import datetime
 
 # Charger les données (à partir du cache ou d'une source de données)
 @st.cache_data
@@ -27,74 +28,85 @@ def client_info_page(df, df_recent_purchases, client_id):
         st.error("Aucun client trouvé avec cet ID.")
         return
 
+    # Informations standard du client
+    client_name = client_data["Restaurant"].iloc[0]
+    total_spent = client_data["Total"].sum().round(2)
+    first_order_date = client_data["date 1ere commande (Restaurant)"].min()
+    last_order_date = client_data["Date de commande"].max()
+    days_since_last_order = (datetime.now() - last_order_date).days
+    num_orders = client_data.shape[0]
+
     # Afficher les informations détaillées du client
-    st.subheader(f"Client ID: {client_id}")
-
-    # Analyse des dépenses mensuelles
-    client_data['Mois'] = client_data['Date de commande'].dt.to_period('M').astype(str)
-    monthly_spending = client_data.groupby('Mois')['Total'].sum().reset_index()
-    fig = px.bar(monthly_spending, x='Mois', y='Total', title='Dépenses mensuelles')
-    st.plotly_chart(fig)
-
-    # Historique des commandes
-    st.subheader("Historique des commandes")
-    st.write(client_data[['Date de commande', 'Total', 'Statut commande']])
+    st.markdown("""
+    <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
+        <h4>Informations Client</h4>
+        <p><strong>ID :</strong> {client_id}</p>
+        <p><strong>Nom :</strong> {client_name}</p>
+        <p><strong>Total des dépenses :</strong> {total_spent} €</p>
+        <p><strong>Date de la première commande :</strong> {first_order_date}</p>
+        <p><strong>Date de la dernière commande :</strong> {last_order_date} ({days_since_last_order} jours)</p>
+        <p><strong>Nombre de commandes :</strong> {num_orders}</p>
+    </div>
+    """.format(
+        client_id=client_id,
+        client_name=client_name,
+        total_spent=total_spent,
+        first_order_date=first_order_date.strftime('%Y-%m'),
+        last_order_date=last_order_date.strftime('%Y-%m-%d'),
+        days_since_last_order=days_since_last_order,
+        num_orders=num_orders
+    ), unsafe_allow_html=True)
 
     # Rechercher les achats récents pour les clients en France
     client_recent_purchases = df_recent_purchases[df_recent_purchases["Restaurant_id"] == client_id]
     
     if not client_recent_purchases.empty:
-        st.subheader("Achats récents (3 derniers mois)")
+        st.subheader("Fournisseurs et Catégories")
 
-        # Fournisseurs préférés
-        suppliers = client_recent_purchases.groupby('Supplier')['GMV'].sum().reset_index()
-        fig_suppliers = px.bar(suppliers, x='Supplier', y='GMV', title='Fournisseurs préférés')
-        st.plotly_chart(fig_suppliers)
+        # Infos générales
+        total_categories = client_recent_purchases["Product Category"].nunique()
+        july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
+        suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
+        
+        st.markdown("""
+        <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
+            <h4>Informations Générales</h4>
+            <p><strong>Total des catégories :</strong> {total_categories}</p>
+            <p><strong>Catégories différentes en juillet 2024 :</strong> {july_categories}</p>
+            <p><strong>Fournisseurs :</strong></p>
+            {suppliers_table}
+        </div>
+        """.format(
+            total_categories=total_categories,
+            july_categories=july_categories,
+            suppliers_table=suppliers.to_html(index=False)
+        ), unsafe_allow_html=True)
 
-        # Catégories de produits
-        product_categories = client_recent_purchases.groupby('Product Category')['GMV'].sum().reset_index()
-        fig_categories = px.bar(product_categories, x='Product Category', y='GMV', title='Catégories de produits')
-        st.plotly_chart(fig_categories)
+        # Graphiques en camembert
+        subcat_gmv = client_recent_purchases.groupby('sub_cat')['GMV'].sum().reset_index()
+        fig_subcat = px.pie(subcat_gmv, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
+        
+        supplier_gmv = client_recent_purchases.groupby('Supplier')['GMV'].sum().reset_index()
+        fig_supplier = px.pie(supplier_gmv, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(fig_subcat)
+        with col2:
+            st.plotly_chart(fig_supplier)
 
-        # Produits achetés
-        products = client_recent_purchases.groupby('product_name')['quantity_float'].sum().reset_index()
-        fig_products = px.bar(products, x='product_name', y='quantity_float', title='Produits achetés')
-        st.plotly_chart(fig_products)
-
-    # Catégorisation des dépenses
-    total_spent = client_data["Total"].sum().round(2)
-    last_order_date = client_data["Date de commande"].max()
-    num_orders = client_data.shape[0]
-
-    def categorize_customer(spent):
-        if spent <= 500:
-            return 'Basic'
-        elif 500 < spent <= 1500:
-            return 'Silver'
-        elif 1500 < spent <= 2000:
-            return 'Gold'
-        else:
-            return 'High Spenders'
-
-    spending_category = categorize_customer(total_spent)
-
-    st.metric("Total dépensé", f"{total_spent} €")
-    st.metric("Dernière commande", last_order_date.strftime('%Y-%m-%d'))
-    st.metric("Nombre de commandes", num_orders)
-    st.metric("Catégorie de dépense", spending_category)
-
-    # Recommandations
-    st.subheader("Recommandations")
-    
-    if spending_category == 'High Spenders':
-        st.write("Félicitations ! Ce client est déjà un High Spender. Pensez à lui offrir des récompenses ou des offres exclusives.")
-    else:
-        if total_spent < 1000:
-            st.write("Proposez des réductions ou des offres spéciales pour inciter le client à augmenter ses achats.")
-        if num_orders < 5:
-            st.write("Encouragez le client à passer plus de commandes en lui proposant des produits complémentaires ou des promotions.")
-        if client_recent_purchases.empty:
-            st.write("Le client n'a pas fait d'achats récents. Contactez-le pour comprendre les raisons et proposer des solutions.")
+        # Produits fréquemment achetés
+        frequent_products = client_recent_purchases.groupby('product_name')['quantity_float'].sum().reset_index()
+        frequent_products = frequent_products.sort_values(by='quantity_float', ascending=False).head(10)
+        
+        st.markdown("""
+        <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
+            <h4>Produits fréquemment achetés</h4>
+            {products_table}
+        </div>
+        """.format(
+            products_table=frequent_products.to_html(index=False)
+        ), unsafe_allow_html=True)
 
 # Charger les données
 df = load_data()
