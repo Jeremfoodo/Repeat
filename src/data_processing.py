@@ -6,6 +6,7 @@ import streamlit as st
 # URL de Google Drive pour les fichiers
 prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 objectifs_url = 'https://drive.google.com/uc?id=17TDM9d4MqXxmj1JC4pv0G9nDjRqKEtXK'
+recent_purchases_url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
 
 @st.cache_data
 def download_prepared_data():
@@ -14,9 +15,11 @@ def download_prepared_data():
     
     output_prepared = os.path.join(data_dir, 'prepared_data.csv')
     output_objectifs = os.path.join(data_dir, 'objectifs.xlsx')
+    output_recent_purchases = os.path.join(data_dir, 'dataFR.xlsx')
     
     gdown.download(prepared_data_url, output_prepared, quiet=False)
     gdown.download(objectifs_url, output_objectifs, quiet=False)
+    gdown.download(recent_purchases_url, output_recent_purchases, quiet=False)
 
 @st.cache_data
 def load_data():
@@ -39,6 +42,16 @@ def load_data():
     df['Mois'] = df['Date de commande'].dt.strftime('%Y-%m')
     
     return historical_data, df
+
+@st.cache_data
+def load_recent_purchases():
+    data_dir = 'data'
+    df_recent_purchases = pd.read_excel(os.path.join(data_dir, 'dataFR.xlsx'), engine='openpyxl')
+    
+    if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
+        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], format='%Y-%m-%d')
+    
+    return df_recent_purchases
 
 @st.cache_data
 def load_objectifs():
