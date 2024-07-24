@@ -2,7 +2,7 @@ import streamlit as st
 from src.data_processing import load_data, load_recent_purchases, load_objectifs
 from segmentation import segmentation_page
 from client_info import client_info_page
-from analyse_globale import analyse_globale_page
+from global_analysis import global_analysis_page
 from account_analysis import account_analysis_page
 from active_users import active_users_page
 from objectifs import objectifs_page
