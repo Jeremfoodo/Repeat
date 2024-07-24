@@ -1,48 +1,22 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
-from global_analysis import global_analysis
-from account_analysis import account_analysis
-from objectifs import objectifs_page
-from active_users import active_users_page
+from src.data_processing import load_data, download_prepared_data, load_recent_purchases
 from segmentation import segmentation_page
-from client_info import client_info_page  # Ajouter cette ligne
-from src.data_processing import load_data, download_prepared_data, reassign_account_manager
-import gdown
-import pandas as pd
+from client_info import client_info_page
 
-# Télécharger et charger les données
-download_prepared_data()
-historical_data, df = load_data()
-
-# Charger les achats récents
-@st.cache_data
-def load_recent_purchases():
-    url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
-    df = pd.read_excel(gdown.download(url, None, quiet=False), parse_dates=['Date'])
-    return df
-
+# Charger les données
+df = load_data()
 df_recent_purchases = load_recent_purchases()
 
-# Menu vertical
-with st.sidebar:
-    selected = option_menu(
-        "Menu",
-        ["Analyse Globale", "Par Account", "Objectifs", "Active Users", "Segmentation", "Client Info"],  # Ajouter "Client Info"
-        icons=["bar-chart", "person-circle", "target", "graph-up", "grid", "info-circle"],  # Ajouter une icône
-        menu_icon="cast",
-        default_index=0,
-    )
+# Définir les pages
+selected = st.sidebar.selectbox("Sélectionner une page", ["Segmentation", "Client Info"])
 
-# Afficher la page sélectionnée
-if selected == "Analyse Globale":
-    global_analysis(historical_data, df)
-elif selected == "Par Account":
-    account_analysis(df)
-elif selected == "Objectifs":
-    objectifs_page(df)
-elif selected == "Active Users":
-    active_users_page(historical_data, df)
-elif selected == "Segmentation":
+# Afficher la page correspondante
+if selected == "Segmentation":
     segmentation_page(df)
-elif selected == "Client Info":  # Ajouter cette section
-    client_info_page(df, df_recent_purchases, 44290)  # Appeler la fonction avec un ID de client en dur
+elif selected == "Client Info":
+    query_params = st.experimental_get_query_params()
+    if 'client_id' in query_params:
+        client_id = int(query_params['client_id'][0])
+        client_info_page(df, df_recent_purchases, client_id)
+    else:
+        st.write("Veuillez sélectionner un client depuis la page Segmentation.")
