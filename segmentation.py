@@ -120,10 +120,6 @@ def segmentation_page(df):
 
     inactive_count = inactive_clients.shape[0]
 
-    # Fonction pour générer un lien HTML cliquable
-    def generate_link(client_id):
-        return f'<a href="?page=client_info&client_id={client_id}" target="_self">Voir Info</a>'
-
     # Clients qui ont baissé dans le tiering
     downgraded_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
     downgraded_clients = downgraded_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
@@ -185,16 +181,17 @@ def segmentation_page(df):
         increased_spending_count=increased_spending_count
     ), unsafe_allow_html=True)
 
-    # Fonction pour générer un lien HTML cliquable
-    def generate_link(client_id):
-        return f'<a href="?page=client_info&client_id={client_id}" target="_self">Voir Info</a>'
+    def render_clients_table(clients, title):
+        st.markdown(f"### {title}")
+        for idx, row in clients.iterrows():
+            st.write(row[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
+            st.button("Voir détails", key=f"{title}_{row['Restaurant ID']}", on_click=lambda client_id=row['Restaurant ID']: st.experimental_set_query_params(client_id=client_id))
 
     # Box rouge pour les clients inactifs en juillet
     st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🔴 Clients actifs en juin mais inactifs en juillet ({inactive_count})")
     st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
-    inactive_clients['Client Info'] = inactive_clients['Restaurant ID'].apply(generate_link)
-    st.write(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande', 'Client Info']].to_html(escape=False), unsafe_allow_html=True)
+    render_clients_table(inactive_clients, "Clients inactifs en juillet")
     st.download_button(
         label='Télécharger la liste des clients inactifs en juillet',
         data=inactive_clients.to_csv(index=False),
@@ -207,8 +204,7 @@ def segmentation_page(df):
     st.markdown("<div style='background-color: #fd7e14; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟠 Clients actifs en juillet mais qui ont baissé dans le tiering ({downgraded_count})")
     st.markdown("<small>Ces clients ont baissé de catégorie de dépense, normalement ils peuvent acheter davantage, vérifiez qu'ils ont bien fait leur commande et si non faites un repeat. Si oui, vérifiez qu'ils ont bien acheté suffisamment et proposez un upsell.</small>", unsafe_allow_html=True)
-    downgraded_clients['Client Info'] = downgraded_clients['Restaurant ID'].apply(generate_link)
-    st.write(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet', 'Dernière commande', 'Client Info']].to_html(escape=False), unsafe_allow_html=True)
+    render_clients_table(downgraded_clients, "Clients qui ont baissé dans le tiering")
     st.download_button(
         label='Télécharger la liste des clients qui ont baissé dans le tiering',
         data=downgraded_clients.to_csv(index=False),
@@ -221,8 +217,7 @@ def segmentation_page(df):
     st.markdown("<div style='background-color: #ffebcc; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en juillet ({same_tier_less_spending_count})")
     st.markdown("<small>Ces clients ont dépensé un peu moins en juillet, même s'ils sont restés dans le même segment. Vous pouvez sans doute voir s'ils peuvent racheter un peu plus.</small>", unsafe_allow_html=True)
-    same_tier_less_spending_clients['Client Info'] = same_tier_less_spending_clients['Restaurant ID'].apply(generate_link)
-    st.write(same_tier_less_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Dernière commande', 'Client Info']].to_html(escape=False), unsafe_allow_html=True)
+    render_clients_table(same_tier_less_spending_clients, "Clients restés dans le même tiering mais dépensé moins en juillet")
     st.download_button(
         label='Télécharger la liste des clients restés dans le même tiering mais dépensé moins en juillet',
         data=same_tier_less_spending_clients.to_csv(index=False),
@@ -234,8 +229,7 @@ def segmentation_page(df):
     # Clients restés dans le même tiering mais dépensé plus en juillet
     st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo ! ({increased_spending_count})")
-    increased_spending_clients['Client Info'] = increased_spending_clients['Restaurant ID'].apply(generate_link)
-    st.write(increased_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Dernière commande', 'Client Info']].to_html(escape=False), unsafe_allow_html=True)
+    render_clients_table(increased_spending_clients, "Clients qui ont augmenté leurs dépenses")
     st.download_button(
         label='Télécharger la liste des clients restés dans le même tiering mais dépensé plus en juillet',
         data=increased_spending_clients.to_csv(index=False),
