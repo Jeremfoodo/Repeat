@@ -130,6 +130,7 @@ def segmentation_page(df):
     downgraded_count = downgraded_clients.shape[0]
 
     st.subheader(f"🟠 Clients actifs en juillet mais qui ont baissé dans le tiering ({downgraded_count})")
+    st.markdown("<small>Ces clients ont baissé de categorie de depense, normalement ils peuvent acheter davantage, verifiez qu'ils ont bien fait leur commande et si non faites un repeat. Si oui, verifiez qu'ils ont bien acheté suffisamenet et proposez un upsell.</small>", unsafe_allow_html=True)
     st.write(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet']])
     st.download_button(
         label='Télécharger la liste des clients qui ont baissé dans le tiering',
