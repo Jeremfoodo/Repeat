@@ -139,4 +139,22 @@ def segmentation_page(df):
         mime='text/csv'
     )
 
+    # Clients restés dans le même tiering mais dépensé moins en juillet
+    same_tier_less_spending_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
+    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
+    same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Juin'] == same_tier_less_spending_clients['Spending Level_Juillet']) & (same_tier_less_spending_clients['Total_Juin'] > same_tier_less_spending_clients['Total_Juillet'])]
+    same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
+
+    st.markdown("<div style='background-color: #fff3cd; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en juillet ({same_tier_less_spending_count})")
+    st.markdown("<small>Ces clients ont depensé un peu moins en juillet, meme s'ils sont resté dans le meme segment. Vous pouvez sans doute voir s'ils peuvent racheter un peu plus..</small>", unsafe_allow_html=True)
+    st.write(same_tier_less_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet']])
+    st.download_button(
+        label='Télécharger la liste des clients restés dans le même tiering mais dépensé moins en juillet',
+        data=same_tier_less_spending_clients.to_csv(index=False),
+        file_name='clients_meme_tiering_depense_moins.csv',
+        mime='text/csv'
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
