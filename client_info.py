@@ -7,7 +7,6 @@ from datetime import datetime
 # Charger les données (à partir du cache ou d'une source de données)
 @st.cache_data
 def load_data():
-    # Remplacez par le chemin d'accès à vos données
     url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
     df = pd.read_csv(url, parse_dates=['Date de commande', 'date 1ere commande (Restaurant)'])
     return df
@@ -16,7 +15,7 @@ def load_data():
 @st.cache_data
 def load_recent_purchases():
     url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
-    df = pd.read_excel(gdown.download(url, None, quiet=False))
+    df = pd.read_excel(gdown.download(url, None, quiet=False), parse_dates=['Date'])
     return df
 
 def client_info_page(df, df_recent_purchases, client_id):
