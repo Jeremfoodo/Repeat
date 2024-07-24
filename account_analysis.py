@@ -5,6 +5,9 @@ from src.calculations import calculate_segments_for_month
 from src.plots import plot_ratios
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
+def account_analysis_page(df):
+    st.title("Account Analysis")
+
 @st.cache_data
 def get_filtered_data(df, account_manager):
     return filter_data_by_account(df, account_manager)
