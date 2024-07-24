@@ -7,9 +7,11 @@ from account_analysis import account_analysis_page
 from active_users import active_users_page
 from objectifs import objectifs_page
 
+
 # Charger les données
-df, historical_data = load_data()
+historical_data, df = load_data()
 df_recent_purchases = load_recent_purchases()
+objectifs_df = load_objectifs()
 
 # Extraire les paramètres de requête
 query_params = st.experimental_get_query_params()
