@@ -3,6 +3,9 @@ import pandas as pd
 from src.calculations import process_country_data, calculate_segments_for_month, process_region_data
 from src.plots import plot_ratios
 
+def global_analysis_page(df):
+    st.title("Analyse Globale")
+    
 def get_regions(country_code):
     if country_code == 'FR':
         return ['Paris', 'Paris EST', 'Paris Ouest', 'Province']
