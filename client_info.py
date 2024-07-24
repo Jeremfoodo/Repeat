@@ -58,15 +58,16 @@ def client_info_page(df, df_recent_purchases, client_id):
 
     # Rechercher les achats récents pour les clients en France
     client_recent_purchases = df_recent_purchases[df_recent_purchases["Restaurant_id"] == client_id]
-    
+
     if not client_recent_purchases.empty:
         st.subheader("Fournisseurs et Catégories")
 
         # Infos générales
+        client_recent_purchases['Date'] = pd.to_datetime(client_recent_purchases['Date'])
         total_categories = client_recent_purchases["Product Category"].nunique()
         july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
         suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
-        
+
         st.markdown("""
         <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
             <h4>Informations Générales</h4>
