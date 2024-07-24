@@ -59,8 +59,11 @@ def load_recent_purchases():
 
     df_recent_purchases = pd.read_excel(os.path.join(data_dir, 'dataFR.xlsx'), engine='openpyxl')
     
+    # Supprimer les lignes où la colonne 'Date' contient des valeurs non conformes
+    df_recent_purchases = df_recent_purchases[pd.to_datetime(df_recent_purchases['Date'], errors='coerce').notnull()]
+
     if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
-        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], format='%Y-%m-%d')
+        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], format='%Y-%m-%d', errors='coerce')
     
     return df_recent_purchases
 
