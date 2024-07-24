@@ -175,6 +175,62 @@ def client_info_page(df, df_recent_purchases, client_id):
             products_table=frequent_products.to_html(index=False, classes='table table-striped')
         ), unsafe_allow_html=True)
 
+    # Recommandations
+    recommendations = []
+
+    # Date de dernière commande
+    if days_since_last_order > 7:
+        recent_fruits_vegetables = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']
+        if not recent_fruits_vegetables.empty:
+            last_fruit_veg_order = recent_fruits_vegetables['Date'].max()
+            if (datetime.now() - last_fruit_veg_order).days > 7:
+                recommendations.append("Le client n'a pas commandé de fruits et légumes depuis plus de 7 jours. Proposez-lui de commander ses produits préférés de cette catégorie.")
+        other_categories = client_recent_purchases['Product Category'].unique()
+        for category in other_categories:
+            if category != 'Fruits et Légumes':
+                recent_category_orders = client_recent_purchases[client_recent_purchases['Product Category'] == category]
+                last_category_order = recent_category_orders['Date'].max()
+                if (datetime.now() - last_category_order).days > 15:
+                    recommendations.append(f"Le client n'a pas commandé de {category} depuis plus de 15 jours. Proposez-lui de refaire une commande.")
+
+    # Nombre de catégories
+    num_categories = client_recent_purchases['Product Category'].nunique()
+    if num_categories == 1:
+        num_products = client_recent_purchases['product_name'].nunique()
+        if num_products < 4:
+            recommendations.append("Le client semble être un client 'mono produit'. Recommandez de comprendre pourquoi et d'essayer de diversifier ses achats.")
+        else:
+            potential_new_categories = ['Boucherie', 'Crémerie', 'Epicerie Salée']
+            categories_not_bought = [cat for cat in potential_new_categories if cat not in client_recent_purchases['Product Category'].unique()]
+            if categories_not_bought:
+                recommendations.append(f"Le client pourrait essayer d'autres catégories. Proposez-lui d'essayer les catégories suivantes : {', '.join(categories_not_bought[:2])}.")
+
+    # Fournisseurs préférés
+    favorite_supplier = client_recent_purchases.groupby('Supplier')['GMV'].sum().idxmax()
+    recommendations.append(f"Proposez des produits en promotion ou des offres spéciales de son fournisseur préféré : {favorite_supplier}.")
+
+    # Catégories et sous-catégories
+    frequent_categories = client_recent_purchases['Product Category'].value_counts().index.tolist()
+    for category in frequent_categories:
+        if category == 'Fruits et Légumes':
+            recommendations.append("Le client achète souvent des fruits frais. Proposez-lui d'essayer nos fruits exotiques.")
+        elif category == 'Boucherie':
+            recommendations.append("Le client achète souvent de la viande. Proposez-lui d'essayer des produits premium.")
+        elif category == 'Crémerie':
+            recommendations.append("Le client achète souvent des produits laitiers. Proposez-lui d'essayer des fromages spéciaux.")
+
+    # Afficher les recommandations
+    st.markdown("""
+    <div class='card'>
+        <h4>Recommandations</h4>
+        <ul>
+            {recommendations_list}
+        </ul>
+    </div>
+    """.format(
+        recommendations_list=''.join([f"<li>{rec}</li>" for rec in recommendations])
+    ), unsafe_allow_html=True)
+
 # Charger les données
 df = load_data()
 df_recent_purchases = load_recent_purchases()
