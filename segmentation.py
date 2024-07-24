@@ -147,7 +147,7 @@ def segmentation_page(df):
     increased_spending_clients['Total_Juillet'] = increased_spending_clients['Total_Juillet'].round()
     increased_spending_count = increased_spending_clients.shape[0]
 
-        # Récapitulatif
+    # Récapitulatif
     st.markdown("""
     <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
         <h4>Recap : où sont vos clients en juillet</h4>
@@ -181,11 +181,17 @@ def segmentation_page(df):
         increased_spending_count=increased_spending_count
     ), unsafe_allow_html=True)
 
+    def render_clients_table(clients, title):
+        st.markdown(f"### {title}")
+        for idx, row in clients.iterrows():
+            st.write(row[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
+            st.button("Voir détails", key=f"{title}_{row['Restaurant ID']}", on_click=lambda client_id=row['Restaurant ID']: st.experimental_set_query_params(client_id=client_id))
+
     # Box rouge pour les clients inactifs en juillet
     st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🔴 Clients actifs en juin mais inactifs en juillet ({inactive_count})")
     st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
-    st.dataframe(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
+    render_clients_table(inactive_clients, "Clients inactifs en juillet")
     st.download_button(
         label='Télécharger la liste des clients inactifs en juillet',
         data=inactive_clients.to_csv(index=False),
@@ -198,7 +204,7 @@ def segmentation_page(df):
     st.markdown("<div style='background-color: #fd7e14; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟠 Clients actifs en juillet mais qui ont baissé dans le tiering ({downgraded_count})")
     st.markdown("<small>Ces clients ont baissé de catégorie de dépense, normalement ils peuvent acheter davantage, vérifiez qu'ils ont bien fait leur commande et si non faites un repeat. Si oui, vérifiez qu'ils ont bien acheté suffisamment et proposez un upsell.</small>", unsafe_allow_html=True)
-    st.write(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet', 'Dernière commande']])
+    render_clients_table(downgraded_clients, "Clients qui ont baissé dans le tiering")
     st.download_button(
         label='Télécharger la liste des clients qui ont baissé dans le tiering',
         data=downgraded_clients.to_csv(index=False),
@@ -211,7 +217,7 @@ def segmentation_page(df):
     st.markdown("<div style='background-color: #ffebcc; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en juillet ({same_tier_less_spending_count})")
     st.markdown("<small>Ces clients ont dépensé un peu moins en juillet, même s'ils sont restés dans le même segment. Vous pouvez sans doute voir s'ils peuvent racheter un peu plus.</small>", unsafe_allow_html=True)
-    st.write(same_tier_less_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Dernière commande']])
+    render_clients_table(same_tier_less_spending_clients, "Clients restés dans le même tiering mais dépensé moins en juillet")
     st.download_button(
         label='Télécharger la liste des clients restés dans le même tiering mais dépensé moins en juillet',
         data=same_tier_less_spending_clients.to_csv(index=False),
@@ -223,7 +229,7 @@ def segmentation_page(df):
     # Clients restés dans le même tiering mais dépensé plus en juillet
     st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo ! ({increased_spending_count})")
-    st.write(increased_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Dernière commande']])
+    render_clients_table(increased_spending_clients, "Clients qui ont augmenté leurs dépenses")
     st.download_button(
         label='Télécharger la liste des clients restés dans le même tiering mais dépensé plus en juillet',
         data=increased_spending_clients.to_csv(index=False),
