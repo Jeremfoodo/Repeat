@@ -108,21 +108,35 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-    # Vérification de la segmentation pour juin 2024
-    st.subheader('Vérification de la segmentation pour juin 2024')
-    st.write(customer_spending_june[['Restaurant ID', 'Restaurant', 'Total', 'Spending Level']])
-
-    # Clients actifs en juin mais pas en juillet
+    # Clients actifs en juin mais pas en juillet pour l'account manager sélectionné
     inactive_clients = get_inactive_clients_july(customer_spending_june_account, customer_spending_july_account)
     inactive_count = inactive_clients.shape[0]
-    
-    st.subheader(f'Clients actifs en juin mais inactifs en juillet ({inactive_count})')
-    st.write(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total']])
-    
-    # Option de téléchargement pour la liste des clients inactifs en juillet
+
+    # Box rouge pour les clients inactifs en juillet
+    st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.subheader(f"🔴 Clients actifs en juin mais inactifs en juillet ({inactive_count})")
+    st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
+    st.dataframe(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total']], height=300, style={"color": "white", "background-color": "red"})
     st.download_button(
         label='Télécharger la liste des clients inactifs en juillet',
         data=inactive_clients.to_csv(index=False),
         file_name='clients_inactifs_juillet.csv',
         mime='text/csv'
     )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Clients qui ont baissé dans le tiering
+    downgraded_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
+    downgraded_clients = downgraded_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
+    downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Juin'] > downgraded_clients['Spending Level_Juillet']]
+    downgraded_count = downgraded_clients.shape[0]
+
+    # Box orange pour les clients qui ont baissé dans le tiering
+    st.markdown("<div style='background-color: #fff3cd; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.subheader(f"🟠 Clients actifs en juillet mais qui ont baissé dans le tiering ({downgraded_count})")
+    st.dataframe(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet']], height=300, style={"color": "white", "background-color": "orange"})
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Charger les données et afficher la page de segmentation
+df = load_data()
+segmentation_page(df)
