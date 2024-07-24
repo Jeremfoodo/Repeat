@@ -195,7 +195,3 @@ def segmentation_page(df):
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Charger les données et afficher la page de segmentation
-df = load_data()
-segmentation_page(df)
-
