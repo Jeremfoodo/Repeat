@@ -42,7 +42,8 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Définir les segments
     acquisition = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
     nouveaux_clients = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')]
-    clients_recents = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin([(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
+    clients_recents = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
+        [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
     )]
     anciens_clients = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
     
@@ -54,12 +55,23 @@ def get_clients_by_segment_and_spending(df, target_month):
     # Compter les clients par segment et niveau de dépense
     heatmap_data = customer_spending.groupby(['Segment', 'Spending Level']).agg({'Restaurant ID': 'nunique'}).reset_index()
     
+    # Ajouter une colonne pour la somme des clients par segment
+    segment_totals = customer_spending.groupby('Segment').agg({'Restaurant ID': 'nunique'}).reset_index()
+    segment_totals = segment_totals.rename(columns={'Restaurant ID': 'Total Clients'})
+    
+    # Fusionner avec heatmap_data
+    heatmap_data = heatmap_data.merge(segment_totals, on='Segment', how='left')
+    
     # Pivot pour obtenir le format désiré
     heatmap_pivot = heatmap_data.pivot(index='Segment', columns='Spending Level', values='Restaurant ID').fillna(0)
+    
+    # Ajouter la colonne de somme au pivot
+    heatmap_pivot['Total Clients'] = heatmap_pivot.sum(axis=1)
     
     total_clients = customer_spending['Restaurant ID'].nunique()
     
     return heatmap_pivot, total_clients, customer_spending
+
 
 # Fonction pour obtenir les clients à réactiver
 def get_inactive_clients_july(df_june, df_july):
