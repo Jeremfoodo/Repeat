@@ -120,6 +120,10 @@ def segmentation_page(df):
 
     inactive_count = inactive_clients.shape[0]
 
+    # Fonction pour générer un lien HTML cliquable
+    def generate_link(client_id):
+        return f'<a href="?page=client_info&client_id={client_id}" target="_self">Voir Info</a>'
+
     # Clients qui ont baissé dans le tiering
     downgraded_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
     downgraded_clients = downgraded_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
@@ -147,7 +151,7 @@ def segmentation_page(df):
     increased_spending_clients['Total_Juillet'] = increased_spending_clients['Total_Juillet'].round()
     increased_spending_count = increased_spending_clients.shape[0]
 
-        # Récapitulatif
+    # Récapitulatif
     st.markdown("""
     <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
         <h4>Recap : où sont vos clients en juillet</h4>
@@ -239,4 +243,3 @@ def segmentation_page(df):
         mime='text/csv'
     )
     st.markdown("</div>", unsafe_allow_html=True)
-
