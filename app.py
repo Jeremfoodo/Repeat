@@ -18,7 +18,7 @@ menu_selection = st.sidebar.selectbox("Menu", menu_options)
 
 # Extraire les paramètres de requête
 query_params = st.experimental_get_query_params()
-page = query_params.get("page", [None])[0]
+selected_page = query_params.get("page", ["Segmentation"])[0]
 client_id = query_params.get("client_id", [None])[0]
 
 # Afficher la page correspondante en fonction du menu sélectionné
@@ -38,3 +38,9 @@ elif page == "client_info" and client_id is not None:
     client_info_page(df, df_recent_purchases, int(client_id))
 else:
     st.write("Sélectionnez une option dans le menu.")
+
+
+
+
+
+
