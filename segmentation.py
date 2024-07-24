@@ -147,7 +147,7 @@ def segmentation_page(df):
     increased_spending_clients['Total_Juillet'] = increased_spending_clients['Total_Juillet'].round()
     increased_spending_count = increased_spending_clients.shape[0]
 
-    # Récapitulatif
+        # Récapitulatif
     st.markdown("""
     <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
         <h4>Recap : où sont vos clients en juillet</h4>
