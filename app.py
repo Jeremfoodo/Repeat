@@ -8,39 +8,26 @@ from active_users import active_users_page
 from objectifs import objectifs_page
 
 # Charger les données
-historical_data, df = load_data()
+df, historical_data = load_data()
 df_recent_purchases = load_recent_purchases()
-objectifs_df = load_objectifs()
-
-# Définir les options du menu
-menu_options = ["Analyse Globale", "Segmentation", "Account Analysis", "Active Users", "Objectifs", "Client Info"]
-menu_selection = st.sidebar.selectbox("Menu", menu_options)
 
 # Extraire les paramètres de requête
 query_params = st.experimental_get_query_params()
-selected_page = query_params.get("page", ["Segmentation"])[0]
+page = query_params.get("page", ["Segmentation"])[0]
 client_id = query_params.get("client_id", [None])[0]
 
-# Afficher la page correspondante en fonction du menu sélectionné
-if menu_selection == "Analyse Globale":
-    global_analysis_page(df)
-elif menu_selection == "Segmentation":
+# Afficher la page en fonction du paramètre 'page'
+if page == "Segmentation":
     segmentation_page(df)
-elif menu_selection == "Account Analysis":
+elif page == "Global Analysis":
+    global_analysis_page(df)
+elif page == "Account Analysis":
     account_analysis_page(df)
-elif menu_selection == "Active Users":
-    active_users_page(df)
-elif menu_selection == "Objectifs":
+elif page == "Active Users":
+    active_users_page(historical_data, df)
+elif page == "Objectifs":
     objectifs_page(df)
-elif menu_selection == "Client Info" and client_id is not None:
-    client_info_page(df, df_recent_purchases, int(client_id))
-elif page == "client_info" and client_id is not None:
+elif page == "Client Info" and client_id:
     client_info_page(df, df_recent_purchases, int(client_id))
 else:
-    st.write("Sélectionnez une option dans le menu.")
-
-
-
-
-
-
+    st.error("Page not found")
