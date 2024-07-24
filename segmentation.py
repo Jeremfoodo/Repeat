@@ -157,19 +157,19 @@ def segmentation_page(df):
         <p><span style='color: #28a745;'>Vert</span> : clients en augmentation de dépense.</p>
         <div style='display: flex; justify-content: space-around;'>
             <div style='background-color: #f8d7da; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #dc3545;'>{inactive_count}</strong>
+                <strong style='color: #000000;'>{inactive_count}</strong>
                 <p>Inactifs en juillet</p>
             </div>
             <div style='background-color: #fd7e14; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #fd7e14;'>{downgraded_count}</strong>
+                <strong style='color: #000000;'>{downgraded_count}</strong>
                 <p>Baissé de catégorie</p>
             </div>
             <div style='background-color: #ffebcc; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #ffc107;'>{same_tier_less_spending_count}</strong>
+                <strong style='color: #000000;'>{same_tier_less_spending_count}</strong>
                 <p>Dépensé moins</p>
             </div>
             <div style='background-color: #d4edda; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #28a745;'>{increased_spending_count}</strong>
+                <strong style='color: #000000;'>{increased_spending_count}</strong>
                 <p>Augmentation de dépense</p>
             </div>
         </div>
