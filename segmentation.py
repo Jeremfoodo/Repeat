@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+
 # Fonction pour télécharger les données (à partir de Google Drive, cache, etc.)
 @st.cache_data
 def load_data():
