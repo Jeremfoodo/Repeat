@@ -11,17 +11,14 @@ def segmentation_page(df):
     if selected_country != 'Tous les pays':
         df = df[df['Pays'] == selected_country]
 
+    # Ajouter la colonne de la dernière commande pour chaque Restaurant ID
+    df['Date de commande'] = pd.to_datetime(df['Date de commande'])
+    last_order_dates = df.groupby('Restaurant ID')['Date de commande'].max().reset_index()
+    last_order_dates.columns = ['Restaurant ID', 'Dernière commande']
+
     # Générer les heatmaps pour juin et juillet 2024
     heatmap_data_june, total_clients_june, customer_spending_june = get_clients_by_segment_and_spending(df, '2024-06')
     heatmap_data_july, total_clients_july, customer_spending_july = get_clients_by_segment_and_spending(df, '2024-07')
-
-    # Ajouter la date de la dernière commande pour chaque client
-    last_order_date = df.groupby('Restaurant ID')['Date de commande'].max().reset_index()
-    last_order_date.columns = ['Restaurant ID', 'Date de commande_Last']
-
-    # Ajouter cette information dans les DataFrames
-    customer_spending_june = customer_spending_june.merge(last_order_date, on='Restaurant ID', how='left')
-    customer_spending_july = customer_spending_july.merge(last_order_date, on='Restaurant ID', how='left')
 
     col1, col2 = st.columns(2)
 
@@ -74,10 +71,6 @@ def segmentation_page(df):
     heatmap_data_june_account, total_clients_june_account, customer_spending_june_account = get_clients_by_segment_and_spending(df_account, '2024-06')
     heatmap_data_july_account, total_clients_july_account, customer_spending_july_account = get_clients_by_segment_and_spending(df_account, '2024-07')
 
-    # Ajouter la date de la dernière commande pour chaque client
-    customer_spending_june_account = customer_spending_june_account.merge(last_order_date, on='Restaurant ID', how='left')
-    customer_spending_july_account = customer_spending_july_account.merge(last_order_date, on='Restaurant ID', how='left')
-
     col3, col4 = st.columns(2)
 
     with col3:
@@ -122,13 +115,16 @@ def segmentation_page(df):
 
     # Clients actifs en juin mais pas en juillet
     inactive_clients = get_inactive_clients_july(customer_spending_june_account, customer_spending_july_account)
+    inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
+    inactive_clients['Total'] = inactive_clients['Total'].round()
+
     inactive_count = inactive_clients.shape[0]
     
     # Box rouge pour les clients inactifs en juillet
     st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🔴 Clients actifs en juin mais inactifs en juillet ({inactive_count})")
     st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
-    st.dataframe(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Date de commande_Last']])
+    st.dataframe(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
     st.download_button(
         label='Télécharger la liste des clients inactifs en juillet',
         data=inactive_clients.to_csv(index=False),
@@ -141,12 +137,15 @@ def segmentation_page(df):
     downgraded_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
     downgraded_clients = downgraded_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
     downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Juin'] > downgraded_clients['Spending Level_Juillet']]
+    downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
+    downgraded_clients['Total_Juin'] = downgraded_clients['Total_Juin'].round()
+    downgraded_clients['Total_Juillet'] = downgraded_clients['Total_Juillet'].round()
     downgraded_count = downgraded_clients.shape[0]
 
-    st.markdown("<div style='background-color: #ff9800; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.markdown("<div style='background-color: #fd7e14; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟠 Clients actifs en juillet mais qui ont baissé dans le tiering ({downgraded_count})")
     st.markdown("<small>Ces clients ont baissé de catégorie de dépense, normalement ils peuvent acheter davantage, vérifiez qu'ils ont bien fait leur commande et si non faites un repeat. Si oui, vérifiez qu'ils ont bien acheté suffisamment et proposez un upsell.</small>", unsafe_allow_html=True)
-    st.dataframe(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet', 'Date de commande_Last']])
+    st.write(downgraded_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Spending Level_Juillet', 'Total_Juillet', 'Dernière commande']])
     st.download_button(
         label='Télécharger la liste des clients qui ont baissé dans le tiering',
         data=downgraded_clients.to_csv(index=False),
@@ -159,12 +158,15 @@ def segmentation_page(df):
     same_tier_less_spending_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
     same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
     same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Juin'] == same_tier_less_spending_clients['Spending Level_Juillet']) & (same_tier_less_spending_clients['Total_Juin'] > same_tier_less_spending_clients['Total_Juillet'])]
+    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(last_order_dates, on='Restaurant ID')
+    same_tier_less_spending_clients['Total_Juin'] = same_tier_less_spending_clients['Total_Juin'].round()
+    same_tier_less_spending_clients['Total_Juillet'] = same_tier_less_spending_clients['Total_Juillet'].round()
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
-    st.markdown("<div style='background-color: #fff3cd; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
+    st.markdown("<div style='background-color: #ffebcc; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en juillet ({same_tier_less_spending_count})")
     st.markdown("<small>Ces clients ont dépensé un peu moins en juillet, même s'ils sont restés dans le même segment. Vous pouvez sans doute voir s'ils peuvent racheter un peu plus.</small>", unsafe_allow_html=True)
-    st.dataframe(same_tier_less_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Date de commande_Last']])
+    st.write(same_tier_less_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Dernière commande']])
     st.download_button(
         label='Télécharger la liste des clients restés dans le même tiering mais dépensé moins en juillet',
         data=same_tier_less_spending_clients.to_csv(index=False),
@@ -177,11 +179,14 @@ def segmentation_page(df):
     increased_spending_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
     increased_spending_clients = increased_spending_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
     increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Juin'] < increased_spending_clients['Total_Juillet'])]
+    increased_spending_clients = increased_spending_clients.merge(last_order_dates, on='Restaurant ID')
+    increased_spending_clients['Total_Juin'] = increased_spending_clients['Total_Juin'].round()
+    increased_spending_clients['Total_Juillet'] = increased_spending_clients['Total_Juillet'].round()
     increased_spending_count = increased_spending_clients.shape[0]
 
     st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo ! ({increased_spending_count})")
-    st.dataframe(increased_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Date de commande_Last']])
+    st.write(increased_spending_clients[['Restaurant ID', 'Restaurant_Juin', 'Spending Level_Juin', 'Total_Juin', 'Total_Juillet', 'Dernière commande']])
     st.download_button(
         label='Télécharger la liste des clients restés dans le même tiering mais dépensé plus en juillet',
         data=increased_spending_clients.to_csv(index=False),
@@ -190,33 +195,7 @@ def segmentation_page(df):
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Ajouter le récapitulatif
-    st.markdown("""
-    <div style='background-color: #e9ecef; padding: 10px; border-radius: 5px; margin-top: 20px;'>
-        <h3>Recap : où sont vos clients en juillet</h3>
-        <p>
-            <span style='color: #dc3545;'>●</span> Rouge : clients qui n'ont pas fait de repeat vs juin<br>
-            <span style='color: #ff9800;'>●</span> Orange : clients qui ont baissé de catégorie de dépense vs juin<br>
-            <span style='color: #ffc107;'>●</span> Jaune : clients qui ont gardé la catégorie de dépense mais dépensé moins depuis juin<br>
-            <span style='color: #28a745;'>●</span> Vert : clients en augmentation de dépense.
-        </p>
-        <div style='display: flex; justify-content: space-around;'>
-            <div style='text-align: center;'>
-                <span style='color: #dc3545; font-size: 24px;'>{inactive_count}</span><br>
-                <small>Inactifs en juillet</small>
-            </div>
-            <div style='text-align: center;'>
-                <span style='color: #ff9800; font-size: 24px;'>{downgraded_count}</span><br>
-                <small>Baissé de catégorie</small>
-            </div>
-            <div style='text-align: center;'>
-                <span style='color: #ffc107; font-size: 24px;'>{same_tier_less_spending_count}</span><br>
-                <small>Dépensé moins</small>
-            </div>
-            <div style='text-align: center;'>
-                <span style='color: #28a745; font-size: 24px;'>{increased_spending_count}</span><br>
-                <small>Dépensé plus</small>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+# Charger les données et afficher la page de segmentation
+df = load_data()
+segmentation_page(df)
+
