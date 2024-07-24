@@ -37,7 +37,25 @@ def client_info_page(df, df_recent_purchases, client_id):
 
     # Afficher les informations détaillées du client
     st.markdown("""
-    <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
+    <style>
+    .card {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    }
+    .card h4 {
+        margin-top: 0;
+    }
+    .card p {
+        margin: 5px 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class='card'>
         <h4>Informations Client</h4>
         <p><strong>ID :</strong> {client_id}</p>
         <p><strong>Nom :</strong> {client_name}</p>
@@ -69,7 +87,7 @@ def client_info_page(df, df_recent_purchases, client_id):
         suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
 
         st.markdown("""
-        <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
+        <div class='card'>
             <h4>Informations Générales</h4>
             <p><strong>Total des catégories :</strong> {total_categories}</p>
             <p><strong>Catégories différentes en juillet 2024 :</strong> {july_categories}</p>
@@ -79,7 +97,7 @@ def client_info_page(df, df_recent_purchases, client_id):
         """.format(
             total_categories=total_categories,
             july_categories=july_categories,
-            suppliers_table=suppliers.to_html(index=False)
+            suppliers_table=suppliers.to_html(index=False, classes='table table-striped')
         ), unsafe_allow_html=True)
 
         # Graphiques en camembert
@@ -100,12 +118,12 @@ def client_info_page(df, df_recent_purchases, client_id):
         frequent_products = frequent_products.sort_values(by='quantity_float', ascending=False).head(10)
         
         st.markdown("""
-        <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
+        <div class='card'>
             <h4>Produits fréquemment achetés</h4>
             {products_table}
         </div>
         """.format(
-            products_table=frequent_products.to_html(index=False)
+            products_table=frequent_products.to_html(index=False, classes='table table-striped')
         ), unsafe_allow_html=True)
 
 # Charger les données
