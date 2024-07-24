@@ -113,6 +113,38 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
+    # Calculer le nombre de clients pour chaque catégorie
+    inactive_count = inactive_clients.shape[0]
+    downgraded_count = downgraded_clients.shape[0]
+    same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
+    increased_spending_count = increased_spending_clients.shape[0]
+
+    # Afficher le récapitulatif des clients
+    st.markdown("## Récapitulatif : Où sont vos clients en juillet")
+    st.markdown("""
+        <div style='display: flex; justify-content: space-between;'>
+            <div style='background-color: #f8d7da; padding: 10px; border-radius: 5px; text-align: center; width: 23%;'>
+                <h3>🔴 {inactive_count}</h3>
+                <small>Clients qui n'ont pas fait de repeat vs juin</small>
+            </div>
+            <div style='background-color: #ffc107; padding: 10px; border-radius: 5px; text-align: center; width: 23%;'>
+                <h3>🟠 {downgraded_count}</h3>
+                <small>Clients qui ont baissé de catégorie de dépense vs juin</small>
+            </div>
+            <div style='background-color: #ffebcc; padding: 10px; border-radius: 5px; text-align: center; width: 23%;'>
+                <h3>🟡 {same_tier_less_spending_count}</h3>
+                <small>Clients qui ont gardé la catégorie de dépense mais dépensé moins depuis juin</small>
+            </div>
+            <div style='background-color: #d4edda; padding: 10px; border-radius: 5px; text-align: center; width: 23%;'>
+                <h3>🟢 {increased_spending_count}</h3>
+                <small>Clients en augmentation de dépense</small>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+
+
+    
     # Clients actifs en juin mais pas en juillet
     inactive_clients = get_inactive_clients_july(customer_spending_june_account, customer_spending_july_account)
     inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
