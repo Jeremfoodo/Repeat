@@ -203,7 +203,5 @@ def display_recap_box(inactive_count, downgraded_count, same_tier_less_spending_
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Charger les données et afficher la page de segmentation
-df = load_data()
-segmentation_page(df)
+
 
