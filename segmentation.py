@@ -70,6 +70,11 @@ def get_clients_by_segment_and_spending(df, target_month):
     
     return heatmap_pivot, total_clients, customer_spending
 
+# Fonction pour obtenir les clients à réactiver
+def get_inactive_clients_july(df_june, df_july):
+    inactive_clients = df_june[~df_june['Restaurant ID'].isin(df_july['Restaurant ID'])]
+    return inactive_clients
+
 # Fonction principale pour afficher la page de segmentation
 def segmentation_page(df):
     st.title('Segmentation')
@@ -176,8 +181,25 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-    # Vérification de la segmentation pour juin 2024
+        # Vérification de la segmentation pour juin 2024
     st.subheader('Vérification de la segmentation pour juin 2024')
     st.write(customer_spending_june[['Restaurant ID', 'Restaurant', 'Total', 'Spending Level']])
 
-#
+    # Clients actifs en juin mais pas en juillet
+    inactive_clients = get_inactive_clients_july(customer_spending_june, customer_spending_july)
+    inactive_count = inactive_clients.shape[0]
+    
+    st.subheader(f'Clients actifs en juin mais inactifs en juillet ({inactive_count})')
+    st.write(inactive_clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total']])
+    
+    # Option de téléchargement pour la liste des clients inactifs en juillet
+    st.download_button(
+        label='Télécharger la liste des clients inactifs en juillet',
+        data=inactive_clients.to_csv(index=False),
+        file_name='clients_inactifs_juillet.csv',
+        mime='text/csv'
+    )
+
+# Charger les données et afficher la page de segmentation
+df = load_data()
+segmentation_page(df)
