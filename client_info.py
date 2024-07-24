@@ -27,6 +27,14 @@ def client_info_page(df, df_recent_purchases, client_id):
         st.error("Aucun client trouvé avec cet ID.")
         return
 
+    # Vérifier que les colonnes de date sont bien au format datetime
+    if not pd.api.types.is_datetime64_any_dtype(df['Date de commande']):
+        df['Date de commande'] = pd.to_datetime(df['Date de commande'])
+    if not pd.api.types.is_datetime64_any_dtype(df['date 1ere commande (Restaurant)']):
+        df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'])
+    if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
+        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'])
+
     # Informations standard du client
     client_name = client_data["Restaurant"].iloc[0]
     total_spent = client_data["Total"].sum().round(2)
