@@ -17,13 +17,20 @@ def download_prepared_data():
     output_objectifs = os.path.join(data_dir, 'objectifs.xlsx')
     output_recent_purchases = os.path.join(data_dir, 'dataFR.xlsx')
     
-    gdown.download(prepared_data_url, output_prepared, quiet=False)
-    gdown.download(objectifs_url, output_objectifs, quiet=False)
-    gdown.download(recent_purchases_url, output_recent_purchases, quiet=False)
+    if not os.path.exists(output_prepared):
+        gdown.download(prepared_data_url, output_prepared, quiet=False)
+    if not os.path.exists(output_objectifs):
+        gdown.download(objectifs_url, output_objectifs, quiet=False)
+    if not os.path.exists(output_recent_purchases):
+        gdown.download(recent_purchases_url, output_recent_purchases, quiet=False)
 
 @st.cache_data
 def load_data():
     data_dir = 'data'
+    
+    # Vérifier et télécharger les données préparées si nécessaire
+    download_prepared_data()
+
     historical_files = {
         'FR': os.path.join(data_dir, 'historical_retention_analysis_FR.csv'),
         'US': os.path.join(data_dir, 'historical_retention_analysis_US.csv'),
@@ -46,6 +53,10 @@ def load_data():
 @st.cache_data
 def load_recent_purchases():
     data_dir = 'data'
+    
+    # Vérifier et télécharger les achats récents si nécessaire
+    download_prepared_data()
+
     df_recent_purchases = pd.read_excel(os.path.join(data_dir, 'dataFR.xlsx'), engine='openpyxl')
     
     if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
@@ -56,6 +67,10 @@ def load_recent_purchases():
 @st.cache_data
 def load_objectifs():
     data_dir = 'data'
+    
+    # Vérifier et télécharger les objectifs si nécessaire
+    download_prepared_data()
+    
     objectifs_df = pd.read_excel(os.path.join(data_dir, 'objectifs.xlsx'), engine='openpyxl')
     return objectifs_df
 
