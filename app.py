@@ -23,7 +23,7 @@ client_id = query_params.get("client_id", [None])[0]
 
 # Afficher la page correspondante en fonction du menu sélectionné
 if menu_selection == "Analyse Globale":
-    analyse_globale_page(df)
+    global_analysis_page(df)
 elif menu_selection == "Segmentation":
     segmentation_page(df)
 elif menu_selection == "Account Analysis":
