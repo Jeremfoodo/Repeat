@@ -1,239 +1,108 @@
+# client_info.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import gdown
 from datetime import datetime
 
-# Charger les données (à partir du cache ou d'une source de données)
-@st.cache_data
-def load_data():
-    url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
-    df = pd.read_csv(url, parse_dates=['Date de commande', 'date 1ere commande (Restaurant)'])
-    return df
-
-# Charger les données des achats récents en France
-@st.cache_data
-def load_recent_purchases():
-    url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
-    df = pd.read_excel(gdown.download(url, None, quiet=False), parse_dates=['Date'])
-    return df
-
 def client_info_page(df, df_recent_purchases, client_id):
-    st.title("Informations sur le client")
+    client_data = df[df['Restaurant ID'] == client_id]
+    client_recent_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'] == client_id]
 
-    client_data = df[df["Restaurant ID"] == client_id]
-
-    if client_data.empty:
-        st.error("Aucun client trouvé avec cet ID.")
-        return
-
-    # Vérifier que les colonnes de date sont bien au format datetime
-    if not pd.api.types.is_datetime64_any_dtype(df['Date de commande']):
-        df['Date de commande'] = pd.to_datetime(df['Date de commande'], errors='coerce')
+    # Convertir les dates si elles ne sont pas déjà au format datetime
     if not pd.api.types.is_datetime64_any_dtype(df['date 1ere commande (Restaurant)']):
-        df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'], errors='coerce')
+        df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'])
     if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
         df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
-
-    # Supprimer les lignes où la conversion datetime a échoué
-    df = df.dropna(subset=['Date de commande', 'date 1ere commande (Restaurant)'])
-    df_recent_purchases = df_recent_purchases.dropna(subset=['Date'])
+        df_recent_purchases.dropna(subset=['Date'], inplace=True)
 
     # Informations standard du client
     client_name = client_data["Restaurant"].iloc[0]
-    total_spent = client_data["Total"].sum().round(2)
-    first_order_date = client_data["date 1ere commande (Restaurant)"].min()
-    last_order_date = client_data["Date de commande"].max()
+    total_spending = client_data["Total"].sum()
+    first_order_date = client_data["date 1ere commande (Restaurant)"].iloc[0]
+    last_order_date = client_data["Dernière commande"].iloc[0]
     days_since_last_order = (datetime.now() - last_order_date).days
-    num_orders = client_data.shape[0]
 
-    # Style CSS
-    st.markdown("""
-    <style>
-    .card {
-        background-color: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    }
-    .card h4 {
-        margin-top: 0;
-        color: #343a40;
-    }
-    .card p {
-        margin: 5px 0;
-    }
-    .icon {
-        font-size: 1.5em;
-        margin-right: 10px;
-    }
-    .info-box {
-        display: flex;
-        align-items: center;
-        background-color: #e9ecef;
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-    }
-    .info-box p {
-        margin: 0;
-        color: #495057;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Informations sur les fournisseurs et catégories
+    total_categories = client_recent_purchases["Product Category"].nunique()
+    july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
+    suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
 
-    # Afficher les informations détaillées du client
-    st.markdown("""
-    <div class='card'>
-        <h4>Informations Client</h4>
-        <div class='info-box'>
-            <span class='icon'>📇</span>
-            <p><strong>ID :</strong> {client_id}</p>
-        </div>
-        <div class='info-box'>
-            <span class='icon'>🏢</span>
-            <p><strong>Nom :</strong> {client_name}</p>
-        </div>
-        <div class='info-box'>
-            <span class='icon'>💰</span>
-            <p><strong>Total des dépenses :</strong> {total_spent} €</p>
-        </div>
-        <div class='info-box'>
-            <span class='icon'>📅</span>
-            <p><strong>Date de la première commande :</strong> {first_order_date}</p>
-        </div>
-        <div class='info-box'>
-            <span class='icon'>📅</span>
-            <p><strong>Date de la dernière commande :</strong> {last_order_date} ({days_since_last_order} jours)</p>
-        </div>
-        <div class='info-box'>
-            <span class='icon'>🛒</span>
-            <p><strong>Nombre de commandes :</strong> {num_orders}</p>
-        </div>
-    </div>
-    """.format(
-        client_id=client_id,
-        client_name=client_name,
-        total_spent=total_spent,
-        first_order_date=first_order_date.strftime('%Y-%m'),
-        last_order_date=last_order_date.strftime('%Y-%m-%d'),
-        days_since_last_order=days_since_last_order,
-        num_orders=num_orders
-    ), unsafe_allow_html=True)
+    category_spending = client_recent_purchases.groupby('sub_cat')['GMV'].sum().reset_index()
+    supplier_spending = client_recent_purchases.groupby('Supplier')['GMV'].sum().reset_index()
+    top_products = client_recent_purchases.groupby(['product_name']).size().reset_index(name='counts').sort_values(by='counts', ascending=False)
 
-    # Rechercher les achats récents pour les clients en France
-    client_recent_purchases = df_recent_purchases[df_recent_purchases["Restaurant_id"] == client_id]
-
-    if not client_recent_purchases.empty:
-        st.markdown("""
-        <div class='card'>
-            <h4>Fournisseurs et Catégories</h4>
-            <div class='info-box'>
-                <span class='icon'>📊</span>
-                <p><strong>Total des catégories :</strong> {total_categories}</p>
-            </div>
-            <div class='info-box'>
-                <span class='icon'>📅</span>
-                <p><strong>Catégories différentes en juillet 2024 :</strong> {july_categories}</p>
-            </div>
-            <div class='info-box'>
-                <span class='icon'>🏢</span>
-                <p><strong>Fournisseurs :</strong></p>
-            </div>
-            {suppliers_table}
-        </div>
-        """.format(
-            total_categories=client_recent_purchases["Product Category"].nunique(),
-            july_categories=client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique(),
-            suppliers_table=client_recent_purchases.groupby('Supplier')['Date'].max().reset_index().to_html(index=False, classes='table table-striped')
-        ), unsafe_allow_html=True)
-
-        # Graphiques en camembert
-        subcat_gmv = client_recent_purchases.groupby('sub_cat')['GMV'].sum().reset_index()
-        fig_subcat = px.pie(subcat_gmv, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)', color_discrete_sequence=px.colors.sequential.RdBu)
-        
-        supplier_gmv = client_recent_purchases.groupby('Supplier')['GMV'].sum().reset_index()
-        fig_supplier = px.pie(supplier_gmv, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)', color_discrete_sequence=px.colors.sequential.RdBu)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.plotly_chart(fig_subcat)
-        with col2:
-            st.plotly_chart(fig_supplier)
-
-        # Produits fréquemment achetés
-        frequent_products = client_recent_purchases.groupby('product_name')['quantity_float'].sum().reset_index()
-        frequent_products = frequent_products.sort_values(by='quantity_float', ascending=False).head(10)
-        
-        st.markdown("""
-        <div class='card'>
-            <h4>Produits fréquemment achetés</h4>
-            {products_table}
-        </div>
-        """.format(
-            products_table=frequent_products.to_html(index=False, classes='table table-striped')
-        ), unsafe_allow_html=True)
-
-    # Recommandations
+    # Algorithme de recommandations
     recommendations = []
 
     # Date de dernière commande
-    if days_since_last_order > 7:
-        recent_fruits_vegetables = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']
-        if not recent_fruits_vegetables.empty:
-            last_fruit_veg_order = recent_fruits_vegetables['Date'].max()
-            if (datetime.now() - last_fruit_veg_order).days > 7:
-                recommendations.append("Le client n'a pas commandé de fruits et légumes depuis plus de 7 jours. Proposez-lui de commander ses produits préférés de cette catégorie.")
-        other_categories = client_recent_purchases['Product Category'].unique()
-        for category in other_categories:
-            if category != 'Fruits et Légumes':
-                recent_category_orders = client_recent_purchases[client_recent_purchases['Product Category'] == category]
-                last_category_order = recent_category_orders['Date'].max()
-                if (datetime.now() - last_category_order).days > 15:
-                    recommendations.append(f"Le client n'a pas commandé de {category} depuis plus de 15 jours. Proposez-lui de refaire une commande.")
+    top_fruits_vegetables = top_products[top_products['product_name'].str.contains('Fruits|Légumes', case=False)]
+    recommendations.append({
+        "Type": "Achat de fruits et légumes",
+        "Recommandation": "Il est temps de recommander des fruits et légumes.",
+        "Détails": f"Produits populaires: {', '.join(top_fruits_vegetables['product_name'].values)}"
+    })
+
+    if days_since_last_order > 15:
+        recommendations.append({
+            "Type": "Achat dans d'autres catégories",
+            "Recommandation": "Recommandez des produits dans d'autres catégories.",
+            "Détails": "Il n'a pas commandé depuis plus de 15 jours."
+        })
 
     # Nombre de catégories
-    num_categories = client_recent_purchases['Product Category'].nunique()
-    if num_categories == 1:
+    if total_categories == 1:
         num_products = client_recent_purchases['product_name'].nunique()
         if num_products < 4:
-            recommendations.append("Le client semble être un client 'mono produit'. Recommandez de comprendre pourquoi et d'essayer de diversifier ses achats.")
+            recommendations.append({
+                "Type": "Client mono-produit",
+                "Recommandation": "Comprendre pourquoi il n'achète qu'un seul type de produit.",
+                "Détails": "Il n'achète que peu de produits dans une seule catégorie."
+            })
         else:
-            potential_new_categories = ['Boucherie', 'Crémerie', 'Epicerie Salée']
-            categories_not_bought = [cat for cat in potential_new_categories if cat not in client_recent_purchases['Product Category'].unique()]
-            if categories_not_bought:
-                recommendations.append(f"Le client pourrait essayer d'autres catégories. Proposez-lui d'essayer les catégories suivantes : {', '.join(categories_not_bought[:2])}.")
+            categories_to_recommend = ["Boucherie", "Fruits et Légumes", "Crémerie", "Epicerie Salée"]
+            categories_not_bought = [cat for cat in categories_to_recommend if cat not in client_recent_purchases['Product Category'].values]
+            recommendations.append({
+                "Type": "Proposition de nouvelles catégories",
+                "Recommandation": "Proposez des produits dans d'autres catégories.",
+                "Détails": f"Catégories à recommander: {', '.join(categories_not_bought)}"
+            })
 
-    # Fournisseurs préférés
-    favorite_supplier = client_recent_purchases.groupby('Supplier')['GMV'].sum().idxmax()
-    recommendations.append(f"Proposez des produits en promotion ou des offres spéciales de son fournisseur préféré : {favorite_supplier}.")
+    # Afficher les informations standard du client
+    st.markdown(f"## Informations du client {client_name}")
+    st.markdown(f"**ID du restaurant:** {client_id}")
+    st.markdown(f"**Nom du restaurant:** {client_name}")
+    st.markdown(f"**Total des dépenses:** {total_spending:.2f} €")
+    st.markdown(f"**Date de la première commande:** {first_order_date.strftime('%Y-%m-%d')}")
+    st.markdown(f"**Date de la dernière commande:** {last_order_date.strftime('%Y-%m-%d')}")
+    st.markdown(f"**Nombre de jours depuis la dernière commande:** {days_since_last_order}")
 
-    # Catégories et sous-catégories
-    frequent_categories = client_recent_purchases['Product Category'].value_counts().index.tolist()
-    for category in frequent_categories:
-        if category == 'Fruits et Légumes':
-            recommendations.append("Le client achète souvent des fruits frais. Proposez-lui d'essayer nos fruits exotiques.")
-        elif category == 'Boucherie':
-            recommendations.append("Le client achète souvent de la viande. Proposez-lui d'essayer des produits premium.")
-        elif category == 'Crémerie':
-            recommendations.append("Le client achète souvent des produits laitiers. Proposez-lui d'essayer des fromages spéciaux.")
+    # Afficher les informations sur les fournisseurs et catégories
+    st.markdown("### Informations sur les fournisseurs et catégories")
+    st.markdown(f"**Nombre total de catégories:** {total_categories}")
+    st.markdown(f"**Nombre de catégories en juillet 2024:** {july_categories}")
+    st.markdown("**Fournisseurs avec date du dernier achat:**")
+    st.write(suppliers)
+
+    fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
+    st.plotly_chart(fig_category_spending)
+
+    fig_supplier_spending = px.pie(supplier_spending, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
+    st.plotly_chart(fig_supplier_spending)
+
+    st.markdown("### Produits les plus fréquemment achetés")
+    st.write(top_products)
 
     # Afficher les recommandations
-    st.markdown("""
-    <div class='card'>
-        <h4>Recommandations</h4>
-        <ul>
-            {recommendations_list}
-        </ul>
-    </div>
-    """.format(
-        recommendations_list=''.join([f"<li>{rec}</li>" for rec in recommendations])
-    ), unsafe_allow_html=True)
+    st.markdown("### Recommandations")
+    for rec in recommendations:
+        st.markdown(f"**Type:** {rec['Type']}")
+        st.markdown(f"**Recommandation:** {rec['Recommandation']}")
+        st.markdown(f"**Détails:** {rec['Détails']}")
+        st.markdown("---")
 
-# Charger les données
-df = load_data()
-df_recent_purchases = load_recent_purchases()
-
-# Appeler la fonction de la page d'informations sur le client
-client_info_page(df, df_recent_purchases, 44290)
+# Charger les données récentes
+def load_recent_purchases():
+    df_recent_purchases = pd.read_excel("dataFR.xlsx", engine='openpyxl')
+    df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
+    df_recent_purchases.dropna(subset=['Date'], inplace=True)
+    return df_recent_purchases
