@@ -136,7 +136,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         categories_not_bought = [cat for cat in categories_to_recommend if cat not in client_recent_purchases['Product Category'].values]
         recommendations.append({
             "Type": "Recommandation multicatégorie",
-            "Recommandation": "Proposez des produits dans les principales catégories non commandées.",
+            "Recommandation": f"Le client ne commande que dans {total_categories} catégorie(s). Faites du cross !",
             "Détails": f"Catégories à recommander: {', '.join(categories_not_bought)}"
         })
     elif total_categories >= 3:
@@ -145,6 +145,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
             "Recommandation": "Focalisez sur l'augmentation du nombre de produits ou des produits plus chers dans les catégories existantes.",
             "Détails": ""
         })
+
 
     # Produits fréquemment achetés mais récemment non commandés
     frequently_bought_products = client_recent_purchases.groupby('product_name').size().reset_index(name='counts').sort_values(by='counts', ascending=False)
