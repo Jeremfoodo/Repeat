@@ -124,3 +124,9 @@ def load_recent_purchases():
     df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
     return df_recent_purchases
+
+# Testing the function with a sample client ID
+if __name__ == "__main__":
+    df = pd.read_csv("data.csv")
+    df_recent_purchases = load_recent_purchases()
+    client_info_page(df, df_recent_purchases, 44290)
