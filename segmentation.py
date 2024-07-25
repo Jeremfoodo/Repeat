@@ -126,7 +126,6 @@ def segmentation_page(df):
     if 'Spending Level' not in inactive_clients.columns:
         inactive_clients['Spending Level'] = 'Unknown'
 
-
     inactive_count = inactive_clients.shape[0]
 
     # Clients qui ont baissé dans le tiering
@@ -136,6 +135,7 @@ def segmentation_page(df):
     downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
     downgraded_clients['Total_Juin'] = downgraded_clients['Total_Juin'].round()
     downgraded_clients['Total_Juillet'] = downgraded_clients['Total_Juillet'].round()
+    downgraded_clients['Total'] = downgraded_clients['Total_Juillet']
 
     # Ajouter les colonnes manquantes
     if 'Restaurant' not in downgraded_clients.columns:
@@ -144,8 +144,6 @@ def segmentation_page(df):
         downgraded_clients['Segment'] = 'Unknown'
     if 'Spending Level' not in downgraded_clients.columns:
         downgraded_clients['Spending Level'] = 'Unknown'
-    if 'Total' not in downgraded_clients.columns:
-        downgraded_clients['Total'] = downgraded_clients['Total_Juillet']
 
     downgraded_count = downgraded_clients.shape[0]
 
@@ -156,6 +154,16 @@ def segmentation_page(df):
     same_tier_less_spending_clients = same_tier_less_spending_clients.merge(last_order_dates, on='Restaurant ID')
     same_tier_less_spending_clients['Total_Juin'] = same_tier_less_spending_clients['Total_Juin'].round()
     same_tier_less_spending_clients['Total_Juillet'] = same_tier_less_spending_clients['Total_Juillet'].round()
+    same_tier_less_spending_clients['Total'] = same_tier_less_spending_clients['Total_Juillet']
+
+    # Ajouter les colonnes manquantes
+    if 'Restaurant' not in same_tier_less_spending_clients.columns:
+        same_tier_less_spending_clients = same_tier_less_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in same_tier_less_spending_clients.columns:
+        same_tier_less_spending_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in same_tier_less_spending_clients.columns:
+        same_tier_less_spending_clients['Spending Level'] = 'Unknown'
+    
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
     # Clients restés dans le même tiering mais dépensé plus en juillet
@@ -165,6 +173,16 @@ def segmentation_page(df):
     increased_spending_clients = increased_spending_clients.merge(last_order_dates, on='Restaurant ID')
     increased_spending_clients['Total_Juin'] = increased_spending_clients['Total_Juin'].round()
     increased_spending_clients['Total_Juillet'] = increased_spending_clients['Total_Juillet'].round()
+    increased_spending_clients['Total'] = increased_spending_clients['Total_Juillet']
+
+    # Ajouter les colonnes manquantes
+    if 'Restaurant' not in increased_spending_clients.columns:
+        increased_spending_clients = increased_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in increased_spending_clients.columns:
+        increased_spending_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in increased_spending_clients.columns:
+        increased_spending_clients['Spending Level'] = 'Unknown'
+
     increased_spending_count = increased_spending_clients.shape[0]
 
     # Récapitulatif
@@ -201,11 +219,10 @@ def segmentation_page(df):
         increased_spending_count=increased_spending_count
     ), unsafe_allow_html=True)
 
+    # Afficher les tables de clients
     def render_clients_table(clients, title):
         st.markdown(f"### {title}")
-        for idx, row in clients.iterrows():
-            st.write(row[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
-            st.button("Voir détails", key=f"{title}_{row['Restaurant ID']}", on_click=lambda client_id=row['Restaurant ID']: st.experimental_set_query_params(client_id=client_id))
+        st.dataframe(clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
 
     # Box rouge pour les clients inactifs en juillet
     st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
@@ -257,3 +274,4 @@ def segmentation_page(df):
         mime='text/csv'
     )
     st.markdown("</div>", unsafe_allow_html=True)
+
