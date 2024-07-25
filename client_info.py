@@ -221,15 +221,18 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         st.plotly_chart(fig_supplier_spending)
 
 
+    # Afficher les produits les plus fréquemment achetés sous forme de tableau
     st.markdown(
         """
         <div style='background-color: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 20px;'>
             <h2>Produits les plus fréquemment achetés</h2>
-            {}
         </div>
-        """.format(top_products.to_html(index=False)),
+        """,
         unsafe_allow_html=True
     )
+
+    st.table(top_products)
+
 
     # Afficher les recommandations
     st.markdown(
