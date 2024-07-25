@@ -11,6 +11,15 @@ from src.segmentation import load_segmentation_data
 # Charger les données de segmentation
 segmentation_df = load_segmentation_data()
 
+def map_gamme(gamme_value):
+    if gamme_value == 1:
+        return "à emporter"
+    elif gamme_value == 2:
+        return "regular"
+    elif gamme_value == 3:
+        return "chic"
+    else:
+        return "Non défini"
 
 def client_info_page(df, df_recent_purchases, default_client_id):
     st.title("Page d'Information Client")
@@ -68,6 +77,13 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         last_order_color = "#ffeeba"  # Orange
     else:
         last_order_color = "#f8d7da"  # Rouge
+
+    # Informations de segmentation
+    gamme = client_data["Gamme"].iloc[0] if "Gamme" in client_data.columns else "Non défini"
+    gamme = map_gamme(gamme)  # Appliquer la transformation
+
+    type_detail = client_data["Type_detail"].iloc[0] if "Type_detail" in client_data.columns else "Non défini"
+    type_general = client_data["Type"].iloc[0] if "Type" in client_data.columns else "Non défini"
 
     # Informations sur les fournisseurs et catégories
     total_categories = client_recent_purchases["Product Category"].nunique()
