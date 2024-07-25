@@ -144,6 +144,8 @@ def segmentation_page(df):
         downgraded_clients['Segment'] = 'Unknown'
     if 'Spending Level' not in downgraded_clients.columns:
         downgraded_clients['Spending Level'] = 'Unknown'
+    if 'Total' not in downgraded_clients.columns:
+        downgraded_clients['Total'] = downgraded_clients['Total_Juillet']
 
     downgraded_count = downgraded_clients.shape[0]
 
