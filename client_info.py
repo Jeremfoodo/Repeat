@@ -9,14 +9,8 @@ from src.segmentation import load_segmentation_data
 
 
 # Charger les données
-df = load_data()
-df_recent_purchases = load_recent_purchases()
 segmentation_df = load_segmentation_data()
 
-# Appeler la page avec un ID client par défaut
-default_client_id = 44290  # Exemple d'ID client par défaut
-
-client_info_page(df, df_recent_purchases, segmentation_df, default_client_id)
 
 def map_gamme(gamme_value):
     if gamme_value == 1:
