@@ -70,6 +70,12 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     # Algorithme de recommandations basé sur les nouveaux critères
     recommendations = []
 
+    # Définir les données de juin et juillet en utilisant df_recent_purchases
+    client_june_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-06')]
+    client_july_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07')]
+
+    
+    
     # Calculer les dépenses totales en juin et juillet à partir de df_recent_purchases
     june_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-06')]['GMV'].sum()
     july_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07')]['GMV'].sum()
