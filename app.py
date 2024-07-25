@@ -6,9 +6,10 @@ from objectifs import objectifs_page
 from active_users import active_users_page
 from segmentation import segmentation_page
 from client_info import client_info_page  # Ajouter cette ligne
-from src.data_processing import load_data, download_prepared_data, reassign_account_manager
+from src.data_processing import load_data, download_prepared_data, reassign_account_manager, load_recent_purchases, load_segmentation_data
 import gdown
 import pandas as pd
+
 
 # Télécharger et charger les données
 download_prepared_data()
@@ -34,6 +35,7 @@ with st.sidebar:
         default_index=0,
     )
 
+default_client_id = 44290
 # Afficher la page sélectionnée
 if selected == "Analyse Globale":
     global_analysis(historical_data, df)
@@ -46,6 +48,6 @@ elif selected == "Active Users":
 elif selected == "Segmentation":
     segmentation_page(df)
 elif selected == "Client Info":  # Ajouter cette section
-    client_info_page(df, df_recent_purchases, 44290)  # Appeler la fonction avec un ID de client en dur
+    client_info_page(df, df_recent_purchases, segmentation_df, default_client_id)  # Appeler la fonction avec un ID de client en dur
 
 
