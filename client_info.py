@@ -159,48 +159,48 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         unsafe_allow_html=True
     )
 
-# Calculer le nombre de jours depuis la dernière commande pour chaque fournisseur
-suppliers['Days Since Last Order'] = (datetime.now() - suppliers['Date']).dt.days
+    # Calculer le nombre de jours depuis la dernière commande pour chaque fournisseur
+    suppliers['Days Since Last Order'] = (datetime.now() - suppliers['Date']).dt.days
 
-# Trier les fournisseurs par date de commande la plus récente
-suppliers = suppliers.sort_values(by='Date', ascending=False)
+    # Trier les fournisseurs par date de commande la plus récente
+    suppliers = suppliers.sort_values(by='Date', ascending=False)
 
-# Formater la date pour n'afficher que l'année, le mois et le jour
-suppliers['Date'] = suppliers['Date'].dt.strftime('%Y-%m-%d')
+    # Formater la date pour n'afficher que l'année, le mois et le jour
+    suppliers['Date'] = suppliers['Date'].dt.strftime('%Y-%m-%d')
 
-# Convertir le DataFrame en tableau HTML
-suppliers_table = suppliers.to_html(index=False, classes='styled-table')
+    # Convertir le DataFrame en tableau HTML
+    suppliers_table = suppliers.to_html(index=False, classes='styled-table')
 
-# Remplacer la partie HTML par le code ci-dessus
-st.markdown(
+    # Remplacer la partie HTML par le code ci-dessus
+    st.markdown(
     """
-    <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
-        <h2>Informations sur les fournisseurs et catégories</h2>
-        <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
-                <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
-                <div>
-                    <h5 style='margin: 0;'>Nombre total de catégories</h5>
-                    <p style='margin: 0;'>{}</p>
-                    <small>{}</small>
+        <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h2>Informations sur les fournisseurs et catégories</h2>
+            <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre total de catégories</h5>
+                        <p style='margin: 0;'>{}</p>
+                        <small>{}</small>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre de catégories en juillet 2024</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
                 </div>
             </div>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
-                <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
-                <div>
-                    <h5 style='margin: 0;'>Nombre de catégories en juillet 2024</h5>
-                    <p style='margin: 0;'>{}</p>
-                </div>
+            <h3 style='font-size: 1.25rem;'>Derniers achats chez les fournisseurs</h3>
+            <div style='background-color: #fff; padding: 20px; border-radius: 10px;'>
+                {}
             </div>
         </div>
-        <h3 style='font-size: 1.25rem;'>Derniers achats chez les fournisseurs</h3>
-        <div style='background-color: #fff; padding: 20px; border-radius: 10px;'>
-            {}
-        </div>
-    </div>
-    """.format(total_categories, categories_list, july_categories, suppliers_table),
-    unsafe_allow_html=True
-)
+        """.format(total_categories, categories_list, july_categories, suppliers_table),
+        unsafe_allow_html=True
+    )
 
 
     fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
