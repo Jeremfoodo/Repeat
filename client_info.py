@@ -36,10 +36,11 @@ def client_info_page(df, df_recent_purchases, default_client_id):
 
     # Informations standard du client
     client_name = client_data["Restaurant"].iloc[0]
-    total_spending = client_data["Total"].sum()
+    total_spending = round(client_data["Total"].sum())
     first_order_date = client_data["date 1ere commande (Restaurant)"].iloc[0]
     last_order_date = client_data["Dernière commande"].iloc[0]
     days_since_last_order = (datetime.now() - last_order_date).days
+    days_since_first_order = (datetime.now() - first_order_date).days
 
     # Informations sur les fournisseurs et catégories
     total_categories = client_recent_purchases["Product Category"].nunique()
@@ -91,15 +92,41 @@ def client_info_page(df, df_recent_purchases, default_client_id):
             })
 
     # Afficher les informations standard du client
-    st.markdown(f"<div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>"
-                f"<h2>Informations du client</h2>"
-                f"<p><strong>ID du restaurant:</strong> {client_id}</p>"
-                f"<p><strong>Nom du restaurant:</strong> {client_name}</p>"
-                f"<p><strong>Total des dépenses:</strong> {total_spending:.2f} €</p>"
-                f"<p><strong>Date de la première commande:</strong> {first_order_date.strftime('%Y-%m-%d')}</p>"
-                f"<p><strong>Date de la dernière commande:</strong> {last_order_date.strftime('%Y-%m-%d')}</p>"
-                f"<p><strong>Nombre de jours depuis la dernière commande:</strong> {days_since_last_order}</p>"
-                f"</div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
+                <h3>ID du restaurant</h3>
+                <p>{}</p>
+            </div>
+            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
+                <h3>Nom du restaurant</h3>
+                <p>{}</p>
+            </div>
+            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
+                <h3>Total des dépenses</h3>
+                <p>{} €</p>
+            </div>
+            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
+                <h3>Date de la première commande</h3>
+                <p>{} ({} jours)</p>
+            </div>
+            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
+                <h3>Date de la dernière commande</h3>
+                <p>{}</p>
+            </div>
+            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
+                <h3>Nombre de jours depuis la dernière commande</h3>
+                <p>{}</p>
+            </div>
+        </div>
+        """.format(
+            client_id, client_name, total_spending,
+            first_order_date.strftime('%Y-%m-%d'), days_since_first_order,
+            last_order_date.strftime('%Y-%m-%d'), days_since_last_order
+        ),
+        unsafe_allow_html=True
+    )
 
     # Afficher les informations sur les fournisseurs et catégories
     st.markdown("<div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>"
@@ -124,11 +151,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     # Afficher les recommandations
     st.markdown("<div style='background-color: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px;'>"
                 "<h2>Recommandations</h2>", unsafe_allow_html=True)
-    for rec in recommendations:
-        st.markdown(f"<p><strong>Type:</strong> {rec['Type']}</p>"
-                    f"<p><strong>Recommandation:</strong> {rec['Recommandation']}</p>"
-                    f"<p><strong>Détails:</strong> {rec['Détails']}</p>"
-                    "<hr>", unsafe_allow_html=True)
+    st.table(pd.DataFrame(recommendations))
     st.markdown("</div>", unsafe_allow_html=True)
 
 # Charger les données récentes
@@ -136,4 +159,3 @@ def load_recent_purchases():
     df_recent_purchases = pd.read_excel("dataFR.xlsx", engine='openpyxl')
     df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
-    return df_recent_purchases
