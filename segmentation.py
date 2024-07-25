@@ -118,6 +118,15 @@ def segmentation_page(df):
     inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
     inactive_clients['Total'] = inactive_clients['Total'].round()
 
+    # Ajouter les colonnes manquantes
+    if 'Restaurant' not in inactive_clients.columns:
+    inactive_clients = inactive_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in inactive_clients.columns:
+    inactive_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in inactive_clients.columns:
+    inactive_clients['Spending Level'] = 'Unknown'
+
+
     inactive_count = inactive_clients.shape[0]
 
     # Clients qui ont baissé dans le tiering
@@ -127,6 +136,15 @@ def segmentation_page(df):
     downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
     downgraded_clients['Total_Juin'] = downgraded_clients['Total_Juin'].round()
     downgraded_clients['Total_Juillet'] = downgraded_clients['Total_Juillet'].round()
+
+    # Ajouter les colonnes manquantes
+    if 'Restaurant' not in downgraded_clients.columns:
+        downgraded_clients = downgraded_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in downgraded_clients.columns:
+        downgraded_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in downgraded_clients.columns:
+        downgraded_clients['Spending Level'] = 'Unknown'
+
     downgraded_count = downgraded_clients.shape[0]
 
     # Clients restés dans le même tiering mais dépensé moins en juillet
