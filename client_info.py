@@ -21,7 +21,7 @@ def map_gamme(gamme_value):
     else:
         return "Non défini"
 
-def client_info_page(df, df_recent_purchases, default_client_id):
+def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id):
     st.title("Page d'Information Client")
 
     # Boîte de saisie pour entrer l'ID client
