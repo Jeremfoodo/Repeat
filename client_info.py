@@ -91,33 +91,54 @@ def client_info_page(df, df_recent_purchases, default_client_id):
                 "Détails": f"Catégories à recommander: {', '.join(categories_not_bought)}"
             })
 
-    # Afficher les informations standard du client
+    # Afficher les informations standard du client avec cadre et pictogrammes
     st.markdown(
         """
-        <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
-                <h3>ID du restaurant</h3>
-                <p>{}</p>
-            </div>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
-                <h3>Nom du restaurant</h3>
-                <p>{}</p>
-            </div>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
-                <h3>Total des dépenses</h3>
-                <p>{} €</p>
-            </div>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
-                <h3>Date de la première commande</h3>
-                <p>{} ({} jours)</p>
-            </div>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
-                <h3>Date de la dernière commande</h3>
-                <p>{}</p>
-            </div>
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px;'>
-                <h3>Nombre de jours depuis la dernière commande</h3>
-                <p>{}</p>
+        <div style='background-color: #f0f4f7; padding: 20px; border-radius: 10px;'>
+            <h2>Infos Générales</h2>
+            <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>ID du restaurant</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nom du restaurant</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/money.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Total des dépenses</h5>
+                        <p style='margin: 0;'>{} €</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Date de la première commande</h5>
+                        <p style='margin: 0;'>{} ({} jours)</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Date de la dernière commande</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre de jours depuis la dernière commande</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
             </div>
         </div>
         """.format(
@@ -129,13 +150,18 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     )
 
     # Afficher les informations sur les fournisseurs et catégories
-    st.markdown("<div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>"
-                "<h2>Informations sur les fournisseurs et catégories</h2>"
-                f"<p><strong>Nombre total de catégories:</strong> {total_categories}</p>"
-                f"<p><strong>Nombre de catégories en juillet 2024:</strong> {july_categories}</p>"
-                f"<h3>Fournisseurs avec date du dernier achat:</h3>"
-                f"{suppliers.to_html(index=False)}"
-                f"</div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h2>Informations sur les fournisseurs et catégories</h2>
+            <p><strong>Nombre total de catégories:</strong> {}</p>
+            <p><strong>Nombre de catégories en juillet 2024:</strong> {}</p>
+            <h3>Fournisseurs avec date du dernier achat:</h3>
+            {}
+        </div>
+        """.format(total_categories, july_categories, suppliers.to_html(index=False)),
+        unsafe_allow_html=True
+    )
 
     fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
     st.plotly_chart(fig_category_spending)
@@ -143,19 +169,33 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     fig_supplier_spending = px.pie(supplier_spending, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
     st.plotly_chart(fig_supplier_spending)
 
-    st.markdown("<div style='background-color: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 20px;'>"
-                "<h2>Produits les plus fréquemment achetés</h2>"
-                f"{top_products.to_html(index=False)}"
-                f"</div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style='background-color: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h2>Produits les plus fréquemment achetés</h2>
+            {}
+        </div>
+        """.format(top_products.to_html(index=False)),
+        unsafe_allow_html=True
+    )
 
     # Afficher les recommandations
-    st.markdown("<div style='background-color: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px;'>"
-                "<h2>Recommandations</h2>", unsafe_allow_html=True)
-    st.table(pd.DataFrame(recommendations))
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style='background-color: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h2>Recommandations</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    recommendations_df = pd.DataFrame(recommendations)
+    st.table(recommendations_df)
 
 # Charger les données récentes
 def load_recent_purchases():
     df_recent_purchases = pd.read_excel("dataFR.xlsx", engine='openpyxl')
     df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
+    return df_recent_purchases
+
