@@ -6,7 +6,7 @@ from objectifs import objectifs_page
 from active_users import active_users_page
 from segmentation import segmentation_page
 from client_info import client_info_page  # Ajouter cette ligne
-from src.data_processing import load_data, download_prepared_data, reassign_account_manager, load_recent_purchases, load_segmentation_data
+from src.data_processing import load_data, download_prepared_data, reassign_account_manager, load_recent_purchases
 import gdown
 import pandas as pd
 
