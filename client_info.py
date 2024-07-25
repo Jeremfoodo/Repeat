@@ -118,31 +118,12 @@ def client_info_page(df, df_recent_purchases, client_id):
     st.markdown(f"""
     <div style='background-color: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px;'>
         <h2>💡 Recommandations</h2>
-        <table style='width:100%; border-collapse: collapse;'>
-            <thead>
-                <tr style='background-color: #c3e6cb;'>
-                    <th style='border: 1px solid #ddd; padding: 8px;'>Type</th>
-                    <th style='border: 1px solid #ddd; padding: 8px;'>Recommandation</th>
-                    <th style='border: 1px solid #ddd; padding: 8px;'>Détails</th>
-                </tr>
-            </thead>
-            <tbody>
     """, unsafe_allow_html=True)
-    
-    for rec in recommendations:
-        st.markdown(f"""
-            <tr>
-                <td style='border: 1px solid #ddd; padding: 8px;'>{rec['Type']}</td>
-                <td style='border: 1px solid #ddd; padding: 8px;'>{rec['Recommandation']}</td>
-                <td style='border: 1px solid #ddd; padding: 8px;'>{rec['Détails']}</td>
-            </tr>
-        """, unsafe_allow_html=True)
-    
-    st.markdown(f"""
-            </tbody>
-        </table>
-    </div>
-    """, unsafe_allow_html=True)
+
+    recommendations_df = pd.DataFrame(recommendations)
+    st.dataframe(recommendations_df)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Charger les données récentes
 def load_recent_purchases():
@@ -155,4 +136,4 @@ def load_recent_purchases():
 if __name__ == "__main__":
     df = pd.read_csv("data.csv")
     df_recent_purchases = load_recent_purchases()
-    client_info_page(df, df_recent_purchases, 42350)
+    client_info_page(df, df_recent_purchases, 44290)
