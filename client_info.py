@@ -155,4 +155,4 @@ def load_recent_purchases():
 if __name__ == "__main__":
     df = pd.read_csv("data.csv")
     df_recent_purchases = load_recent_purchases()
-    client_info_page(df, df_recent_purchases, 44290)
+    client_info_page(df, df_recent_purchases, 42350)
