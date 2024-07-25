@@ -1,4 +1,3 @@
-# client_info.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -20,7 +19,7 @@ def client_info_page(df, df_recent_purchases, client_id):
         df['Dernière commande'] = df.groupby('Restaurant ID')['Date de commande'].transform('max')
     
     if 'Dernière commande' not in client_data.columns:
-        client_data['Dernière commande'] = client_data['Date de commande'].max()
+        client_data.loc[:, 'Dernière commande'] = client_data['Date de commande'].max()
 
     # Informations standard du client
     client_name = client_data["Restaurant"].iloc[0]
@@ -31,7 +30,11 @@ def client_info_page(df, df_recent_purchases, client_id):
 
     # Informations sur les fournisseurs et catégories
     total_categories = client_recent_purchases["Product Category"].nunique()
-    july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
+    if pd.api.types.is_datetime64_any_dtype(client_recent_purchases['Date']):
+        july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
+    else:
+        july_categories = 0
+
     suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
 
     category_spending = client_recent_purchases.groupby('sub_cat')['GMV'].sum().reset_index()
