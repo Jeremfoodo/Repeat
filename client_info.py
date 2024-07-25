@@ -7,6 +7,7 @@ from src.calculations import get_clients_by_segment_and_spending
 from recommendations import get_recommendations
 from src.segmentation import load_segmentation_data
 
+
 # Charger les données de segmentation
 segmentation_df = load_segmentation_data()
 
@@ -24,9 +25,16 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     else:
         client_id = default_client_id
 
+    # Charger les données de segmentation
+    segmentation_df = load_segmentation_data()
+
+    # Sélectionner les données du client
+    client_data = df[df['Restaurant ID'] == client_id]
+
+    # Fusionner les données de segmentation avec les données du client
     client_data = pd.merge(client_data, segmentation_df, left_on='Restaurant ID', right_on='Restaurant_id', how='left')
 
-    client_data = df[df['Restaurant ID'] == client_id]
+    # Sélectionner les achats récents du client
     client_recent_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'] == client_id]
 
     # Convertir les dates si elles ne sont pas déjà au format datetime
