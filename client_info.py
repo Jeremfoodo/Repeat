@@ -15,6 +15,13 @@ def client_info_page(df, df_recent_purchases, client_id):
         df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
         df_recent_purchases.dropna(subset=['Date'], inplace=True)
 
+    # Calculer la dernière commande si elle n'existe pas
+    if 'Dernière commande' not in df.columns:
+        df['Dernière commande'] = df.groupby('Restaurant ID')['Date de commande'].transform('max')
+    
+    if 'Dernière commande' not in client_data.columns:
+        client_data['Dernière commande'] = client_data['Date de commande'].max()
+
     # Informations standard du client
     client_name = client_data["Restaurant"].iloc[0]
     total_spending = client_data["Total"].sum()
