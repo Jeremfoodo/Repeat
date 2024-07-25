@@ -160,6 +160,8 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     )
 
     # Calculer le nombre de jours depuis la dernière commande pour chaque fournisseur
+    suppliers['Date'] = pd.to_datetime(suppliers['Date'], errors='coerce')
+    suppliers.dropna(subset=['Date'], inplace=True)
     suppliers['Days Since Last Order'] = (datetime.now() - suppliers['Date']).dt.days
 
     # Trier les fournisseurs par date de commande la plus récente
@@ -171,9 +173,10 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     # Convertir le DataFrame en tableau HTML
     suppliers_table = suppliers.to_html(index=False, classes='styled-table')
 
-    # Remplacer la partie HTML par le code ci-dessus
+
+    # Remplacer cette section dans le code existant
     st.markdown(
-    """
+        """
         <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
             <h2>Informations sur les fournisseurs et catégories</h2>
             <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
@@ -201,6 +204,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         """.format(total_categories, categories_list, july_categories, suppliers_table),
         unsafe_allow_html=True
     )
+
 
 
     fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
