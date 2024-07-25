@@ -269,6 +269,14 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     st.table(top_products)
 
     # Afficher les recommandations
+    recommendations = get_recommendations(
+    client_recent_purchases,
+    client_june_data,
+    client_july_data,
+    df_recent_purchases,
+    segmentation_df,
+    client_id
+)
     st.markdown("### Recommandations")
     for rec in recommendations:
         st.markdown(f"**Type:** {rec['Type']}")
