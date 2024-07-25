@@ -85,45 +85,38 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
                 "Recommandation": f"Recommandez de racheter le produit {product}.",
                 "Détails": f"Le dernier achat de ce produit a été effectué il y a {(datetime.now() - last_product_order_date).days} jours."
             })
+
+    # Recommandations basées sur les restaurants similaires
+    client_info = segmentation_df[segmentation_df['Restaurant_id'] == client_id].iloc[0]
+    similar_restaurants = segmentation_df[(segmentation_df['Gamme'] == client_info['Gamme']) & (segmentation_df['Type'] == client_info['Type'])]
+    similar_restaurant_ids = similar_restaurants['Restaurant_id'].tolist()
+    similar_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_restaurant_ids)]
+
+    # Appliquer l'algorithme Apriori
+    basket = similar_purchases.groupby(['Restaurant_id', 'product_name'])['GMV'].sum().unstack().reset_index().fillna(0).set_index('Restaurant_id')
+    basket_sets = basket.applymap(lambda x: 1 if x > 0 else 0)
+    frequent_itemsets = apriori(basket_sets, min_support=0.05, use_colnames=True)
+    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+
+    # Trier les produits recommandés par support
+    top_recommendations = rules.sort_values(by='support', ascending=False).head(10)
+
+    # Formater les recommandations
+    product_recommendations = []
+    for _, row in top_recommendations.iterrows():
+        product = list(row['antecedents'])[0]
+        support = row['support']
+        product_category = similar_purchases[similar_purchases['product_name'] == product]['Product Category'].iloc[0]
+        product_recommendations.append({
+            "Produit": product,
+            "Catégorie": product_category,
+            "Support (%)": round(support * 100, 2)
+        })
+
+    recommendations.append({
+        "Type": "Recommandation basée sur les restaurants similaires",
+        "Recommandation": "Les clients similaires (même gamme, même type) que ce client achètent ces produits en priorité :",
+        "Détails": product_recommendations
+    })
     
-    # Ajouter la partie Apriori pour les recommandations basées sur les restaurants similaires
-    client_segmentation = segmentation_df[segmentation_df['Restaurant_id'] == client_id]
-
-    if not client_segmentation.empty:
-        gamme = client_segmentation['Gamme'].values[0]
-        type_general = client_segmentation['Type'].values[0]
-
-        # Trouver les restaurants similaires
-        similar_restaurants = segmentation_df[
-            (segmentation_df['Gamme'] == gamme) & 
-            (segmentation_df['Type'] == type_general)
-        ]['Restaurant_id'].unique()
-
-        # Filtrer les achats des restaurants similaires
-        similar_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_restaurants)]
-
-        # Appliquer l'algorithme Apriori
-        basket = similar_purchases.groupby(['Restaurant_id', 'product_name'])['GMV'].sum().unstack().reset_index().fillna(0).set_index('Restaurant_id')
-        basket = basket.applymap(lambda x: 1 if x > 0 else 0)
-
-        frequent_itemsets = apriori(basket, min_support=0.1, use_colnames=True)
-        rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
-
-        # Recommandations basées sur Apriori
-        client_products = set(client_recent_purchases['product_name'].unique())
-        apriori_recommendations = []
-
-        for _, row in rules.iterrows():
-            if any(item in client_products for item in row['antecedents']):
-                apriori_recommendations.extend(list(row['consequents']))
-
-        apriori_recommendations = list(set(apriori_recommendations) - client_products)
-
-        for product in apriori_recommendations:
-            recommendations.append({
-                "Type": "Recommandation basée sur les restaurants similaires",
-                "Recommandation": f"Recommandez d'acheter {product}.",
-                "Détails": ""
-            })
-
     return recommendations
