@@ -68,92 +68,92 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     top_products = client_recent_purchases.groupby(['product_name']).size().reset_index(name='counts').sort_values(by='counts', ascending=False)
 
     # Algorithme de recommandations basé sur les nouveaux critères
-    recommendations = []
+recommendations = []
 
-    # Récupérer les informations de la dépense en juin et juillet
-    client_june_data = df[(df['Restaurant ID'] == client_id) & (df['Mois'] == '2024-06')]
-    client_july_data = df[(df['Restaurant ID'] == client_id) & (df['Mois'] == '2024-07')]
+# Récupérer les informations de la catégorie de dépense en juin et juillet
+client_june_data = df[(df['Restaurant ID'] == client_id) & (df['Mois'] == '2024-06')]
+client_july_data = df[(df['Restaurant ID'] == client_id) & (df['Mois'] == '2024-07')]
 
-    june_total_spending = client_june_data["Total"].sum() if not client_june_data.empty else 0
-    july_total_spending = client_july_data["Total"].sum() if not client_july_data.empty else 0
+june_spending = client_june_data["Total"].sum()
+july_spending = client_july_data["Total"].sum()
 
-    # Comparer les dépenses totales
-    if june_total_spending and july_total_spending:
-        if july_total_spending < june_total_spending:
-            recommendations.append({
-                "Type": "Augmentation des efforts",
-                "Recommandation": "Le client a baissé ses dépenses en juillet par rapport à juin. Augmentez les efforts de recommandation pour l'inciter à commander plus.",
-                "Détails": f"Dépenses en juin : {june_total_spending} €, Dépenses en juillet : {july_total_spending} €"
-            })
-        elif july_total_spending > june_total_spending:
-            recommendations.append({
-                "Type": "Maintien des efforts",
-                "Recommandation": "Le client a augmenté ses dépenses en juillet par rapport à juin. Maintenez ou améliorez les recommandations pour continuer cette tendance.",
-                "Détails": f"Dépenses en juin : {june_total_spending} €, Dépenses en juillet : {july_total_spending} €"
-            })
+# Comparer les niveaux de dépense
+if july_spending < june_spending:
+    recommendations.append({
+        "Type": "Augmentation des efforts",
+        "Recommandation": "Le client a baissé ses dépenses en juillet par rapport à juin. Augmentez les efforts de recommandation pour l'inciter à commander plus.",
+        "Détails": ""
+    })
+elif july_spending > june_spending:
+    recommendations.append({
+        "Type": "Maintien des efforts",
+        "Recommandation": "Le client a augmenté ses dépenses en juillet par rapport à juin. Maintenez ou améliorez les recommandations pour continuer cette tendance.",
+        "Détails": ""
+    })
 
-    # Fréquence d'achat
-    if 'Fruits et Légumes' in client_recent_purchases['Product Category'].values:
-        last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
-        last_fruit_veg_order_date = pd.to_datetime(last_fruit_veg_order_date, errors='coerce')  # Convertir en datetime
+# Fréquence d'achat
+if 'Fruits et Légumes' in client_recent_purchases['Product Category'].values:
+    last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
+    last_fruit_veg_order_date = pd.to_datetime(last_fruit_veg_order_date, errors='coerce')  # Convertir en datetime
     if (datetime.now() - last_fruit_veg_order_date).days > 7:
         recommendations.append({
             "Type": "Rachat de fruits et légumes",
             "Recommandation": "Recommandez de racheter des fruits et légumes.",
             "Détails": f"Le dernier achat de fruits et légumes a été effectué il y a {(datetime.now() - last_fruit_veg_order_date).days} jours."
         })
-    else:
-        last_order_date = client_recent_purchases['Date'].max()
-        last_order_date = pd.to_datetime(last_order_date, errors='coerce')  # Convertir last_order_date en datetime
-        if (datetime.now() - last_order_date).days > 15:
-            recommendations.append({
-                "Type": "Rachat dans d'autres catégories",
-                "Recommandation": "Recommandez de racheter dans d'autres catégories.",
-                "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
-            })
-
-
-    # Nombre de catégories
-    june_categories = client_june_data['Product Category'].nunique()
-    july_categories = client_july_data['Product Category'].nunique()
-
-    # Comparaison juin vs juillet
-    if july_categories < june_categories:
-        categories_not_bought_in_july = set(client_june_data['Product Category'].unique()) - set(client_july_data['Product Category'].unique())
+else:
+    last_order_date = client_recent_purchases['Date'].max()
+    last_order_date = pd.to_datetime(last_order_date, errors='coerce')  # Convertir en datetime
+    if (datetime.now() - last_order_date).days > 15:
         recommendations.append({
-            "Type": "Recommandation de catégories",
-            "Recommandation": "Recommandez des achats dans les catégories non commandées en juillet.",
-            "Détails": f"Catégories non commandées en juillet: {', '.join(categories_not_bought_in_july)}"
+            "Type": "Rachat dans d'autres catégories",
+            "Recommandation": "Recommandez de racheter dans d'autres catégories.",
+            "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
         })
 
-    # Nombre total de catégories distinctes
-    total_categories = client_recent_purchases['Product Category'].nunique()
+# Nombre de catégories
+june_categories = client_june_data['Product Category'].nunique()
+july_categories = client_july_data['Product Category'].nunique()
 
-    if total_categories < 3:
-        categories_to_recommend = ["Boucherie", "Fruits et Légumes", "Crémerie", "Epicerie Salée"]
-        categories_not_bought = [cat for cat in categories_to_recommend if cat not in client_recent_purchases['Product Category'].values]
+# Comparaison juin vs juillet
+if july_categories < june_categories:
+    categories_not_bought_in_july = set(client_june_data['Product Category'].unique()) - set(client_july_data['Product Category'].unique())
+    recommendations.append({
+        "Type": "Recommandation de catégories",
+        "Recommandation": "Recommandez des achats dans les catégories non commandées en juillet.",
+        "Détails": f"Catégories non commandées en juillet: {', '.join(categories_not_bought_in_july)}"
+    })
+
+# Nombre total de catégories distinctes
+total_categories = client_recent_purchases['Product Category'].nunique()
+
+if total_categories < 3:
+    categories_to_recommend = ["Boucherie", "Fruits et Légumes", "Crémerie", "Epicerie Salée"]
+    categories_not_bought = [cat for cat in categories_to_recommend if cat not in client_recent_purchases['Product Category'].values]
+    recommendations.append({
+        "Type": "Recommandation multicatégorie",
+        "Recommandation": "Proposez des produits dans les principales catégories non commandées.",
+        "Détails": f"Catégories à recommander: {', '.join(categories_not_bought)}"
+    })
+elif total_categories >= 3:
+    recommendations.append({
+        "Type": "Augmentation des produits",
+        "Recommandation": "Focalisez sur l'augmentation du nombre de produits ou des produits plus chers dans les catégories existantes.",
+        "Détails": ""
+    })
+
+# Produits fréquemment achetés mais récemment non commandés
+frequently_bought_products = client_recent_purchases.groupby('product_name').size().reset_index(name='counts').sort_values(by='counts', ascending=False)
+for product in frequently_bought_products['product_name'].unique():
+    last_product_order_date = client_recent_purchases[client_recent_purchases['product_name'] == product]['Date'].max()
+    last_product_order_date = pd.to_datetime(last_product_order_date, errors='coerce')  # Convertir en datetime
+    if (datetime.now() - last_product_order_date).days > 30:
         recommendations.append({
-            "Type": "Recommandation multicatégorie",
-            "Recommandation": "Proposez des produits dans les principales catégories non commandées.",
-            "Détails": f"Catégories à recommander: {', '.join(categories_not_bought)}"
-        })
-    elif total_categories >= 3:
-        recommendations.append({
-            "Type": "Augmentation des produits",
-            "Recommandation": "Focalisez sur l'augmentation du nombre de produits ou des produits plus chers dans les catégories existantes.",
-            "Détails": ""
+            "Type": "Rachat de produit",
+            "Recommandation": f"Recommandez de racheter le produit {product}.",
+            "Détails": f"Le dernier achat de ce produit a été effectué il y a {(datetime.now() - last_product_order_date).days} jours."
         })
 
-    # Produits fréquemment achetés mais récemment non commandés
-    frequently_bought_products = client_recent_purchases.groupby('product_name').size().reset_index(name='counts').sort_values(by='counts', ascending=False)
-    for product in frequently_bought_products['product_name'].unique():
-        last_product_order_date = client_recent_purchases[client_recent_purchases['product_name'] == product]['Date'].max()
-        if (datetime.now() - last_product_order_date).days > 30:
-            recommendations.append({
-                "Type": "Rachat de produit",
-                "Recommandation": f"Recommandez le produit {product} qui était souvent commandé mais n'a pas été acheté récemment.",
-                "Détails": f"Le dernier achat de ce produit a été effectué il y a {(datetime.now() - last_product_order_date).days} jours."
-            })
 
     # Afficher les informations standard du client avec cadre et pictogrammes
     st.markdown(
