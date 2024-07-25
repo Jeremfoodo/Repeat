@@ -6,7 +6,7 @@ from objectifs import objectifs_page
 from active_users import active_users_page
 from segmentation import segmentation_page
 from client_info import client_info_page  # Ajouter cette ligne
-from src.data_processing import load_data, download_prepared_data, reassign_account_manager, load_recent_purchases
+from src.data_processing import load_data, download_prepared_data, reassign_account_manager, load_recent_purchases, load_segmentation_data
 import gdown
 import pandas as pd
 
@@ -14,6 +14,8 @@ import pandas as pd
 # Télécharger et charger les données
 download_prepared_data()
 historical_data, df = load_data()
+segmentation_df = load_segmentation_data()
+
 
 
 # Charger les achats récents
