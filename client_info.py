@@ -102,15 +102,15 @@ def client_info_page(df, df_recent_purchases, default_client_id):
             "Recommandation": "Recommandez de racheter des fruits et légumes.",
             "Détails": f"Le dernier achat de fruits et légumes a été effectué il y a {(datetime.now() - last_fruit_veg_order_date).days} jours."
         })
-else:
-    last_order_date = client_recent_purchases['Date'].max()
-    last_order_date = pd.to_datetime(last_order_date, errors='coerce')  # Convertir last_order_date en datetime
-    if (datetime.now() - last_order_date).days > 15:
-        recommendations.append({
-            "Type": "Rachat dans d'autres catégories",
-            "Recommandation": "Recommandez de racheter dans d'autres catégories.",
-            "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
-        })
+    else:
+        last_order_date = client_recent_purchases['Date'].max()
+        last_order_date = pd.to_datetime(last_order_date, errors='coerce')  # Convertir last_order_date en datetime
+        if (datetime.now() - last_order_date).days > 15:
+            recommendations.append({
+                "Type": "Rachat dans d'autres catégories",
+                "Recommandation": "Recommandez de racheter dans d'autres catégories.",
+                "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
+            })
 
 
     # Nombre de catégories
