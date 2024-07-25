@@ -186,8 +186,8 @@ if 'Segment' not in increased_spending_clients.columns:
 if 'Spending Level' not in increased_spending_clients.columns:
     increased_spending_clients['Spending Level'] = 'Unknown'
 
-increased_spending_clients = increased_spending_clients.drop_duplicates(subset='Restaurant ID')
-increased_spending_count = increased_spending_clients.shape[0]
+    increased_spending_clients = increased_spending_clients.drop_duplicates(subset='Restaurant ID')
+    increased_spending_count = increased_spending_clients.shape[0]
 
 
     # Récapitulatif
