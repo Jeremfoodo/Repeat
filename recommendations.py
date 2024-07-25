@@ -1,7 +1,6 @@
 # recommendations.py
 from datetime import datetime
 import pandas as pd
-from mlxtend.frequent_patterns import apriori, association_rules
 
 def get_recommendations(client_recent_purchases, client_june_data, client_july_data, df_recent_purchases, segmentation_df, client_id):
     recommendations = []
@@ -92,14 +91,15 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
     similar_restaurant_ids = similar_restaurants['Restaurant_id'].tolist()
     similar_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_restaurant_ids)]
 
-    # Calculer la fréquence des produits achetés par les restaurants similaires
-    product_counts = similar_purchases['product_name'].value_counts().reset_index()
-    product_counts.columns = ['product_name', 'count']
-    product_counts = product_counts.merge(similar_purchases[['product_name', 'Product Category']].drop_duplicates(), on='product_name')
-    product_counts['Support (%)'] = product_counts['count'] / similar_purchases['Restaurant_id'].nunique() * 100
+    # Calculer le support correctement
+    order_counts = similar_purchases.groupby('Restaurant_id')['Date'].nunique().sum()
+    product_order_counts = similar_purchases.groupby('product_name')['Restaurant_id'].nunique().reset_index()
+    product_order_counts.columns = ['product_name', 'order_count']
+    product_order_counts = product_order_counts.merge(similar_purchases[['product_name', 'Product Category']].drop_duplicates(), on='product_name')
+    product_order_counts['Support (%)'] = product_order_counts['order_count'] / order_counts * 100
 
     # Prendre les 10 produits les plus fréquents
-    top_recommendations = product_counts.head(10)
+    top_recommendations = product_order_counts.sort_values(by='Support (%)', ascending=False).head(10)
 
     # Formater les recommandations
     product_recommendations = top_recommendations.to_dict('records')
