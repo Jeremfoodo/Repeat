@@ -67,6 +67,11 @@ def client_info_page(df, df_recent_purchases, default_client_id):
 
     # Algorithme de recommandations basé sur les nouveaux critères
 
+    # Vérifier l'existence de la colonne "Spending Level"
+    if 'Spending Level' not in df.columns:
+        st.error("La colonne 'Spending Level' n'existe pas dans les données.")
+        return
+
     # Récupérer les informations de la catégorie de dépense en juin et juillet
     client_june_data = df[(df['Restaurant ID'] == client_id) & (df['Mois'] == '2024-06')]
     client_july_data = df[(df['Restaurant ID'] == client_id) & (df['Mois'] == '2024-07')]
@@ -75,7 +80,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     july_spending_level = client_july_data["Spending Level"].max() if not client_july_data.empty else None
 
     # Comparer les niveaux de dépense
-    if june_spending_level and july_spending_level:
+    if june_spending_level is not None and july_spending_level is not None:
         if july_spending_level < june_spending_level:
             recommendations.append({
                 "Type": "Augmentation des efforts",
@@ -103,8 +108,8 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         if (datetime.now() - last_order_date).days > 15:
             recommendations.append({
                 "Type": "Rachat dans d'autres catégories",
-            "Recommandation": "Recommandez de racheter dans d'autres catégories.",
-                    "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
+                "Recommandation": "Recommandez de racheter dans d'autres catégories.",
+                "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
             })
 
     # Nombre de catégories
@@ -148,7 +153,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
                 "Recommandation": f"Recommandez de racheter le produit {product}.",
                 "Détails": f"Le dernier achat de ce produit a été effectué il y a {(datetime.now() - last_product_order_date).days} jours."
             })
-
+    
 
 
     # Afficher les informations standard du client avec cadre et pictogrammes
