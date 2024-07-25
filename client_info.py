@@ -1,4 +1,3 @@
-# client_info.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -42,8 +41,19 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     days_since_last_order = (datetime.now() - last_order_date).days
     days_since_first_order = (datetime.now() - first_order_date).days
 
+    # Déterminer la couleur de la box en fonction du nombre de jours depuis la dernière commande
+    if days_since_last_order < 7:
+        last_order_color = "#d4edda"  # Vert
+    elif days_since_last_order < 15:
+        last_order_color = "#fff3cd"  # Jaune
+    elif days_since_last_order < 30:
+        last_order_color = "#ffeeba"  # Orange
+    else:
+        last_order_color = "#f8d7da"  # Rouge
+
     # Informations sur les fournisseurs et catégories
     total_categories = client_recent_purchases["Product Category"].nunique()
+    categories_list = ", ".join(client_recent_purchases["Product Category"].unique())
     if pd.api.types.is_datetime64_any_dtype(client_recent_purchases['Date']):
         july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
     else:
@@ -132,7 +142,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
                         <p style='margin: 0;'>{}</p>
                     </div>
                 </div>
-                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                <div style='background-color: {}; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
                     <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
                     <div>
                         <h5 style='margin: 0;'>Nombre de jours depuis la dernière commande</h5>
@@ -144,7 +154,7 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         """.format(
             client_id, client_name, total_spending,
             first_order_date.strftime('%Y-%m-%d'), days_since_first_order,
-            last_order_date.strftime('%Y-%m-%d'), days_since_last_order
+            last_order_date.strftime('%Y-%m-%d'), last_order_color, days_since_last_order
         ),
         unsafe_allow_html=True
     )
@@ -154,12 +164,27 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         """
         <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
             <h2>Informations sur les fournisseurs et catégories</h2>
-            <p><strong>Nombre total de catégories:</strong> {}</p>
-            <p><strong>Nombre de catégories en juillet 2024:</strong> {}</p>
+            <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre total de catégories</h5>
+                        <p style='margin: 0;'>{}</p>
+                        <small>{}</small>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre de catégories en juillet 2024</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+            </div>
             <h3>Fournisseurs avec date du dernier achat:</h3>
             {}
         </div>
-        """.format(total_categories, july_categories, suppliers.to_html(index=False)),
+        """.format(total_categories, categories_list, july_categories, suppliers.to_html(index=False)),
         unsafe_allow_html=True
     )
 
@@ -198,3 +223,4 @@ def load_recent_purchases():
     df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
     return df_recent_purchases
+
