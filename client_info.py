@@ -207,11 +207,19 @@ def client_info_page(df, df_recent_purchases, default_client_id):
 
 
 
+    # Créez les graphiques en secteurs
     fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
-    st.plotly_chart(fig_category_spending)
-
     fig_supplier_spending = px.pie(supplier_spending, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
-    st.plotly_chart(fig_supplier_spending)
+
+    # Afficher les graphiques côte à côte en utilisant les colonnes
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.plotly_chart(fig_category_spending)
+    
+    with col2:
+        st.plotly_chart(fig_supplier_spending)
+
 
     st.markdown(
         """
