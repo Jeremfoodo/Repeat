@@ -109,7 +109,6 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     june_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-06')]['GMV'].sum()
     july_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07')]['GMV'].sum()
 
-    recommendations = get_recommendations(client_recent_purchases, client_june_data, client_july_data)
 
     
     # Informations de segmentation
