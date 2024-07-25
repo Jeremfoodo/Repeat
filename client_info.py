@@ -94,8 +94,8 @@ def client_info_page(df, df_recent_purchases, default_client_id):
 
     # Fréquence d'achat
     if 'Fruits et Légumes' in client_recent_purchases['Product Category'].values:
-    last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
-    last_fruit_veg_order_date = pd.to_datetime(last_fruit_veg_order_date, errors='coerce')  # Convertir en datetime
+        last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
+        last_fruit_veg_order_date = pd.to_datetime(last_fruit_veg_order_date, errors='coerce')  # Convertir en datetime
     if (datetime.now() - last_fruit_veg_order_date).days > 7:
         recommendations.append({
             "Type": "Rachat de fruits et légumes",
