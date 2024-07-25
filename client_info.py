@@ -94,21 +94,24 @@ def client_info_page(df, df_recent_purchases, default_client_id):
 
     # Fréquence d'achat
     if 'Fruits et Légumes' in client_recent_purchases['Product Category'].values:
-        last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
-        if (datetime.now() - last_fruit_veg_order_date).days > 7:
-            recommendations.append({
-                "Type": "Rachat de fruits et légumes",
-                "Recommandation": "Recommandez de racheter des fruits et légumes.",
-                "Détails": f"Le dernier achat de fruits et légumes a été effectué il y a {(datetime.now() - last_fruit_veg_order_date).days} jours."
-            })
-    else:
-        last_order_date = client_recent_purchases['Date'].max()
-        if (datetime.now() - last_order_date).days > 15:
-            recommendations.append({
-                "Type": "Rachat dans d'autres catégories",
-                "Recommandation": "Recommandez de racheter dans d'autres catégories.",
-                "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
-            })
+    last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
+    last_fruit_veg_order_date = pd.to_datetime(last_fruit_veg_order_date, errors='coerce')  # Convertir en datetime
+    if (datetime.now() - last_fruit_veg_order_date).days > 7:
+        recommendations.append({
+            "Type": "Rachat de fruits et légumes",
+            "Recommandation": "Recommandez de racheter des fruits et légumes.",
+            "Détails": f"Le dernier achat de fruits et légumes a été effectué il y a {(datetime.now() - last_fruit_veg_order_date).days} jours."
+        })
+else:
+    last_order_date = client_recent_purchases['Date'].max()
+    last_order_date = pd.to_datetime(last_order_date, errors='coerce')  # Convertir last_order_date en datetime
+    if (datetime.now() - last_order_date).days > 15:
+        recommendations.append({
+            "Type": "Rachat dans d'autres catégories",
+            "Recommandation": "Recommandez de racheter dans d'autres catégories.",
+            "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
+        })
+
 
     # Nombre de catégories
     june_categories = client_june_data['Product Category'].nunique()
