@@ -120,11 +120,11 @@ def segmentation_page(df):
 
     # Ajouter les colonnes manquantes
     if 'Restaurant' not in inactive_clients.columns:
-    inactive_clients = inactive_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+        inactive_clients = inactive_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
     if 'Segment' not in inactive_clients.columns:
-    inactive_clients['Segment'] = 'Unknown'
+        inactive_clients['Segment'] = 'Unknown'
     if 'Spending Level' not in inactive_clients.columns:
-    inactive_clients['Spending Level'] = 'Unknown'
+        inactive_clients['Spending Level'] = 'Unknown'
 
 
     inactive_count = inactive_clients.shape[0]
