@@ -92,26 +92,17 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
     similar_restaurant_ids = similar_restaurants['Restaurant_id'].tolist()
     similar_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_restaurant_ids)]
 
-    # Appliquer l'algorithme Apriori
-    basket = similar_purchases.groupby(['Restaurant_id', 'product_name'])['GMV'].sum().unstack().reset_index().fillna(0).set_index('Restaurant_id')
-    basket_sets = basket.applymap(lambda x: 1 if x > 0 else 0)
-    frequent_itemsets = apriori(basket_sets, min_support=0.05, use_colnames=True)
-    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+    # Calculer la fréquence des produits achetés par les restaurants similaires
+    product_counts = similar_purchases['product_name'].value_counts().reset_index()
+    product_counts.columns = ['product_name', 'count']
+    product_counts = product_counts.merge(similar_purchases[['product_name', 'Product Category']].drop_duplicates(), on='product_name')
+    product_counts['Support (%)'] = product_counts['count'] / similar_purchases['Restaurant_id'].nunique() * 100
 
-    # Trier les produits recommandés par support
-    top_recommendations = rules.sort_values(by='support', ascending=False).head(10)
+    # Prendre les 10 produits les plus fréquents
+    top_recommendations = product_counts.head(10)
 
     # Formater les recommandations
-    product_recommendations = []
-    for _, row in top_recommendations.iterrows():
-        product = list(row['antecedents'])[0]
-        support = row['support']
-        product_category = similar_purchases[similar_purchases['product_name'] == product]['Product Category'].iloc[0]
-        product_recommendations.append({
-            "Produit": product,
-            "Catégorie": product_category,
-            "Support (%)": round(support * 100, 2)
-        })
+    product_recommendations = top_recommendations.to_dict('records')
 
     recommendations.append({
         "Type": "Recommandation basée sur les restaurants similaires",
