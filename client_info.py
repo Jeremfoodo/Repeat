@@ -5,6 +5,11 @@ import plotly.express as px
 from datetime import datetime
 from src.calculations import get_clients_by_segment_and_spending
 from recommendations import get_recommendations
+from src.segmentation import load_segmentation_data
+
+# Charger les données de segmentation
+segmentation_df = load_segmentation_data()
+
 
 def client_info_page(df, df_recent_purchases, default_client_id):
     st.title("Page d'Information Client")
@@ -18,6 +23,8 @@ def client_info_page(df, df_recent_purchases, default_client_id):
         client_id = int(client_id_input)
     else:
         client_id = default_client_id
+
+    client_data = pd.merge(client_data, segmentation_df, left_on='Restaurant ID', right_on='Restaurant_id', how='left')
 
     client_data = df[df['Restaurant ID'] == client_id]
     client_recent_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'] == client_id]
@@ -81,6 +88,11 @@ def client_info_page(df, df_recent_purchases, default_client_id):
     recommendations = get_recommendations(client_recent_purchases, client_june_data, client_july_data)
 
     
+    # Informations de segmentation
+    gamme = client_data["Gamme"].iloc[0]
+    type_detail = client_data["Type_detail"].iloc[0]
+    type_general = client_data["Type"].iloc[0]
+
     # Afficher les informations standard du client avec cadre et pictogrammes
     st.markdown(
         """
@@ -129,15 +141,38 @@ def client_info_page(df, df_recent_purchases, default_client_id):
                         <p style='margin: 0;'>{}</p>
                     </div>
                 </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/categorize.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Gamme</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Type détaillé</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Type général</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
             </div>
         </div>
         """.format(
             client_id, client_name, total_spending,
             first_order_date.strftime('%Y-%m-%d'), days_since_first_order,
-            last_order_date.strftime('%Y-%m-%d'), last_order_color, days_since_last_order
+            last_order_date.strftime('%Y-%m-%d'), last_order_color, days_since_last_order,
+            gamme, type_detail, type_general
         ),
         unsafe_allow_html=True
     )
+
 
     # Calculer le nombre de jours depuis la dernière commande pour chaque fournisseur
     suppliers['Date'] = pd.to_datetime(suppliers['Date'], errors='coerce')
