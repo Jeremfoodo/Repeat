@@ -132,8 +132,23 @@ def load_recent_purchases():
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
     return df_recent_purchases
 
-# Testing the function with a sample client ID
+# Interface principale
+def main():
+    st.title("Informations sur le client")
+
+    # Ajouter une boîte pour entrer l'ID client
+    client_id_input = st.text_input("Entrez l'ID du client (Restaurant ID):")
+    if st.button("Valider"):
+        if client_id_input:
+            try:
+                client_id = int(client_id_input)
+                df = pd.read_csv("data.csv")
+                df_recent_purchases = load_recent_purchases()
+                client_info_page(df, df_recent_purchases, client_id)
+            except ValueError:
+                st.error("Veuillez entrer un ID client valide.")
+        else:
+            st.error("Veuillez entrer un ID client.")
+
 if __name__ == "__main__":
-    df = pd.read_csv("data.csv")
-    df_recent_purchases = load_recent_purchases()
-    client_info_page(df, df_recent_purchases, 44290)
+    main()
