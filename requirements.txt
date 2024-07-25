@@ -15,5 +15,6 @@ sqlalchemy
 requests
 openpyxl
 seaborn
+mlxtend
 
 
