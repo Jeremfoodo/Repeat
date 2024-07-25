@@ -84,3 +84,10 @@ def reassign_account_manager(df):
 
 def filter_data_by_account(df, account_manager):
     return df[df['Owner email'] == account_manager]
+
+def load_segmentation_data():
+    url = "https://drive.google.com/uc?id=1lCVTDYtM_SWj1W5OqTr15-56K4BCWPqf"
+    output = "segmentation_data.xlsx"
+    gdown.download(url, output, quiet=False)
+    segmentation_df = pd.read_excel(output)
+    return segmentation_df
