@@ -1,3 +1,4 @@
+# client_info.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -78,20 +79,24 @@ def client_info_page(df, df_recent_purchases, client_id):
             })
 
     # Afficher les informations standard du client
-    st.markdown(f"## Informations du client {client_name}")
-    st.markdown(f"**ID du restaurant:** {client_id}")
-    st.markdown(f"**Nom du restaurant:** {client_name}")
-    st.markdown(f"**Total des dépenses:** {total_spending:.2f} €")
-    st.markdown(f"**Date de la première commande:** {first_order_date.strftime('%Y-%m-%d')}")
-    st.markdown(f"**Date de la dernière commande:** {last_order_date.strftime('%Y-%m-%d')}")
-    st.markdown(f"**Nombre de jours depuis la dernière commande:** {days_since_last_order}")
+    st.markdown(f"<div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>"
+                f"<h4>Informations du client {client_name}</h4>"
+                f"<p><strong>ID du restaurant:</strong> {client_id}</p>"
+                f"<p><strong>Nom du restaurant:</strong> {client_name}</p>"
+                f"<p><strong>Total des dépenses:</strong> {total_spending:.2f} €</p>"
+                f"<p><strong>Date de la première commande:</strong> {first_order_date.strftime('%Y-%m-%d')}</p>"
+                f"<p><strong>Date de la dernière commande:</strong> {last_order_date.strftime('%Y-%m-%d')}</p>"
+                f"<p><strong>Nombre de jours depuis la dernière commande:</strong> {days_since_last_order}</p>"
+                f"</div>", unsafe_allow_html=True)
 
     # Afficher les informations sur les fournisseurs et catégories
-    st.markdown("### Informations sur les fournisseurs et catégories")
-    st.markdown(f"**Nombre total de catégories:** {total_categories}")
-    st.markdown(f"**Nombre de catégories en juillet 2024:** {july_categories}")
-    st.markdown("**Fournisseurs avec date du dernier achat:**")
-    st.write(suppliers)
+    st.markdown("<div style='background-color: #e9ecef; padding: 10px; border-radius: 5px;'>"
+                "<h4>Informations sur les fournisseurs et catégories</h4>"
+                f"<p><strong>Nombre total de catégories:</strong> {total_categories}</p>"
+                f"<p><strong>Nombre de catégories en juillet 2024:</strong> {july_categories}</p>"
+                f"<p><strong>Fournisseurs avec date du dernier achat:</strong></p>"
+                f"{suppliers.to_html(index=False)}"
+                f"</div>", unsafe_allow_html=True)
 
     fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
     st.plotly_chart(fig_category_spending)
@@ -99,16 +104,20 @@ def client_info_page(df, df_recent_purchases, client_id):
     fig_supplier_spending = px.pie(supplier_spending, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
     st.plotly_chart(fig_supplier_spending)
 
-    st.markdown("### Produits les plus fréquemment achetés")
-    st.write(top_products)
+    st.markdown("<div style='background-color: #fff3cd; padding: 10px; border-radius: 5px;'>"
+                "<h4>Produits les plus fréquemment achetés</h4>"
+                f"{top_products.to_html(index=False)}"
+                f"</div>", unsafe_allow_html=True)
 
     # Afficher les recommandations
-    st.markdown("### Recommandations")
+    st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>"
+                "<h4>Recommandations</h4>", unsafe_allow_html=True)
     for rec in recommendations:
-        st.markdown(f"**Type:** {rec['Type']}")
-        st.markdown(f"**Recommandation:** {rec['Recommandation']}")
-        st.markdown(f"**Détails:** {rec['Détails']}")
-        st.markdown("---")
+        st.markdown(f"<p><strong>Type:</strong> {rec['Type']}</p>"
+                    f"<p><strong>Recommandation:</strong> {rec['Recommandation']}</p>"
+                    f"<p><strong>Détails:</strong> {rec['Détails']}</p>"
+                    "<hr>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Charger les données récentes
 def load_recent_purchases():
