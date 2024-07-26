@@ -169,7 +169,7 @@ def segmentation_page(df):
     same_tier_less_spending_clients = same_tier_less_spending_clients.drop_duplicates(subset='Restaurant ID')
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
-    # Clients restés dans le même tiering mais dépensé plus en juillet
+   # Clients restés dans le même tiering mais dépensé plus en juillet
     increased_spending_clients = customer_spending_june_account[customer_spending_june_account['Restaurant ID'].isin(customer_spending_july_account['Restaurant ID'])]
     increased_spending_clients = increased_spending_clients.merge(customer_spending_july_account, on='Restaurant ID', suffixes=('_Juin', '_Juillet'))
     increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Juin'] < increased_spending_clients['Total_Juillet'])]
@@ -179,16 +179,15 @@ def segmentation_page(df):
     increased_spending_clients['Total'] = increased_spending_clients['Total_Juillet']
 
     # Ajouter les colonnes manquantes
-if 'Restaurant' not in increased_spending_clients.columns:
-    increased_spending_clients = increased_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-if 'Segment' not in increased_spending_clients.columns:
-    increased_spending_clients['Segment'] = 'Unknown'
-if 'Spending Level' not in increased_spending_clients.columns:
-    increased_spending_clients['Spending Level'] = 'Unknown'
+    if 'Restaurant' not in increased_spending_clients.columns:
+        increased_spending_clients = increased_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in increased_spending_clients.columns:
+        increased_spending_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in increased_spending_clients.columns:
+        increased_spending_clients['Spending Level'] = 'Unknown'
 
     increased_spending_clients = increased_spending_clients.drop_duplicates(subset='Restaurant ID')
     increased_spending_count = increased_spending_clients.shape[0]
-
 
     # Récapitulatif
     st.markdown("""
@@ -279,4 +278,5 @@ if 'Spending Level' not in increased_spending_clients.columns:
         mime='text/csv'
     )
     st.markdown("</div>", unsafe_allow_html=True)
+
 
