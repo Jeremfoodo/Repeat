@@ -159,7 +159,7 @@ def segmentation_page(df):
     downgraded_clients = add_missing_columns(downgraded_clients, df)
     same_tier_less_spending_clients = add_missing_columns(same_tier_less_spending_clients, df)
     increased_spending_clients = add_missing_columns(increased_spending_clients, df)
-        inactive_count = inactive_clients.drop_duplicates(subset='Restaurant ID').shape[0]
+    inactive_count = inactive_clients.drop_duplicates(subset='Restaurant ID').shape[0]
     downgraded_count = downgraded_clients.drop_duplicates(subset='Restaurant ID').shape[0]
     same_tier_less_spending_count = same_tier_less_spending_clients.drop_duplicates(subset='Restaurant ID').shape[0]
     increased_spending_count = increased_spending_clients.drop_duplicates(subset='Restaurant ID').shape[0]
