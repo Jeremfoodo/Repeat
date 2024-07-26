@@ -123,7 +123,7 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
     client_purchases_matrix = df_recent_purchases.pivot_table(index='Restaurant_id', columns='product_name', values='GMV', aggfunc='sum', fill_value=0)
     client_id_index = client_purchases_matrix.index.get_loc(client_id)
     cosine_sim = cosine_similarity(client_purchases_matrix)
-    similar_indices = cosine_sim[client_id_index].argsort()[-11:-1][::-1]
+    similar_indices = cosine_sim[client_id_index].argsort()[-51:-1][::-1]
     similar_clients = client_purchases_matrix.index[similar_indices]
     
     similar_clients_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_clients)]
