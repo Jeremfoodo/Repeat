@@ -280,15 +280,18 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
     st.markdown("### Recommandations")
     for rec in recommendations:
-        if rec['Type'] == "Rachat de produits":
-            st.markdown(f"**Type:** {rec['Type']}")
-            st.markdown(f"**Recommandation:** {rec['Recommandation']}")
-            st.table(pd.DataFrame(rec['Détails']))
+        st.markdown(f"**Type:** {rec['Type']}")
+        st.markdown(f"**Recommandation:** {rec['Recommandation']}")
+    
+        if isinstance(rec['Détails'], list):
+            if all(isinstance(i, dict) for i in rec['Détails']):
+                st.table(pd.DataFrame(rec['Détails']))
+            else:
+                st.markdown(f"**Détails:** {', '.join(rec['Détails'])}")
         else:
-            st.markdown(f"**Type:** {rec['Type']}")
-            st.markdown(f"**Recommandation:** {rec['Recommandation']}")
             st.markdown(f"**Détails:** {rec['Détails']}")
         st.markdown("---")
+
 
 
 
