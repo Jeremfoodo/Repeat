@@ -1,5 +1,7 @@
 import pandas as pd
 from datetime import datetime
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
 
 def get_recommendations(client_recent_purchases, client_june_data, client_july_data, df_recent_purchases, segmentation_df, client_id):
     recommendations = []
@@ -115,6 +117,23 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
         "Type": "Recommandation basée sur les restaurants similaires",
         "Recommandation": "Les clients similaires (même gamme, même type) que ce client achètent ces produits en priorité :",
         "Détails": product_recommendations
+    })
+
+    # Recommandations de filtrage collaboratif
+    client_purchases_matrix = df_recent_purchases.pivot_table(index='Restaurant_id', columns='product_name', values='GMV', aggfunc='sum', fill_value=0)
+    client_id_index = client_purchases_matrix.index.get_loc(client_id)
+    cosine_sim = cosine_similarity(client_purchases_matrix)
+    similar_indices = cosine_sim[client_id_index].argsort()[-11:-1][::-1]
+    similar_clients = client_purchases_matrix.index[similar_indices]
+    
+    similar_clients_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_clients)]
+    similar_clients_top_products = similar_clients_purchases['product_name'].value_counts().head(10).index
+    similar_clients_recommendations = df_recent_purchases[df_recent_purchases['product_name'].isin(similar_clients_top_products)].groupby('product_name')['GMV'].sum().reset_index().sort_values(by='GMV', ascending=False)
+
+    recommendations.append({
+        "Type": "Filtrage collaboratif",
+        "Recommandation": "Recommandez les produits suivants basés sur les achats des clients similaires :",
+        "Détails": similar_clients_recommendations.to_dict('records')
     })
     
     return recommendations
