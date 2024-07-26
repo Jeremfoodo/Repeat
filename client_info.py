@@ -292,6 +292,12 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
             st.markdown(f"**Détails:** {rec['Détails']}")
         st.markdown("---")
 
+        # Afficher les recommandations de filtrage collaboratif sous forme de tableau
+        if rec['Type'] == "Recommandation basée sur les restaurants similaires" and isinstance(rec['Détails'], list):
+            st.markdown("#### Tableau des recommandations de filtrage collaboratif")
+            st.table(pd.DataFrame(rec['Détails']))
+
+
 
 
 
