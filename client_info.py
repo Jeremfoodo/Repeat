@@ -278,34 +278,6 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
         client_id
     )
 
-    st.markdown("### Recommandations")
-    for rec in recommendations:
-        st.markdown(f"**Type:** {rec['Type']}")
-        st.markdown(f"**Recommandation:** {rec['Recommandation']}")
-        
-        # Enlever la date de la dernière commande pour les recommandations de rachat de produits
-        if rec['Type'] == "Rachat de produits" and isinstance(rec['Détails'], list):
-            for detail in rec['Détails']:
-                if 'Dernier achat' in detail:
-                    detail.pop('Dernier achat')
-            st.table(pd.DataFrame(rec['Détails']))
-        elif isinstance(rec['Détails'], list):
-            if all(isinstance(i, dict) for i in rec['Détails']):
-                st.table(pd.DataFrame(rec['Détails']))
-            else:
-                st.markdown(f"**Détails:** {', '.join(rec['Détails'])}")
-        else:
-            st.markdown(f"**Détails:** {rec['Détails']}")
-    
-        st.markdown("---")
-
-    # Afficher les recommandations de filtrage collaboratif sous forme de tableau
-    collaborative_filtering_recommendations = [rec for rec in recommendations if rec['Type'] == "Recommandation basée sur les restaurants similaires"]
-
-    if collaborative_filtering_recommendations:
-        st.markdown("### Recommandation basée sur les restaurants similaires")
-        st.table(pd.DataFrame(collaborative_filtering_recommendations[0]['Détails']))
-
     # Mettre en évidence les différents types de recommandations
     def format_recommendations(rec):
         type_icon = {
@@ -326,6 +298,7 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
     for rec in recommendations:
         st.markdown(format_recommendations(rec))
     
+        # Enlever la date de la dernière commande pour les recommandations de rachat de produits
         if rec['Type'] == "Rachat de produits" and isinstance(rec['Détails'], list):
             for detail in rec['Détails']:
                 if 'Dernier achat' in detail:
@@ -338,8 +311,9 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
                 st.markdown(f"**Détails:** {', '.join(rec['Détails'])}")
         else:
             st.markdown(f"**Détails:** {rec['Détails']}")
-    
+
         st.markdown("---")
+
 
 
 
