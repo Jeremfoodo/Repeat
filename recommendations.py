@@ -1,6 +1,8 @@
 # recommendations.py
 from datetime import datetime
 import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 def get_recommendations(client_recent_purchases, client_june_data, client_july_data, df_recent_purchases, segmentation_df, client_id):
     recommendations = []
@@ -101,7 +103,6 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
     # Prendre les 10 produits les plus fréquents
     top_recommendations = product_order_counts.sort_values(by='Support (%)', ascending=False).head(10)
 
-
     # Formater les recommandations
     product_recommendations = top_recommendations.to_dict('records')
 
@@ -110,5 +111,29 @@ def get_recommendations(client_recent_purchases, client_june_data, client_july_d
         "Recommandation": "Les clients similaires (même gamme, même type) que ce client achètent ces produits en priorité :",
         "Détails": product_recommendations
     })
-    
+
+    # Filtrage collaboratif
+    user_product_matrix = df_recent_purchases.pivot_table(index='Restaurant_id', columns='product_name', values='GMV', aggfunc='sum').fillna(0)
+
+    # Calculer la similarité cosinus entre les utilisateurs
+    cosine_sim = cosine_similarity(user_product_matrix)
+    similarity_df = pd.DataFrame(cosine_sim, index=user_product_matrix.index, columns=user_product_matrix.index)
+
+    # Obtenir les utilisateurs les plus similaires
+    similar_users = similarity_df[client_id].sort_values(ascending=False).head(11).index.tolist()
+    similar_users = [user for user in similar_users if user != client_id]
+
+    # Obtenir les produits achetés par les utilisateurs similaires
+    similar_users_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_users)]
+    similar_users_top_products = similar_users_purchases.groupby('product_name').size().reset_index(name='counts').sort_values(by='counts', ascending=False)
+
+    # Recommander les produits achetés par les utilisateurs similaires
+    collaborative_recommendations = similar_users_top_products.head(10).to_dict('records')
+
+    recommendations.append({
+        "Type": "Recommandation basée sur le filtrage collaboratif",
+        "Recommandation": "Les utilisateurs similaires à ce client achètent ces produits :",
+        "Détails": collaborative_recommendations
+    })
+
     return recommendations
