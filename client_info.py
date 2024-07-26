@@ -268,7 +268,7 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
     st.table(top_products)
 
-    # Afficher les recommandations
+   # Afficher les recommandations
     recommendations = get_recommendations(
         client_recent_purchases,
         client_june_data,
@@ -280,13 +280,16 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
     st.markdown("### Recommandations")
     for rec in recommendations:
-        st.markdown(f"**Type:** {rec['Type']}")
-        st.markdown(f"**Recommandation:** {rec['Recommandation']}")
-        if isinstance(rec['Détails'], list):
+        if rec['Type'] == "Rachat de produits":
+            st.markdown(f"**Type:** {rec['Type']}")
+            st.markdown(f"**Recommandation:** {rec['Recommandation']}")
             st.table(pd.DataFrame(rec['Détails']))
         else:
+            st.markdown(f"**Type:** {rec['Type']}")
+            st.markdown(f"**Recommandation:** {rec['Recommandation']}")
             st.markdown(f"**Détails:** {rec['Détails']}")
         st.markdown("---")
+
 
 
 # Charger les données récentes
