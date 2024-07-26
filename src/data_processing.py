@@ -7,6 +7,7 @@ import streamlit as st
 prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 objectifs_url = 'https://drive.google.com/uc?id=17TDM9d4MqXxmj1JC4pv0G9nDjRqKEtXK'
 recent_purchases_url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
+segmentation_url = 'https://drive.google.com/uc?id=1lCVTDYtM_SWj1W5OqTr15-56K4BCWPqf'
 
 @st.cache_data
 def download_prepared_data():
@@ -16,6 +17,7 @@ def download_prepared_data():
     output_prepared = os.path.join(data_dir, 'prepared_data.csv')
     output_objectifs = os.path.join(data_dir, 'objectifs.xlsx')
     output_recent_purchases = os.path.join(data_dir, 'dataFR.xlsx')
+    output_segmentation = os.path.join(data_dir, 'segmentation_data.xlsx')
     
     if not os.path.exists(output_prepared):
         gdown.download(prepared_data_url, output_prepared, quiet=False)
@@ -23,6 +25,8 @@ def download_prepared_data():
         gdown.download(objectifs_url, output_objectifs, quiet=False)
     if not os.path.exists(output_recent_purchases):
         gdown.download(recent_purchases_url, output_recent_purchases, quiet=False)
+    if not os.path.exists(output_segmentation):
+        gdown.download(segmentation_url, output_segmentation, quiet=False)
 
 @st.cache_data
 def load_data():
@@ -77,6 +81,16 @@ def load_objectifs():
     objectifs_df = pd.read_excel(os.path.join(data_dir, 'objectifs.xlsx'), engine='openpyxl')
     return objectifs_df
 
+@st.cache_data
+def load_segmentation_data():
+    data_dir = 'data'
+    
+    # Vérifier et télécharger les données de segmentation si nécessaire
+    download_prepared_data()
+    
+    segmentation_df = pd.read_excel(os.path.join(data_dir, 'segmentation_data.xlsx'), engine='openpyxl')
+    return segmentation_df
+
 def reassign_account_manager(df):
     df = df.sort_values(by=['Restaurant ID', 'Date de commande'])
     df['Owner email'] = df.groupby('Restaurant ID')['Owner email'].transform(lambda x: x.ffill().bfill())
@@ -85,9 +99,8 @@ def reassign_account_manager(df):
 def filter_data_by_account(df, account_manager):
     return df[df['Owner email'] == account_manager]
 
-def load_segmentation_data():
-    url = "https://drive.google.com/uc?id=1lCVTDYtM_SWj1W5OqTr15-56K4BCWPqf"
-    output = "segmentation_data.xlsx"
-    gdown.download(url, output, quiet=False)
-    segmentation_df = pd.read_excel(output)
-    return segmentation_df
+# Charger les données
+historical_data, df = load_data()
+df_recent_purchases = load_recent_purchases()
+objectifs_df = load_objectifs()
+segmentation_df = load_segmentation_data()
