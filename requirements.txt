@@ -16,5 +16,5 @@ requests
 openpyxl
 seaborn
 mlxtend
-
+scikit-learn
 
