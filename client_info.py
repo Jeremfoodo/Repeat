@@ -282,20 +282,65 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
     for rec in recommendations:
         st.markdown(f"**Type:** {rec['Type']}")
         st.markdown(f"**Recommandation:** {rec['Recommandation']}")
-    
-        if isinstance(rec['Détails'], list):
+        
+        # Enlever la date de la dernière commande pour les recommandations de rachat de produits
+        if rec['Type'] == "Rachat de produits" and isinstance(rec['Détails'], list):
+            for detail in rec['Détails']:
+                if 'Dernier achat' in detail:
+                    detail.pop('Dernier achat')
+            st.table(pd.DataFrame(rec['Détails']))
+        elif isinstance(rec['Détails'], list):
             if all(isinstance(i, dict) for i in rec['Détails']):
                 st.table(pd.DataFrame(rec['Détails']))
             else:
                 st.markdown(f"**Détails:** {', '.join(rec['Détails'])}")
         else:
             st.markdown(f"**Détails:** {rec['Détails']}")
+    
         st.markdown("---")
 
-        # Afficher les recommandations de filtrage collaboratif sous forme de tableau
-        if rec['Type'] == "Recommandation basée sur les restaurants similaires" and isinstance(rec['Détails'], list):
-            st.markdown("#### Tableau des recommandations de filtrage collaboratif")
+    # Afficher les recommandations de filtrage collaboratif sous forme de tableau
+    collaborative_filtering_recommendations = [rec for rec in recommendations if rec['Type'] == "Recommandation basée sur les restaurants similaires"]
+
+    if collaborative_filtering_recommendations:
+        st.markdown("### Recommandation basée sur les restaurants similaires")
+        st.table(pd.DataFrame(collaborative_filtering_recommendations[0]['Détails']))
+
+    # Mettre en évidence les différents types de recommandations
+    def format_recommendations(rec):
+        type_icon = {
+            "Augmentation des efforts": "🚀",
+            "Maintien des efforts": "✅",
+            "Rachat de fruits et légumes": "🍎",
+            "Rachat dans d'autres catégories": "🛒",
+            "Recommandation de catégories": "📂",
+            "Recommandation multicatégorie": "🔀",
+            "Augmentation des produits": "💹",
+            "Rachat de produits": "🔄",
+            "Recommandation basée sur les restaurants similaires": "🏪"
+        }
+
+        return f"{type_icon.get(rec['Type'], '')} **{rec['Type']}**: {rec['Recommandation']}"
+
+    st.markdown("### Recommandations avec icônes")
+    for rec in recommendations:
+        st.markdown(format_recommendations(rec))
+    
+        if rec['Type'] == "Rachat de produits" and isinstance(rec['Détails'], list):
+            for detail in rec['Détails']:
+                if 'Dernier achat' in detail:
+                    detail.pop('Dernier achat')
             st.table(pd.DataFrame(rec['Détails']))
+        elif isinstance(rec['Détails'], list):
+            if all(isinstance(i, dict) for i in rec['Détails']):
+                st.table(pd.DataFrame(rec['Détails']))
+            else:
+                st.markdown(f"**Détails:** {', '.join(rec['Détails'])}")
+        else:
+            st.markdown(f"**Détails:** {rec['Détails']}")
+    
+        st.markdown("---")
+
 
 
 
