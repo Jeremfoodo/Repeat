@@ -45,9 +45,12 @@ def global_analysis(historical_data, df):
     mai_2023_nouveaux_clients = all_results[(all_results['Mois'] == '2023-05') & (all_results['Segment'] == 'Nouveaux Clients')]
     st.write("Données filtrées pour Mai 2023 Nouveaux Clients :", mai_2023_nouveaux_clients)
 
-    # Calcul du taux de repeat pour Mai 2023 Nouveaux Clients
-    repeat_rate_mai_2023 = mai_2023_nouveaux_clients['Rapport (%)'].mean()
-    st.write(f"Taux de repeat pour Mai 2023 Nouveaux Clients: {repeat_rate_mai_2023}%")
+    # Calcul du taux de repeat pondéré pour Mai 2023 Nouveaux Clients
+    total_clients_possible = mai_2023_nouveaux_clients['Nombre de Clients Possible'].sum()
+    total_clients_actifs = mai_2023_nouveaux_clients['Nombre de Clients Actifs (Mois Précédent)'].sum()
+    
+    repeat_rate_mai_2023 = (total_clients_actifs / total_clients_possible) * 100 if total_clients_possible != 0 else 0
+    st.write(f"Taux de repeat pondéré pour Mai 2023 Nouveaux Clients: {repeat_rate_mai_2023}%")
 
     june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
@@ -65,6 +68,7 @@ def global_analysis(historical_data, df):
 
     st.header('Graphiques des Segments')
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        # **Passage de `country_code` à `plot_ratios`**
         fig = plot_ratios(segment, all_results, country_code)
         st.plotly_chart(fig)
 
