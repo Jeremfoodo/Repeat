@@ -26,6 +26,9 @@ def global_analysis(historical_data, df):
     country_code = st.selectbox('Sélectionner un pays ou une région', countries)
 
     if country_code == 'Global':
+        # Ajouter une colonne 'Pays' aux DataFrames avant concaténation
+        for country, data in historical_data.items():
+            data['Pays'] = country
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
         recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
@@ -33,6 +36,9 @@ def global_analysis(historical_data, df):
     else:
         all_results = process_country_data(df, historical_data, country_code)
     
+    # Ajout d'un point de débogage pour vérifier le contenu de all_results
+    st.write("Contenu de all_results:", all_results.head())
+
     june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
     st.header('Résumé des Segments pour Juillet 2024')
