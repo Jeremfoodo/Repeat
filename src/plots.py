@@ -1,6 +1,6 @@
 import plotly.graph_objs as go
 import pandas as pd
-import numpy as np  # Ajout de l'import de numpy
+import numpy as np
 
 def plot_ratios(segment, all_results, country_code):
     years = [2022, 2023, 2024]
@@ -11,6 +11,11 @@ def plot_ratios(segment, all_results, country_code):
         year_results = all_results[all_results['Mois'].str.startswith(str(year))]
         ratios = year_results[year_results['Segment'] == segment]
 
+        # Débogage : Vérification des résultats pour chaque année et segment
+        print(f"Année: {year}, Segment: {segment}")
+        print(ratios)
+
+        # Convert 'Mois' to month name and create a dictionary of ratios
         ratios_dict = {pd.to_datetime(row['Mois']).strftime('%b'): row['Rapport (%)'] for _, row in ratios.iterrows()}
         full_ratios = [ratios_dict.get(month, np.nan) for month in months]
 
