@@ -15,7 +15,7 @@ def plot_ratios(segment, all_results, country_code):
         
         ratios = year_results[year_results['Segment'] == segment]
 
-        # Débogage : Vérification des résultats pour chaque année et segment
+        # Débogage : Vérification des résultats pour chaque année, segment et pays
         print(f"Année: {year}, Segment: {segment}, Pays: {country_code}")
         print(ratios)
 
