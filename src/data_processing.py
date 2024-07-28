@@ -42,7 +42,12 @@ def load_data():
         'GB': os.path.join(data_dir, 'historical_retention_analysis_GB.csv')
     }
 
-    historical_data = {country: pd.read_csv(file) for country, file in historical_files.items()}
+    historical_data = {}
+    for country, file in historical_files.items():
+        df = pd.read_csv(file)
+        df['Pays'] = country
+        historical_data[country] = df
+    
     df = pd.read_csv(os.path.join(data_dir, 'prepared_data.csv'), parse_dates=['date 1ere commande (Restaurant)', 'Date de commande'], decimal='.')
     
     to_exclude_commande = ['CANCELLED', 'ABANDONED', 'FAILED', 'WAITING']
