@@ -26,18 +26,28 @@ def global_analysis(historical_data, df):
     country_code = st.selectbox('Sélectionner un pays ou une région', countries)
 
     if country_code == 'Global':
-        # Ajouter une colonne 'Pays' aux DataFrames avant concaténation
-        for country, data in historical_data.items():
-            data['Pays'] = country
+        # Concaténer les données historiques avec la colonne 'Pays' déjà ajoutée
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
+        
+        # Débogage : Vérification de la concaténation des données historiques
+        st.write("Données historiques concaténées (premières lignes) :", all_historical_data.head())
+        
         recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
         all_results = process_country_data(df, historical_data, country_code)
     
-    # Ajout d'un point de débogage pour vérifier le contenu de all_results
-    st.write("Contenu de all_results:", all_results.head())
+    # Débogage : Vérification du contenu de all_results
+    st.write("Contenu de all_results (premières lignes) :", all_results.head())
+
+    # Filtrer pour les nouveaux clients de mai 2023 pour vérifier le calcul
+    mai_2023_nouveaux_clients = all_results[(all_results['Mois'] == '2023-05') & (all_results['Segment'] == 'Nouveaux Clients')]
+    st.write("Données filtrées pour Mai 2023 Nouveaux Clients :", mai_2023_nouveaux_clients)
+
+    # Calcul du taux de repeat pour Mai 2023 Nouveaux Clients
+    repeat_rate_mai_2023 = mai_2023_nouveaux_clients['Rapport (%)'].mean()
+    st.write(f"Taux de repeat pour Mai 2023 Nouveaux Clients: {repeat_rate_mai_2023}%")
 
     june_2024_results = all_results[all_results['Mois'] == '2024-07']
 
