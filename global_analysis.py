@@ -68,7 +68,14 @@ def global_analysis(historical_data, df):
 
     st.header('Graphiques des Segments')
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        # **Passage de `country_code` à `plot_ratios`**
+        # Vérification du segment et du pays pour les graphiques
+        if country_code == 'Global':
+            segment_data = all_results[all_results['Segment'] == segment]
+        else:
+            segment_data = all_results[(all_results['Segment'] == segment) & (all_results['Pays'] == country_code)]
+        
+        st.write(f"Données pour le graphique {segment} ({country_code}):", segment_data.head())
+        
         fig = plot_ratios(segment, all_results, country_code)
         st.plotly_chart(fig)
 
@@ -138,3 +145,4 @@ def generate_region_summary_boxes(region_june_2024_results):
             """
             boxes.append(box)
     return boxes
+
