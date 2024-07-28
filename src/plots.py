@@ -8,11 +8,15 @@ def plot_ratios(segment, all_results, country_code):
     fig = go.Figure()
 
     for year in years:
-        year_results = all_results[all_results['Mois'].str.startswith(str(year))]
+        if country_code == 'Global':
+            year_results = all_results[all_results['Mois'].str.startswith(str(year))]
+        else:
+            year_results = all_results[(all_results['Mois'].str.startswith(str(year))) & (all_results['Pays'] == country_code)]
+        
         ratios = year_results[year_results['Segment'] == segment]
 
         # Débogage : Vérification des résultats pour chaque année et segment
-        print(f"Année: {year}, Segment: {segment}")
+        print(f"Année: {year}, Segment: {segment}, Pays: {country_code}")
         print(ratios)
 
         # Convert 'Mois' to month name and create a dictionary of ratios
