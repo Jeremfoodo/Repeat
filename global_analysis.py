@@ -26,26 +26,18 @@ def global_analysis(historical_data, df):
     country_code = st.selectbox('Sélectionner un pays ou une région', countries)
 
     if country_code == 'Global':
-        # Concaténer les données historiques avec la colonne 'Pays' déjà ajoutée
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
-        
-        # Débogage : Vérification de la concaténation des données historiques
-        st.write("Données historiques concaténées (premières lignes) :", all_historical_data.head())
-        
         recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
         all_results = process_country_data(df, historical_data, country_code)
     
-    # Débogage : Vérification du contenu de all_results
     st.write("Contenu de all_results (premières lignes) :", all_results.head())
 
-    # Filtrer pour les nouveaux clients de mai 2023 pour vérifier le calcul
     mai_2023_nouveaux_clients = all_results[(all_results['Mois'] == '2023-05') & (all_results['Segment'] == 'Nouveaux Clients')]
     st.write("Données filtrées pour Mai 2023 Nouveaux Clients :", mai_2023_nouveaux_clients)
 
-    # Calcul du taux de repeat pondéré pour Mai 2023 Nouveaux Clients
     total_clients_possible = mai_2023_nouveaux_clients['Nombre de Clients Possible'].sum()
     total_clients_actifs = mai_2023_nouveaux_clients['Nombre de Clients Actifs (Mois Précédent)'].sum()
     
@@ -57,7 +49,6 @@ def global_analysis(historical_data, df):
     st.header('Résumé des Segments pour Juillet 2024')
     summary_boxes = generate_summary_boxes(june_2024_results)
 
-    # Afficher les boîtes dans une grille 2x2
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(summary_boxes[0], unsafe_allow_html=True)
@@ -68,7 +59,6 @@ def global_analysis(historical_data, df):
 
     st.header('Graphiques des Segments')
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        # Vérification du segment et du pays pour les graphiques
         if country_code == 'Global':
             segment_data = all_results[all_results['Segment'] == segment]
         else:
@@ -79,7 +69,6 @@ def global_analysis(historical_data, df):
         fig = plot_ratios(segment, all_results, country_code)
         st.plotly_chart(fig)
 
-    # Afficher l'analyse par région si FR ou US est sélectionné
     if country_code in ['FR', 'US']:
         st.header('Analyse par région')
         for region in get_regions(country_code):
@@ -145,4 +134,3 @@ def generate_region_summary_boxes(region_june_2024_results):
             """
             boxes.append(box)
     return boxes
-
