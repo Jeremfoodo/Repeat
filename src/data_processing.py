@@ -68,7 +68,6 @@ def load_recent_purchases():
 
     df_recent_purchases = pd.read_excel(os.path.join(data_dir, 'dataFR.xlsx'), engine='openpyxl')
     
-    # Supprimer les lignes où la colonne 'Date' contient des valeurs non conformes
     df_recent_purchases = df_recent_purchases[pd.to_datetime(df_recent_purchases['Date'], errors='coerce').notnull()]
 
     if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
@@ -80,7 +79,6 @@ def load_recent_purchases():
 def load_objectifs():
     data_dir = 'data'
     
-    # Vérifier et télécharger les objectifs si nécessaire
     download_prepared_data()
     
     objectifs_df = pd.read_excel(os.path.join(data_dir, 'objectifs.xlsx'), engine='openpyxl')
@@ -103,9 +101,3 @@ def reassign_account_manager(df):
 
 def filter_data_by_account(df, account_manager):
     return df[df['Owner email'] == account_manager]
-
-# Charger les données
-historical_data, df = load_data()
-df_recent_purchases = load_recent_purchases()
-objectifs_df = load_objectifs()
-segmentation_df = load_segmentation_data()
