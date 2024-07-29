@@ -5,6 +5,41 @@ from src.calculations import calculate_segments_for_month
 from src.plots import plot_ratios
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
+def account_analysis_page(df):
+    st.title("Account Analysis")
+
+@st.cache_data
+def get_filtered_data(df, account_manager):
+    return filter_data_by_account(df, account_manager)
+
+@st.cache_data
+def get_account_results(df_account, recent_months):
+    return pd.concat([calculate_segments_for_month(df_account, month) for month in recent_months], ignore_index=True)
+
+def generate_summary_boxes(june_2024_results):
+    colors = {
+        'Acquisition': '#FFCCCC',
+        'Nouveaux Clients': '#CCFFCC',
+        'Clients Récents': '#CCCCFF',
+        'Anciens Clients': '#FFCC99'
+    }
+
+    boxes = []
+    for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
+        if segment in june_2024_results['Segment'].values:
+            segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
+            box = f"""
+            <div style="background-color: {colors[segment]}; padding: 5px; margin: 5px; border-radius: 5px; width: 90%; height: auto;">
+                <h4 style="margin: 0; font-size: 14px; text-align: center;">{segment}</h4>
+                <p style="margin: 2px 0; font-size: 12px;">Nombre de Clients: {segment_data['Nombre de Clients']}</p>
+                <p style="margin: 2px 0; font-size: 12px;">Possible: {segment_data['Nombre de Clients Possible']}</p>
+                <p style="margin: 2px 0; font-size: 12px;">Actifs (Mois Précédent): {segment_data['Nombre de Clients Actifs (Mois Précédent)']}</p>
+                <p style="margin: 2px 0; font-size: 12px;">Rapport (%): {segment_data['Rapport (%)']}</p>
+            </div>
+            """
+            boxes.append(box)
+    return boxes
+
 def account_analysis(df):
     st.title('Analyse de la Rétention par Account Manager')
 
@@ -24,11 +59,11 @@ def account_analysis(df):
             st.experimental_rerun()
 
     # Filtrer les données par account manager
-    df_account = filter_data_by_account(df, account_manager)
+    df_account = get_filtered_data(df, account_manager)
 
     # Calculer les segments pour chaque mois depuis avril 2024 pour l'account manager
     recent_months = pd.date_range(start='2024-04-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
-    account_results = pd.concat([calculate_segments_for_month(df_account, month) for month in recent_months], ignore_index=True)
+    account_results = get_account_results(df_account, recent_months)
 
     june_2024_results_account = account_results[account_results['Mois'] == '2024-07']
 
