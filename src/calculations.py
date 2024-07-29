@@ -129,9 +129,9 @@ def process_country_data(df, historical_data, country_code, region=None):
 
 @st.cache_data
 def process_region_data(df, country_code, region):
-    df_region = df[(df['Pays'] == country_code) & (df['region'] == region)]
+    df_region = df[(df['Pays'] == country_code) & (df['Région'] == region)]
     
-    recent_months = pd.date_range(start='2024-06-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
-    recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
+    recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+    region_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
-    return recent_results
+    return region_results
