@@ -3,9 +3,6 @@ import pandas as pd
 from src.calculations import process_country_data, calculate_segments_for_month, process_region_data
 from src.plots import plot_ratios
 
-def global_analysis_page(df):
-    st.title("Analyse Globale")
-    
 def get_regions(country_code):
     if country_code == 'FR':
         return ['Paris', 'Paris EST', 'Paris Ouest', 'Province']
@@ -26,7 +23,9 @@ def global_analysis(historical_data, df):
     country_code = st.selectbox('Sélectionner un pays ou une région', countries)
 
     if country_code == 'Global':
+        # Concaténer les données historiques avec la colonne 'Pays' déjà ajoutée
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
+        
         recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
