@@ -42,12 +42,7 @@ def load_data():
         'GB': os.path.join(data_dir, 'historical_retention_analysis_GB.csv')
     }
 
-    historical_data = {}
-    for country, file in historical_files.items():
-        df = pd.read_csv(file)
-        df['Pays'] = country
-        historical_data[country] = df
-    
+    historical_data = {country: pd.read_csv(file) for country, file in historical_files.items()}
     df = pd.read_csv(os.path.join(data_dir, 'prepared_data.csv'), parse_dates=['date 1ere commande (Restaurant)', 'Date de commande'], decimal='.')
     
     to_exclude_commande = ['CANCELLED', 'ABANDONED', 'FAILED', 'WAITING']
@@ -68,6 +63,7 @@ def load_recent_purchases():
 
     df_recent_purchases = pd.read_excel(os.path.join(data_dir, 'dataFR.xlsx'), engine='openpyxl')
     
+    # Supprimer les lignes où la colonne 'Date' contient des valeurs non conformes
     df_recent_purchases = df_recent_purchases[pd.to_datetime(df_recent_purchases['Date'], errors='coerce').notnull()]
 
     if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
@@ -79,6 +75,7 @@ def load_recent_purchases():
 def load_objectifs():
     data_dir = 'data'
     
+    # Vérifier et télécharger les objectifs si nécessaire
     download_prepared_data()
     
     objectifs_df = pd.read_excel(os.path.join(data_dir, 'objectifs.xlsx'), engine='openpyxl')
@@ -101,3 +98,9 @@ def reassign_account_manager(df):
 
 def filter_data_by_account(df, account_manager):
     return df[df['Owner email'] == account_manager]
+
+# Charger les données
+historical_data, df = load_data()
+df_recent_purchases = load_recent_purchases()
+objectifs_df = load_objectifs()
+segmentation_df = load_segmentation_data()
