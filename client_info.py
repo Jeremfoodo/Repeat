@@ -8,10 +8,6 @@ from recommendations import get_recommendations
 from src.segmentation import load_segmentation_data
 
 
-# Charger les données
-segmentation_df = load_segmentation_data()
-
-
 def map_gamme(gamme_value):
     if gamme_value == 1:
         return "à emporter"
@@ -25,6 +21,13 @@ def map_gamme(gamme_value):
 def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id):
     st.title("Page d'Information Client")
 
+    # Sélection du pays
+    country = st.selectbox("Sélectionnez le pays", ['FR', 'US', 'UK', 'BE'])
+
+    # Charger les données en fonction du pays sélectionné
+    segmentation_df = load_segmentation_data(country)
+    df_recent_purchases = load_recent_purchases(country)
+
     # Boîte de saisie pour entrer l'ID client
     client_id_input = st.text_input("Entrez l'ID du client (Restaurant ID)", value=default_client_id)
     client_id_button = st.button("Valider")
@@ -34,9 +37,6 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
         client_id = int(client_id_input)
     else:
         client_id = default_client_id
-
-    # Charger les données de segmentation
-    segmentation_df = load_segmentation_data()
 
     # Sélectionner les données du client
     client_data = df[df['Restaurant ID'] == client_id]
@@ -110,8 +110,6 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
     june_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-06')]['GMV'].sum()
     july_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07')]['GMV'].sum()
 
-
-    
     # Informations de segmentation
     gamme = client_data["Gamme"].iloc[0]
     type_detail = client_data["Type_detail"].iloc[0]
@@ -197,7 +195,6 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
         unsafe_allow_html=True
     )
 
-
     # Calculer le nombre de jours depuis la dernière commande pour chaque fournisseur
     suppliers['Date'] = pd.to_datetime(suppliers['Date'], errors='coerce')
     suppliers.dropna(subset=['Date'], inplace=True)
@@ -212,7 +209,6 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
     # Convertir le DataFrame en tableau HTML
     suppliers_table = suppliers.to_html(index=False, classes='styled-table')
 
-    # Remplacer cette section dans le code existant
     st.markdown(
         """
         <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
@@ -268,7 +264,7 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
     st.table(top_products)
 
-   # Afficher les recommandations
+    # Afficher les recommandations
     recommendations = get_recommendations(
         client_recent_purchases,
         client_june_data,
@@ -314,18 +310,23 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
         st.markdown("---")
 
-
-
-
-
-
-
 # Charger les données récentes
-def load_recent_purchases():
-    df_recent_purchases = pd.read_excel("dataFR.xlsx", engine='openpyxl')
+def load_recent_purchases(country):
+    # Mapping des pays aux fichiers Google Sheets
+    country_files = {
+        'FR': 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/edit?usp=sharing',
+        'US': 'https://docs.google.com/spreadsheets/d/1HsxBxGpq3lSwJKPALDsDNvJXNi6us2j-/edit?usp=sharing',
+        'UK': 'https://docs.google.com/spreadsheets/d/1ROT0ide8EQfgcWpXMY6Qnyp5nMKoLt-a/edit?usp=sharing',
+        'BE': 'https://docs.google.com/spreadsheets/d/1fqu_YgsovkDrpqV7OsFStusEvM-9axRg/edit?usp=sharing',
+        # Ajouter les autres pays ici
+    }
+
+    if country in country_files:
+        file_url = country_files[country]
+    else:
+        raise ValueError(f"Country {country} not supported")
+
+    df_recent_purchases = pd.read_excel(file_url, engine='openpyxl')
     df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
     return df_recent_purchases
-
-
-   
