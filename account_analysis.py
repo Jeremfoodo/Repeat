@@ -65,6 +65,10 @@ def account_analysis(df):
     recent_months = pd.date_range(start='2024-04-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
     account_results = get_account_results(df_account, recent_months)
 
+    # Ajouter une colonne 'Pays' si elle n'existe pas
+    if 'Pays' not in account_results.columns:
+        account_results['Pays'] = df_account['Pays'].iloc[0]
+
     june_2024_results_account = account_results[account_results['Mois'] == '2024-07']
 
     st.header('Résumé des Segments pour Juillet 2024')
