@@ -7,7 +7,6 @@ from src.calculations import get_clients_by_segment_and_spending
 from recommendations import get_recommendations
 from src.segmentation import load_segmentation_data
 
-
 def map_gamme(gamme_value):
     if gamme_value == 1:
         return "à emporter"
