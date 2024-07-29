@@ -55,21 +55,25 @@ def load_data():
     return historical_data, df
 
 @st.cache_data
-def load_recent_purchases():
-    data_dir = 'data'
-    
-    # Vérifier et télécharger les achats récents si nécessaire
-    download_prepared_data()
+def load_recent_purchases(country):
+    # Mapping des pays aux fichiers Google Sheets
+    country_files = {
+        'FR': 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/edit?usp=sharing',
+        'US': 'https://docs.google.com/spreadsheets/d/1HsxBxGpq3lSwJKPALDsDNvJXNi6us2j-/edit?usp=sharing',
+        'UK': 'https://docs.google.com/spreadsheets/d/1ROT0ide8EQfgcWpXMY6Qnyp5nMKoLt-a/edit?usp=sharing',
+        'BE': 'https://docs.google.com/spreadsheets/d/1fqu_YgsovkDrpqV7OsFStusEvM-9axRg/edit?usp=sharing',
+    }
 
-    df_recent_purchases = pd.read_excel(os.path.join(data_dir, 'dataFR.xlsx'), engine='openpyxl')
-    
-    # Supprimer les lignes où la colonne 'Date' contient des valeurs non conformes
-    df_recent_purchases = df_recent_purchases[pd.to_datetime(df_recent_purchases['Date'], errors='coerce').notnull()]
+    if country in country_files:
+        file_url = country_files[country]
+    else:
+        raise ValueError(f"Country {country} not supported")
 
-    if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
-        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], format='%Y-%m-%d', errors='coerce')
-    
+    df_recent_purchases = pd.read_excel(file_url, engine='openpyxl')
+    df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
+    df_recent_purchases.dropna(subset=['Date'], inplace=True)
     return df_recent_purchases
+
 
 @st.cache_data
 def load_objectifs():
