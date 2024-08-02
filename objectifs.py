@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from datetime import datetime, timedelta
 from src.data_processing import load_objectifs, load_data
 from src.calculations import calculate_segments_for_month
 
@@ -20,13 +21,18 @@ def get_active_clients(df, target_month):
 
 # Fonction pour créer la page des objectifs
 def objectifs_page(df):
-    st.title('Objectifs de Clients Actifs pour Juillet 2024')
+    st.title(f'Objectifs de Clients Actifs pour {datetime.today().strftime("%B %Y")}')
 
     # Récupérer les objectifs depuis le fichier Excel
     objectifs_df = load_objectifs()
 
-    # Calculer les clients actuels pour juillet 2024
-    active_clients = get_active_clients(df, '2024-07')
+    # Calculer le mois actuel et le mois précédent
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    current_month_str = current_month.strftime('%Y-%m')
+
+    # Calculer les clients actuels pour le mois en cours
+    active_clients = get_active_clients(df, current_month_str)
 
     # Préparer les données pour l'affichage
     rows = []
