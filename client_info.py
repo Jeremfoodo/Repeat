@@ -89,10 +89,16 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
     # Informations sur les fournisseurs et catégories
     total_categories = client_recent_purchases["Product Category"].nunique()
     categories_list = ", ".join(client_recent_purchases["Product Category"].unique())
+
+    # Calculer les mois dynamiques
+    today = datetime.today()
+    current_month_str = today.strftime('%Y-%m')
+    previous_month_str = (today - pd.DateOffset(months=1)).strftime('%Y-%m')
+
     if pd.api.types.is_datetime64_any_dtype(client_recent_purchases['Date']):
-        july_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07']["Product Category"].nunique()
+        current_month_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == current_month_str]["Product Category"].nunique()
     else:
-        july_categories = 0
+        current_month_categories = 0
 
     suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
 
@@ -102,20 +108,13 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
     # Algorithme de recommandations basé sur les nouveaux critères
 
-    # Définir les données de juin et juillet en utilisant df_recent_purchases
-    client_june_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-06')]
-    client_july_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07')]
+    # Définir les données des mois dynamiques en utilisant df_recent_purchases
+    client_previous_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == previous_month_str)]
+    client_current_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == current_month_str)]
 
-    # Calculer les dépenses totales en juin et juillet à partir de df_recent_purchases
-    june_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-06')]['GMV'].sum()
-    july_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == '2024-07')]['GMV'].sum()
-
-
-    
-    # Informations de segmentation
-    gamme = client_data["Gamme"].iloc[0]
-    type_detail = client_data["Type_detail"].iloc[0]
-    type_general = client_data["Type"].iloc[0]
+    # Calculer les dépenses totales des mois dynamiques à partir de df_recent_purchases
+    previous_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == previous_month_str)]['GMV'].sum()
+    current_spending = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == current_month_str)]['GMV'].sum()
 
     # Afficher les informations standard du client avec cadre et pictogrammes
     st.markdown(
@@ -229,7 +228,7 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
                 <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
                     <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
                     <div>
-                        <h5 style='margin: 0;'>Nombre de catégories en juillet 2024</h5>
+                        <h5 style='margin: 0;'>Nombre de catégories en {}</h5>
                         <p style='margin: 0;'>{}</p>
                     </div>
                 </div>
@@ -239,7 +238,7 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
                 {}
             </div>
         </div>
-        """.format(total_categories, categories_list, july_categories, suppliers_table),
+        """.format(total_categories, categories_list, today.strftime('%B %Y'), current_month_categories, suppliers_table),
         unsafe_allow_html=True
     )
 
@@ -268,11 +267,11 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
 
     st.table(top_products)
 
-   # Afficher les recommandations
+    # Afficher les recommandations
     recommendations = get_recommendations(
         client_recent_purchases,
-        client_june_data,
-        client_july_data,
+        client_previous_data,
+        client_current_data,
         df_recent_purchases,
         segmentation_df,
         client_id
@@ -315,17 +314,9 @@ def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id
         st.markdown("---")
 
 
-
-
-
-
-
 # Charger les données récentes
 def load_recent_purchases():
     df_recent_purchases = pd.read_excel("dataFR.xlsx", engine='openpyxl')
     df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
     df_recent_purchases.dropna(subset=['Date'], inplace=True)
     return df_recent_purchases
-
-
-   
