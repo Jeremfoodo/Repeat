@@ -46,7 +46,7 @@ def get_clients_by_segment_and_spending(df, target_month):
     clients_recents = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
     )]
-    anciens_clients = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
+    anciens_clients = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
     
     customer_spending.loc[customer_spending['Restaurant ID'].isin(acquisition['Restaurant ID']), 'Segment'] = 'Acquisition'
     customer_spending.loc[customer_spending['Restaurant ID'].isin(nouveaux_clients['Restaurant ID']), 'Segment'] = 'Nouveaux Clients'
@@ -64,8 +64,8 @@ def get_clients_by_segment_and_spending(df, target_month):
     return heatmap_pivot, total_clients, customer_spending
 
 # Fonction pour obtenir les clients à réactiver
-def get_inactive_clients_july(df_june, df_july):
-    inactive_clients = df_june[~df_june['Restaurant ID'].isin(df_july['Restaurant ID'])]
+def get_inactive_clients(previous_df, current_df):
+    inactive_clients = previous_df[~previous_df['Restaurant ID'].isin(current_df['Restaurant ID'])]
     return inactive_clients
 
 @st.cache_data
@@ -77,7 +77,7 @@ def calculate_segments_for_month(df, target_month):
     clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
     )]
-    anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]
+    anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
     segment_counts = {
         'Segment': ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients'],
         'Nombre de Clients': [len(acquisition['Restaurant ID'].unique()), len(nouveaux_clients['Restaurant ID'].unique()), len(clients_recents['Restaurant ID'].unique()), len(anciens_clients['Restaurant ID'].unique())]
@@ -86,7 +86,7 @@ def calculate_segments_for_month(df, target_month):
     all_recent_clients = df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
     ))]
-    all_old_clients = df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m'))]
+    all_old_clients = df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=6)).strftime('%Y-%m'))]
     segment_counts['Nombre de Clients Possible'] = [
         len(acquisition['Restaurant ID'].unique()),
         len(all_previous_acquisitions['Restaurant ID'].unique()),
@@ -99,7 +99,7 @@ def calculate_segments_for_month(df, target_month):
     recent_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
     )]['Restaurant ID'].unique())
-    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=5)).strftime('%Y-%m')]['Restaurant ID'].unique())
+    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]['Restaurant ID'].unique())
     segment_counts['Nombre de Clients Actifs (Mois Précédent)'] = [
         acquisition_previous,
         new_clients_previous,
