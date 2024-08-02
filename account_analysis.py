@@ -92,11 +92,12 @@ def account_analysis(df):
     df_latest = df[df['Owner email'] == account_manager].drop_duplicates('Restaurant ID')
 
     def client_type(row):
-        if row['Derniere commande'].startswith(current_month_str):
+        last_order_month = row['Derniere commande'].strftime('%Y-%m')
+        if last_order_month == current_month_str:
             return 'Acquisition'
-        elif row['Derniere commande'].startswith((current_month - pd.DateOffset(months=1)).strftime('%Y-%m')):
+        elif last_order_month == (current_month - pd.DateOffset(months=1)).strftime('%Y-%m'):
             return 'Nouveaux Clients'
-        elif row['Derniere commande'].startswith((current_month - pd.DateOffset(months=2)).strftime('%Y-%m')):
+        elif last_order_month == (current_month - pd.DateOffset(months=2)).strftime('%Y-%m'):
             return 'Clients Récents'
         else:
             return 'Anciens Clients'
@@ -141,3 +142,9 @@ def account_analysis(df):
         file_name=f'{account_manager}_clients.csv',
         mime='text/csv',
     )
+
+# Appel de la fonction pour créer la page des objectifs
+if __name__ == "__main__":
+    # Charger les données
+    historical_data, df = load_data()
+    account_analysis(df)
