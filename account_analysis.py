@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime, timedelta
 from src.data_processing import filter_data_by_account
 from src.calculations import calculate_segments_for_month
 from src.plots import plot_ratios
@@ -16,7 +17,7 @@ def get_filtered_data(df, account_manager):
 def get_account_results(df_account, recent_months):
     return pd.concat([calculate_segments_for_month(df_account, month) for month in recent_months], ignore_index=True)
 
-def generate_summary_boxes(june_2024_results):
+def generate_summary_boxes(results):
     colors = {
         'Acquisition': '#FFCCCC',
         'Nouveaux Clients': '#CCFFCC',
@@ -26,8 +27,8 @@ def generate_summary_boxes(june_2024_results):
 
     boxes = []
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        if segment in june_2024_results['Segment'].values:
-            segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
+        if segment in results['Segment'].values:
+            segment_data = results[results['Segment'] == segment].iloc[0]
             box = f"""
             <div style="background-color: {colors[segment]}; padding: 5px; margin: 5px; border-radius: 5px; width: 90%; height: auto;">
                 <h4 style="margin: 0; font-size: 14px; text-align: center;">{segment}</h4>
@@ -61,15 +62,19 @@ def account_analysis(df):
     # Filtrer les données par account manager
     df_account = get_filtered_data(df, account_manager)
 
-    # Calculer les segments pour chaque mois depuis avril 2024 pour l'account manager
-    recent_months = pd.date_range(start='2024-04-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+    # Calculer les segments pour chaque mois depuis trois mois avant le mois en cours pour l'account manager
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
     account_results = get_account_results(df_account, recent_months)
 
-    june_2024_results_account = account_results[account_results['Mois'] == '2024-07']
+    current_month_str = current_month.strftime('%Y-%m')
+    current_month_results_account = account_results[account_results['Mois'] == current_month_str]
 
-    st.header('Résumé des Segments pour Juillet 2024')
+    st.header(f'Résumé des Segments pour {current_month_str}')
     st.markdown(f'<span style="font-size:14px; color:black; text-decoration:none;">{account_manager}</span>', unsafe_allow_html=True)
-    summary_boxes_account = generate_summary_boxes(june_2024_results_account)
+    summary_boxes_account = generate_summary_boxes(current_month_results_account)
 
     # Afficher les boîtes dans une grille 2x2 ou une seule rangée
     col1, col2, col3, col4 = st.columns(4)
@@ -87,11 +92,11 @@ def account_analysis(df):
     df_latest = df[df['Owner email'] == account_manager].drop_duplicates('Restaurant ID')
 
     def client_type(row):
-        if row['Mois'] == '2024-07':
+        if row['Derniere commande'].startswith(current_month_str):
             return 'Acquisition'
-        elif row['Mois'] == '2024-06':
+        elif row['Derniere commande'].startswith((current_month - pd.DateOffset(months=1)).strftime('%Y-%m')):
             return 'Nouveaux Clients'
-        elif row['Mois'] in ['2024-03', '2024-04', '2024-05']:
+        elif row['Derniere commande'].startswith((current_month - pd.DateOffset(months=2)).strftime('%Y-%m')):
             return 'Clients Récents'
         else:
             return 'Anciens Clients'
@@ -104,7 +109,7 @@ def account_analysis(df):
     # Colorer les lignes en fonction de la date de dernière commande
     js = JsCode("""
     function(params) {
-        if (params.data['Derniere commande'].startsWith('2024-07')) {
+        if (params.data['Derniere commande'].startsWith(current_month_str)) {
             return {
                 'color': 'white',
                 'backgroundColor': 'green'
