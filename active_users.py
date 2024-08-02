@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from datetime import datetime, timedelta
 
 @st.cache_data
 def calculate_active_users(df, target_month):
@@ -34,8 +35,13 @@ def add_total_labels(fig, df, x_col, y_cols):
 def active_users_page(historical_data, df):
     st.title("Active Users")
 
+    # Calcul des dates dynamiques
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
+
     # Calcul des utilisateurs actifs pour tous les pays confondus
-    recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
     active_users_data = []
 
     for month in recent_months:
@@ -57,7 +63,7 @@ def active_users_page(historical_data, df):
 
     add_total_labels(fig, active_users_df, 'Mois', ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients'])
 
-    fig.add_shape(type="line", x0='2024-05', x1='2024-07', y0=1700, y1=1700,
+    fig.add_shape(type="line", x0=start_month, x1=current_month.strftime('%Y-%m'), y0=1700, y1=1700,
                   line=dict(color="Red", width=2, dash="dash"),
                   name="Objectif")
     
