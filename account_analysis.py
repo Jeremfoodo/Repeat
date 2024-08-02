@@ -107,20 +107,20 @@ def account_analysis(df):
     df_display = df_latest[['Owner email', 'Restaurant ID', 'Restaurant', 'Type de Client', 'Derniere commande']]
 
     # Colorer les lignes en fonction de la date de dernière commande
-    js = JsCode("""
-    function(params) {
-        if (params.data['Derniere commande'].startsWith(current_month_str)) {
-            return {
+    js = JsCode(f"""
+    function(params) {{
+        if (params.data['Derniere commande'].startsWith('{current_month_str}')) {{
+            return {{
                 'color': 'white',
                 'backgroundColor': 'green'
-            }
-        } else {
-            return {
+            }}
+        }} else {{
+            return {{
                 'color': 'white',
                 'backgroundColor': 'red'
-            }
-        }
-    }
+            }}
+        }}
+    }}
     """)
 
     gb = GridOptionsBuilder.from_dataframe(df_display)
