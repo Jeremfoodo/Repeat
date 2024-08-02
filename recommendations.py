@@ -1,139 +1,322 @@
+# client_info.py
+import streamlit as st
 import pandas as pd
-from datetime import datetime
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import CountVectorizer
+import plotly.express as px
+from datetime import datetime, timedelta
+from src.calculations import get_clients_by_segment_and_spending
+from recommendations import get_recommendations
+from src.segmentation import load_segmentation_data
 
-def get_recommendations(client_recent_purchases, client_june_data, client_july_data, df_recent_purchases, segmentation_df, client_id):
-    recommendations = []
 
-    # Comparer les dépenses entre juin et juillet
-    june_spending = client_june_data['GMV'].sum()
-    july_spending = client_july_data['GMV'].sum()
+# Charger les données
+segmentation_df = load_segmentation_data()
 
-    if july_spending < june_spending:
-        recommendations.append({
-            "Type": "Augmentation des efforts",
-            "Recommandation": "Le client a baissé ses dépenses en juillet par rapport à juin. Augmentez les efforts de recommandation pour l'inciter à commander plus.",
-            "Détails": ""
-        })
-    elif july_spending > june_spending:
-        recommendations.append({
-            "Type": "Maintien des efforts",
-            "Recommandation": "Le client a augmenté ses dépenses en juillet par rapport à juin. Maintenez ou améliorez les recommandations pour continuer cette tendance.",
-            "Détails": ""
-        })
 
-    # Fréquence d'achat
-    if 'Fruits et Légumes' in client_recent_purchases['Product Category'].values:
-        last_fruit_veg_order_date = client_recent_purchases[client_recent_purchases['Product Category'] == 'Fruits et Légumes']['Date'].max()
-        last_fruit_veg_order_date = pd.to_datetime(last_fruit_veg_order_date, errors='coerce')
-        if (datetime.now() - last_fruit_veg_order_date).days > 7:
-            recommendations.append({
-                "Type": "Rachat de fruits et légumes",
-                "Recommandation": "Recommandez de racheter des fruits et légumes.",
-                "Détails": f"Le dernier achat de fruits et légumes a été effectué il y a {(datetime.now() - last_fruit_veg_order_date).days} jours."
-            })
+def map_gamme(gamme_value):
+    if gamme_value == 1:
+        return "à emporter"
+    elif gamme_value == 2:
+        return "regular"
+    elif gamme_value == 3:
+        return "chic"
     else:
-        last_order_date = client_recent_purchases['Date'].max()
-        last_order_date = pd.to_datetime(last_order_date, errors='coerce')
-        if (datetime.now() - last_order_date).days > 15:
-            recommendations.append({
-                "Type": "Rachat dans d'autres catégories",
-                "Recommandation": "Recommandez de racheter dans d'autres catégories.",
-                "Détails": f"Le dernier achat a été effectué il y a {(datetime.now() - last_order_date).days} jours."
-            })
+        return "Non défini"
 
-    # Nombre de catégories
-    june_categories = client_june_data['Product Category'].nunique()
-    july_categories = client_july_data['Product Category'].nunique()
+def client_info_page(df, df_recent_purchases, segmentation_df, default_client_id):
+    st.title("Page d'Information Client")
 
-    # Comparaison juin vs juillet
-    if july_categories < june_categories:
-        categories_not_bought_in_july = set(client_june_data['Product Category'].unique()) - set(client_july_data['Product Category'].unique())
-        recommendations.append({
-            "Type": "Recommandation de catégories",
-            "Recommandation": "Recommandez des achats dans les catégories non commandées en juillet.",
-            "Détails": f"Catégories non commandées en juillet: {', '.join(categories_not_bought_in_july)}"
-        })
+    # Boîte de saisie pour entrer l'ID client
+    client_id_input = st.text_input("Entrez l'ID du client (Restaurant ID)", value=default_client_id)
+    client_id_button = st.button("Valider")
 
-    # Nombre total de catégories distinctes
-    total_categories = client_recent_purchases['Product Category'].nunique()
+    # Mettre à jour le client_id en fonction de l'entrée de l'utilisateur
+    if client_id_button:
+        client_id = int(client_id_input)
+    else:
+        client_id = default_client_id
 
-    if total_categories < 3:
-        categories_to_recommend = ["Boucherie", "Fruits et Légumes", "Crémerie", "Epicerie Salée"]
-        categories_not_bought = [cat for cat in categories_to_recommend if cat not in client_recent_purchases['Product Category'].values]
-        recommendations.append({
-            "Type": "Recommandation multicatégorie",
-            "Recommandation": f"Le client ne commande que dans {total_categories} catégorie(s). Faites du cross !",
-            "Détails": f"Catégories à recommander: {', '.join(categories_not_bought)}"
-        })
-    elif total_categories >= 3:
-        recommendations.append({
-            "Type": "Augmentation des produits",
-            "Recommandation": "Focalisez sur l'augmentation du nombre de produits ou des produits plus chers dans les catégories existantes.",
-            "Détails": ""
-        })
+    # Charger les données de segmentation
+    segmentation_df = load_segmentation_data()
 
-    # Produits fréquemment achetés mais récemment non commandés
-    frequently_bought_products = client_recent_purchases.groupby('product_name').size().reset_index(name='counts').sort_values(by='counts', ascending=False)
-    product_recommendations = []
-    for product in frequently_bought_products['product_name'].unique():
-        last_product_order_date = client_recent_purchases[client_recent_purchases['product_name'] == product]['Date'].max()
-        last_product_order_date = pd.to_datetime(last_product_order_date, errors='coerce')
-        if (datetime.now() - last_product_order_date).days > 30:
-            product_recommendations.append({
-                "Produit": product,
-                "Dernier achat": last_product_order_date,
-                "Jours depuis le dernier achat": (datetime.now() - last_product_order_date).days
-            })
+    # Sélectionner les données du client
+    client_data = df[df['Restaurant ID'] == client_id]
 
-    if product_recommendations:
-        recommendations.append({
-            "Type": "Rachat de produits",
-            "Recommandation": "Recommandez de racheter les produits suivants :",
-            "Détails": product_recommendations
-        })
+    # Fusionner les données de segmentation avec les données du client
+    client_data = pd.merge(client_data, segmentation_df, left_on='Restaurant ID', right_on='Restaurant_id', how='left')
 
-    # Recommandations basées sur les restaurants similaires
-    client_info = segmentation_df[segmentation_df['Restaurant_id'] == client_id].iloc[0]
-    similar_restaurants = segmentation_df[(segmentation_df['Gamme'] == client_info['Gamme']) & (segmentation_df['Type'] == client_info['Type'])]
-    similar_restaurant_ids = similar_restaurants['Restaurant_id'].tolist()
-    similar_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_restaurant_ids)]
+    # Sélectionner les achats récents du client
+    client_recent_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'] == client_id]
 
-    # Calculer le support correctement
-    order_counts = similar_purchases['order_id'].nunique()
-    product_order_counts = similar_purchases.groupby('product_name')['order_id'].nunique().reset_index()
-    product_order_counts.columns = ['product_name', 'order_count']
-    product_order_counts = product_order_counts.merge(similar_purchases[['product_name', 'Product Category']].drop_duplicates(), on='product_name')
-    product_order_counts['Support (%)'] = product_order_counts['order_count'] / order_counts * 100
+    # Convertir les dates si elles ne sont pas déjà au format datetime
+    if not pd.api.types.is_datetime64_any_dtype(df['date 1ere commande (Restaurant)']):
+        df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'])
+    if not pd.api.types.is_datetime64_any_dtype(df_recent_purchases['Date']):
+        df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
+        df_recent_purchases.dropna(subset=['Date'], inplace=True)
 
-    # Prendre les 10 produits les plus fréquents
-    top_recommendations = product_order_counts.sort_values(by='Support (%)', ascending=False).head(10)
-
-    # Formater les recommandations
-    product_recommendations = top_recommendations.to_dict('records')
-
-    recommendations.append({
-        "Type": "Recommandation basée sur les restaurants similaires",
-        "Recommandation": "Les clients similaires (même gamme, même type) que ce client achètent ces produits en priorité :",
-        "Détails": product_recommendations
-    })
-
-    # Recommandations de filtrage collaboratif
-    client_purchases_matrix = df_recent_purchases.pivot_table(index='Restaurant_id', columns='product_name', values='GMV', aggfunc='sum', fill_value=0)
-    client_id_index = client_purchases_matrix.index.get_loc(client_id)
-    cosine_sim = cosine_similarity(client_purchases_matrix)
-    similar_indices = cosine_sim[client_id_index].argsort()[-101:-1][::-1]
-    similar_clients = client_purchases_matrix.index[similar_indices]
+    # Calculer la dernière commande si elle n'existe pas
+    if 'Dernière commande' not in df.columns:
+        df['Dernière commande'] = df.groupby('Restaurant ID')['Date de commande'].transform('max')
     
-    similar_clients_purchases = df_recent_purchases[df_recent_purchases['Restaurant_id'].isin(similar_clients)]
-    similar_clients_top_products = similar_clients_purchases['product_name'].value_counts().head(10).index
-    similar_clients_recommendations = df_recent_purchases[df_recent_purchases['product_name'].isin(similar_clients_top_products)].groupby('product_name')['GMV'].sum().reset_index().sort_values(by='GMV', ascending=False)
+    if 'Dernière commande' not in client_data.columns:
+        client_data.loc[:, 'Dernière commande'] = client_data['Date de commande'].max()
 
-    recommendations.append({
-        "Type": "Filtrage collaboratif",
-        "Recommandation": "Recommandez les produits suivants basés sur les achats des clients similaires :",
-        "Détails": similar_clients_recommendations.to_dict('records')
-    })
+    # Informations standard du client
+    client_name = client_data["Restaurant"].iloc[0]
+    total_spending = round(client_data["Total"].sum())
+    first_order_date = client_data["date 1ere commande (Restaurant)"].iloc[0]
+    last_order_date = client_data["Dernière commande"].iloc[0]
+    days_since_last_order = (datetime.now() - last_order_date).days
+    days_since_first_order = (datetime.now() - first_order_date).days
+
+    # Déterminer la couleur de la box en fonction du nombre de jours depuis la dernière commande
+    if days_since_last_order < 7:
+        last_order_color = "#d4edda"  # Vert
+    elif days_since_last_order < 15:
+        last_order_color = "#fff3cd"  # Jaune
+    elif days_since_last_order < 30:
+        last_order_color = "#ffeeba"  # Orange
+    else:
+        last_order_color = "#f8d7da"  # Rouge
+
+    # Informations de segmentation
+    gamme = client_data["Gamme"].iloc[0] if "Gamme" in client_data.columns else "Non défini"
+    gamme = map_gamme(gamme)  # Appliquer la transformation
+
+    type_detail = client_data["Type_detail"].iloc[0] if "Type_detail" in client_data.columns else "Non défini"
+    type_general = client_data["Type"].iloc[0] if "Type" in client_data.columns else "Non défini"
+
+    # Informations sur les fournisseurs et catégories
+    total_categories = client_recent_purchases["Product Category"].nunique()
+    categories_list = ", ".join(client_recent_purchases["Product Category"].unique())
+
+    today = datetime.today()
+    current_month_str = today.strftime('%Y-%m')
+
+    if pd.api.types.is_datetime64_any_dtype(client_recent_purchases['Date']):
+        current_month_categories = client_recent_purchases[client_recent_purchases['Date'].dt.strftime('%Y-%m') == current_month_str]["Product Category"].nunique()
+    else:
+        current_month_categories = 0
+
+    suppliers = client_recent_purchases.groupby('Supplier')['Date'].max().reset_index()
+
+    category_spending = client_recent_purchases.groupby('sub_cat')['GMV'].sum().reset_index()
+    supplier_spending = client_recent_purchases.groupby('Supplier')['GMV'].sum().reset_index()
+    top_products = client_recent_purchases.groupby(['product_name']).size().reset_index(name='counts').sort_values(by='counts', ascending=False)
+
+    # Définir les données pour les mois dynamiques
+    previous_month_str = (today - timedelta(days=30)).strftime('%Y-%m')
+    client_previous_month_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == previous_month_str)]
+    client_current_month_data = df_recent_purchases[(df_recent_purchases['Restaurant_id'] == client_id) & (df_recent_purchases['Date'].dt.strftime('%Y-%m') == current_month_str)]
+
+    # Calculer les dépenses totales pour les mois dynamiques
+    previous_month_spending = client_previous_month_data['GMV'].sum()
+    current_month_spending = client_current_month_data['GMV'].sum()
+
+    # Informations de segmentation
+    gamme = client_data["Gamme"].iloc[0]
+    type_detail = client_data["Type_detail"].iloc[0]
+    type_general = client_data["Type"].iloc[0]
+
+    # Afficher les informations standard du client avec cadre et pictogrammes
+    st.markdown(
+        """
+        <div style='background-color: #f0f4f7; padding: 20px; border-radius: 10px;'>
+            <h2>Infos Générales</h2>
+            <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>ID du restaurant</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nom du restaurant</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/money.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Total des dépenses</h5>
+                        <p style='margin: 0;'>{} €</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Date de la première commande</h5>
+                        <p style='margin: 0;'>{} ({} jours)</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Date de la dernière commande</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: {}; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/calendar.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre de jours depuis la dernière commande</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/categorize.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Gamme</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Type détaillé</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/restaurant.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Type général</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """.format(
+            client_id, client_name, total_spending,
+            first_order_date.strftime('%Y-%m-%d'), days_since_first_order,
+            last_order_date.strftime('%Y-%m-%d'), last_order_color, days_since_last_order,
+            gamme, type_detail, type_general
+        ),
+        unsafe_allow_html=True
+    )
+
+    # Calculer le nombre de jours depuis la dernière commande pour chaque fournisseur
+    suppliers['Date'] = pd.to_datetime(suppliers['Date'], errors='coerce')
+    suppliers.dropna(subset=['Date'], inplace=True)
+    suppliers['Days Since Last Order'] = (datetime.now() - suppliers['Date']).dt.days
+
+    # Trier les fournisseurs par date de commande la plus récente
+    suppliers = suppliers.sort_values(by='Date', ascending=False)
+
+    # Formater la date pour n'afficher que l'année, le mois et le jour
+    suppliers['Date'] = suppliers['Date'].dt.strftime('%Y-%m-%d')
+
+    # Convertir le DataFrame en tableau HTML
+    suppliers_table = suppliers.to_html(index=False, classes='styled-table')
+
+    st.markdown(
+        """
+        <div style='background-color: #e9ecef; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h2>Informations sur les fournisseurs et catégories</h2>
+            <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre total de catégories</h5>
+                        <p style='margin: 0;'>{}</p>
+                        <small>{}</small>
+                    </div>
+                </div>
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; display: flex; align-items: center;'>
+                    <img src='https://img.icons8.com/ios-filled/50/000000/list.png' width='30' height='30' style='margin-right: 10px;'/>
+                    <div>
+                        <h5 style='margin: 0;'>Nombre de catégories en {}</h5>
+                        <p style='margin: 0;'>{}</p>
+                    </div>
+                </div>
+            </div>
+            <h3 style='font-size: 1.25rem;'>Derniers achats chez les fournisseurs</h3>
+            <div style='background-color: #fff; padding: 20px; border-radius: 10px;'>
+                {}
+            </div>
+        </div>
+        """.format(total_categories, categories_list, today.strftime('%B %Y'), current_month_categories, suppliers_table),
+        unsafe_allow_html=True
+    )
+
+    # Créez les graphiques en secteurs
+    fig_category_spending = px.pie(category_spending, values='GMV', names='sub_cat', title='Dépenses par sous-catégorie (3 derniers mois)')
+    fig_supplier_spending = px.pie(supplier_spending, values='GMV', names='Supplier', title='Dépenses par fournisseur (3 derniers mois)')
+
+    # Afficher les graphiques côte à côte en utilisant les colonnes
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.plotly_chart(fig_category_spending)
     
-    return recommendations
+    with col2:
+        st.plotly_chart(fig_supplier_spending)
+
+    # Afficher les produits les plus fréquemment achetés sous forme de tableau
+    st.markdown(
+        """
+        <div style='background-color: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+            <h2>Produits les plus fréquemment achetés</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.table(top_products)
+
+    # Afficher les recommandations
+    recommendations = get_recommendations(
+        client_recent_purchases,
+        client_previous_month_data,
+        client_current_month_data,
+        df_recent_purchases,
+        segmentation_df,
+        client_id
+    )
+
+    # Mettre en évidence les différents types de recommandations
+    def format_recommendations(rec):
+        type_icon = {
+            "Augmentation des efforts": "🚀",
+            "Maintien des efforts": "✅",
+            "Rachat de fruits et légumes": "🍎",
+            "Rachat dans d'autres catégories": "🛒",
+            "Recommandation de catégories": "📂",
+            "Recommandation multicatégorie": "🔀",
+            "Augmentation des produits": "💹",
+            "Rachat de produits": "🔄",
+            "Recommandation basée sur les restaurants similaires": "🏪"
+        }
+
+        return f"{type_icon.get(rec['Type'], '')} **{rec['Type']}**: {rec['Recommandation']}"
+
+    st.markdown("### Recommandations avec icônes")
+    for rec in recommendations:
+        st.markdown(format_recommendations(rec))
+    
+        # Enlever la date de la dernière commande pour les recommandations de rachat de produits
+        if rec['Type'] == "Rachat de produits" and isinstance(rec['Détails'], list):
+            for detail in rec['Détails']:
+                if 'Dernier achat' in detail:
+                    detail.pop('Dernier achat')
+            st.table(pd.DataFrame(rec['Détails']))
+        elif isinstance(rec['Détails'], list):
+            if all(isinstance(i, dict) for i in rec['Détails']):
+                st.table(pd.DataFrame(rec['Détails']))
+            else:
+                st.markdown(f"**Détails:** {', '.join(rec['Détails'])}")
+        else:
+            st.markdown(f"**Détails:** {rec['Détails']}")
+
+        st.markdown("---")
+
+
+# Charger les données récentes
+def load_recent_purchases():
+    df_recent_purchases = pd.read_excel("dataFR.xlsx", engine='openpyxl')
+    df_recent_purchases['Date'] = pd.to_datetime(df_recent_purchases['Date'], errors='coerce')
+    df_recent_purchases.dropna(subset=['Date'], inplace=True)
+    return df_recent_purchases
