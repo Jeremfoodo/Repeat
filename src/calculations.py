@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import streamlit as st
+from datetime import datetime, timedelta
 
 # Fonction de segmentation des clients par niveau de dépense
 def segment_customers(data, year, month):
@@ -121,7 +122,10 @@ def process_country_data(df, historical_data, country_code, region=None):
         else:
             raise KeyError(f"La colonne 'region' n'existe pas dans le DataFrame. Colonnes disponibles : {df_country.columns}")
 
-    recent_months = pd.date_range(start='2024-04-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
     recent_results = pd.concat([calculate_segments_for_month(df_country, month) for month in recent_months], ignore_index=True)
     all_results = pd.concat([historical_results, recent_results], ignore_index=True)
     
@@ -131,7 +135,10 @@ def process_country_data(df, historical_data, country_code, region=None):
 def process_region_data(df, country_code, region):
     df_region = df[(df['Pays'] == country_code) & (df['region'] == region)]
     
-    recent_months = pd.date_range(start='2024-06-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=2)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
     return recent_results
