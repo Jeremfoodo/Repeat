@@ -93,10 +93,15 @@ def load_segmentation_data():
 
 def reassign_account_manager(df):
     df = df.sort_values(by=['Restaurant ID', 'Date de commande'])
+    # Appliquer forward-fill et backward-fill
     df['Owner email'] = df.groupby('Restaurant ID')['Owner email'].transform(lambda x: x.ffill().bfill())
+    # Remplacer les valeurs manquantes par "BLOCKED C1"
+    df['Owner email'].fillna('BLOCKED C1', inplace=True)
     return df
 
 def filter_data_by_account(df, account_manager):
+    # Assurez-vous que "BLOCKED C1" est utilisé pour les valeurs manquantes
+    df['Owner email'].fillna('BLOCKED C1', inplace=True)
     return df[df['Owner email'] == account_manager]
 
 # Charger les données
