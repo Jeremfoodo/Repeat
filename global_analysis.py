@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime, timedelta
 from src.calculations import process_country_data, calculate_segments_for_month, process_region_data
 from src.plots import plot_ratios
 
@@ -25,18 +26,25 @@ def global_analysis(historical_data, df):
     countries = list(historical_data.keys()) + ['Global']
     country_code = st.selectbox('Sélectionner un pays ou une région', countries)
 
+    # Calculer les dates dynamiquement
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    previous_month = (current_month - timedelta(days=1)).replace(day=1)
+    current_month_str = current_month.strftime('%Y-%m')
+    previous_month_str = previous_month.strftime('%Y-%m')
+
     if country_code == 'Global':
         all_historical_data = pd.concat(historical_data.values(), ignore_index=True)
-        recent_months = pd.date_range(start='2024-05-01', end='2024-07-01', freq='MS').strftime('%Y-%m').tolist()
+        recent_months = pd.date_range(start=previous_month - timedelta(days=60), end=current_month, freq='MS').strftime('%Y-%m').tolist()
         recent_results = pd.concat([calculate_segments_for_month(df, month) for month in recent_months], ignore_index=True)
         all_results = pd.concat([all_historical_data, recent_results], ignore_index=True)
     else:
         all_results = process_country_data(df, historical_data, country_code)
     
-    june_2024_results = all_results[all_results['Mois'] == '2024-07']
+    current_month_results = all_results[all_results['Mois'] == current_month_str]
 
-    st.header('Résumé des Segments pour Juillet 2024')
-    summary_boxes = generate_summary_boxes(june_2024_results)
+    st.header(f'Résumé des Segments pour {current_month_str}')
+    summary_boxes = generate_summary_boxes(current_month_results)
 
     # Afficher les boîtes dans une grille 2x2
     col1, col2 = st.columns(2)
@@ -59,8 +67,8 @@ def global_analysis(historical_data, df):
             st.subheader(f'Région: {region}')
             try:
                 region_results = process_region_data(df, country_code, region=region)
-                region_june_2024_results = region_results[region_results['Mois'] == '2024-07']
-                region_summary_boxes = generate_region_summary_boxes(region_june_2024_results)
+                region_current_month_results = region_results[region_results['Mois'] == current_month_str]
+                region_summary_boxes = generate_region_summary_boxes(region_current_month_results)
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown(region_summary_boxes[0], unsafe_allow_html=True)
@@ -71,7 +79,7 @@ def global_analysis(historical_data, df):
             except KeyError as e:
                 st.error(f"Erreur: {e}")
 
-def generate_summary_boxes(june_2024_results):
+def generate_summary_boxes(current_month_results):
     colors = {
         'Acquisition': '#FFCCCC',
         'Nouveaux Clients': '#CCFFCC',
@@ -81,8 +89,8 @@ def generate_summary_boxes(june_2024_results):
 
     boxes = []
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        if segment in june_2024_results['Segment'].values:
-            segment_data = june_2024_results[june_2024_results['Segment'] == segment].iloc[0]
+        if segment in current_month_results['Segment'].values:
+            segment_data = current_month_results[current_month_results['Segment'] == segment].iloc[0]
             box = f"""
             <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 170px;">
                 <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
@@ -95,7 +103,7 @@ def generate_summary_boxes(june_2024_results):
             boxes.append(box)
     return boxes
 
-def generate_region_summary_boxes(region_june_2024_results):
+def generate_region_summary_boxes(region_current_month_results):
     colors = {
         'Acquisition': '#FFCCCC',
         'Nouveaux Clients': '#CCFFCC',
@@ -105,8 +113,8 @@ def generate_region_summary_boxes(region_june_2024_results):
 
     boxes = []
     for segment in ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
-        if segment in region_june_2024_results['Segment'].values:
-            segment_data = region_june_2024_results[region_june_2024_results['Segment'] == segment].iloc[0]
+        if segment in region_current_month_results['Segment'].values:
+            segment_data = region_current_month_results[region_current_month_results['Segment'] == segment].iloc[0]
             box = f"""
             <div style="background-color: {colors[segment]}; padding: 10px; margin: 10px; border-radius: 5px; width: 90%; height: 170px;">
                 <h4 style="margin: 0; font-size: 16px;">{segment}</h4>
