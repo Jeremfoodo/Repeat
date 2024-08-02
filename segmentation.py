@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
-from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients_july
+from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients
 
 def segmentation_page(df):
     st.title('Segmentation')
@@ -122,7 +122,7 @@ def segmentation_page(df):
         st.plotly_chart(fig)
 
     # Clients actifs en juin mais pas en juillet
-    inactive_clients = get_inactive_clients_july(customer_spending_previous_account, customer_spending_current_account)
+    inactive_clients = get_inactive_clients(customer_spending_previous_account, customer_spending_current_account)
     inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
     inactive_clients['Total'] = inactive_clients['Total'].round()
 
