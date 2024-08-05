@@ -72,41 +72,64 @@ def get_inactive_clients(previous_df, current_df):
 def calculate_segments_for_month(df, target_month):
     previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
     target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
-    
-    # Ensure 'date 1ere commande (Restaurant)' is in datetime format
-    df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'], format='%Y-%m-%d %H:%M:%S')
-    
     acquisition = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
     nouveaux_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]
     clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
         [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
     )]
     anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
-    
     segment_counts = {
-        'Restaurant ID': [],
-        'Segment': [],
-        'Nombre de Clients': []
+        'Segment': ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients'],
+        'Nombre de Clients': [len(acquisition['Restaurant ID'].unique()), len(nouveaux_clients['Restaurant ID'].unique()), len(clients_recents['Restaurant ID'].unique()), len(anciens_clients['Restaurant ID'].unique())]
     }
-    
-    for seg_name, seg_df in zip(
-        ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients'],
-        [acquisition, nouveaux_clients, clients_recents, anciens_clients]
-    ):
-        segment_counts['Restaurant ID'].extend(seg_df['Restaurant ID'].unique())
-        segment_counts['Segment'].extend([seg_name] * seg_df['Restaurant ID'].nunique())
-        segment_counts['Nombre de Clients'].extend([seg_df['Restaurant ID'].nunique()])
-
-    # Ensure all lists in segment_counts are of the same length
-    max_length = max(len(segment_counts['Restaurant ID']), len(segment_counts['Segment']), len(segment_counts['Nombre de Clients']))
-    for key in segment_counts:
-        while len(segment_counts[key]) < max_length:
-            segment_counts[key].append(None)
-    
+    all_previous_acquisitions = df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month)]
+    all_recent_clients = df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
+        [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
+    ))]
+    all_old_clients = df[(df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=6)).strftime('%Y-%m'))]
+    segment_counts['Nombre de Clients Possible'] = [
+        len(acquisition['Restaurant ID'].unique()),
+        len(all_previous_acquisitions['Restaurant ID'].unique()),
+        len(all_recent_clients['Restaurant ID'].unique()),
+        len(all_old_clients['Restaurant ID'].unique())
+    ]
+    previous_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == previous_month]
+    acquisition_previous = 0
+    new_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]['Restaurant ID'].unique())
+    recent_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
+        [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(1, 5)]
+    )]['Restaurant ID'].unique())
+    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]['Restaurant ID'].unique())
+    segment_counts['Nombre de Clients Actifs (Mois Précédent)'] = [
+        acquisition_previous,
+        new_clients_previous,
+        recent_clients_previous,
+        old_clients_previous
+    ]
+    segment_counts['Rapport (%)'] = np.round(np.divide(segment_counts['Nombre de Clients'], segment_counts['Nombre de Clients Actifs (Mois Précédent)'], out=np.zeros_like(segment_counts['Nombre de Clients'], dtype=float), where=np.array(segment_counts['Nombre de Clients Actifs (Mois Précédent)']) != 0) * 100, 1)
     results_df = pd.DataFrame(segment_counts)
     results_df['Mois'] = target_month
     return results_df
 
+@st.cache_data
+def process_country_data(df, historical_data, country_code, region=None):
+    historical_results = historical_data[country_code]
+    df_country = df[df['Pays'] == country_code]
+    
+    if region:
+        if 'region' in df_country.columns:
+            df_country = df_country[df_country['region'] == region]
+        else:
+            raise KeyError(f"La colonne 'region' n'existe pas dans le DataFrame. Colonnes disponibles : {df_country.columns}")
+
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
+    recent_results = pd.concat([calculate_segments_for_month(df_country, month) for month in recent_months], ignore_index=True)
+    all_results = pd.concat([historical_results, recent_results], ignore_index=True)
+    
+    return all_results
 
 @st.cache_data
 def process_region_data(df, country_code, region):
@@ -119,17 +142,3 @@ def process_region_data(df, country_code, region):
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
     return recent_results
-
-def get_segment_and_spending_info(df, target_month):
-    customer_spending = segment_customers(df, *map(int, target_month.split('-')))
-    segments_info = calculate_segments_for_month(df, target_month)
-    
-    # Ensure both DataFrames have 'Restaurant ID'
-    if 'Restaurant ID' not in customer_spending.columns:
-        raise KeyError("'Restaurant ID' not found in customer_spending DataFrame")
-    if 'Restaurant ID' not in segments_info.columns:
-        raise KeyError("'Restaurant ID' not found in segments_info DataFrame")
-    
-    merged_info = pd.merge(customer_spending, segments_info, on='Restaurant ID', how='left')
-    
-    return merged_info
