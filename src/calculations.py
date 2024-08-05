@@ -35,6 +35,41 @@ def segment_customers(data, year, month):
     
     return customer_spending
 
+# Fonction pour calculer les segments pour un mois donné
+def calculate_segments_for_month(df, target_month):
+    year, month = map(int, target_month.split('-'))
+    target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
+    
+    acquisition = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
+    nouveaux_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')]
+    clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
+        [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
+    )]
+    anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
+    
+    segments_info = pd.concat([
+        acquisition.assign(Segment='Acquisition'),
+        nouveaux_clients.assign(Segment='Nouveaux Clients'),
+        clients_recents.assign(Segment='Clients Récents'),
+        anciens_clients.assign(Segment='Anciens Clients')
+    ])
+    
+    return segments_info[['Restaurant ID', 'Segment']]
+
+# Fonction pour obtenir les informations de segmentation et de niveau de dépense
+@st.cache_data
+def get_segment_and_spending_info(df, target_month):
+    customer_spending = segment_customers(df, *map(int, target_month.split('-')))
+    segments_info = calculate_segments_for_month(df, target_month)
+    
+    merged_info = pd.merge(customer_spending, segments_info, on='Restaurant ID', how='left')
+    return merged_info
+
+# Fonction pour obtenir les clients à réactiver
+def get_inactive_clients(previous_df, current_df):
+    inactive_clients = previous_df[~previous_df['Restaurant ID'].isin(current_df['Restaurant ID'])]
+    return inactive_clients
+
 # Fonction pour obtenir les clients par segment et niveau de dépense
 @st.cache_data
 def get_clients_by_segment_and_spending(df, target_month):
@@ -62,89 +97,3 @@ def get_clients_by_segment_and_spending(df, target_month):
     total_clients = customer_spending['Restaurant ID'].nunique()
     
     return heatmap_pivot, total_clients, customer_spending
-
-# Fonction pour obtenir les clients à réactiver
-def get_inactive_clients(previous_df, current_df):
-    inactive_clients = previous_df[~previous_df['Restaurant ID'].isin(current_df['Restaurant ID'])]
-    return inactive_clients
-
-# Fonction pour calculer les segments pour un mois donné
-@st.cache_data
-def calculate_segments_for_month(df, target_month):
-    year, month = map(int, target_month.split('-'))
-    previous_month = (pd.to_datetime(target_month) - pd.DateOffset(months=1)).strftime('%Y-%m')
-    target_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == target_month]
-    
-    acquisition = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == target_month]
-    nouveaux_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]
-    clients_recents = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-        [(pd.to_datetime(target_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
-    )]
-    anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
-    
-    segment_counts = {
-        'Restaurant ID': pd.concat([acquisition['Restaurant ID'], nouveaux_clients['Restaurant ID'], clients_recents['Restaurant ID'], anciens_clients['Restaurant ID']]).unique(),
-        'Segment': ['Acquisition'] * len(acquisition['Restaurant ID'].unique()) + 
-                   ['Nouveaux Clients'] * len(nouveaux_clients['Restaurant ID'].unique()) + 
-                   ['Clients Récents'] * len(clients_recents['Restaurant ID'].unique()) + 
-                   ['Anciens Clients'] * len(anciens_clients['Restaurant ID'].unique())
-    }
-    
-    previous_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == previous_month]
-    acquisition_previous = 0
-    new_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') == previous_month]['Restaurant ID'].unique())
-    recent_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m').isin(
-        [(pd.to_datetime(previous_month) - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]
-    )]['Restaurant ID'].unique())
-    old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]['Restaurant ID'].unique())
-    
-    segment_counts_df = pd.DataFrame(segment_counts)
-    
-    return segment_counts_df
-
-@st.cache_data
-def process_country_data(df, historical_data, country_code, region=None):
-    historical_results = historical_data[country_code]
-    df_country = df[df['Pays'] == country_code]
-    
-    if region:
-        if 'region' in df_country.columns:
-            df_country = df_country[df_country['region'] == region]
-        else:
-            raise KeyError(f"La colonne 'region' n'existe pas dans le DataFrame. Colonnes disponibles : {df_country.columns}")
-
-    today = datetime.today()
-    current_month = today.replace(day=1)
-    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
-    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
-    recent_results = pd.concat([calculate_segments_for_month(df_country, month) for month in recent_months], ignore_index=True)
-    all_results = pd.concat([historical_results, recent_results], ignore_index=True)
-    
-    return all_results
-
-@st.cache_data
-def process_region_data(df, country_code, region):
-    df_region = df[(df['Pays'] == country_code) & (df['region'] == region)]
-    
-    today = datetime.today()
-    current_month = today.replace(day=1)
-    start_month = (current_month - pd.DateOffset(months=2)).strftime('%Y-%m')
-    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
-    recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
-    
-    return recent_results
-
-@st.cache_data
-def get_segment_and_spending_info(df, target_month):
-    customer_spending = segment_customers(df, *map(int, target_month.split('-')))
-    segments_info = calculate_segments_for_month(df, target_month)
-    
-    # Vérifier la présence de 'Restaurant ID' dans les deux DataFrames avant la fusion
-    if 'Restaurant ID' not in customer_spending.columns:
-        raise KeyError("'Restaurant ID' column is missing in customer_spending DataFrame")
-    
-    if 'Restaurant ID' not in segments_info.columns:
-        raise KeyError("'Restaurant ID' column is missing in segments_info DataFrame")
-    
-    merged_info = pd.merge(customer_spending, segments_info, on='Restaurant ID', how='left')
-    return merged_info
