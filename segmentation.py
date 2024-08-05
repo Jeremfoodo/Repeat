@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
-from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients, get_segment_and_spending_info
+from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients
 
 def segmentation_page(df):
     st.title('Segmentation')
@@ -75,12 +75,9 @@ def segmentation_page(df):
     account_manager = st.selectbox('Sélectionner un account manager', df['Owner email'].unique())
     
     df_account = df[df['Owner email'] == account_manager]
-
-    customer_info_previous = get_segment_and_spending_info(df_account, previous_month_str)
-    customer_info_current = get_segment_and_spending_info(df_account, current_month_str)
     
-    heatmap_data_previous_account, total_clients_previous_account, _ = get_clients_by_segment_and_spending(df_account, previous_month_str)
-    heatmap_data_current_account, total_clients_current_account, _ = get_clients_by_segment_and_spending(df_account, current_month_str)
+    heatmap_data_previous_account, total_clients_previous_account, customer_spending_previous_account = get_clients_by_segment_and_spending(df_account, previous_month_str)
+    heatmap_data_current_account, total_clients_current_account, customer_spending_current_account = get_clients_by_segment_and_spending(df_account, current_month_str)
 
     col3, col4 = st.columns(2)
 
@@ -124,22 +121,25 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-    # Clients inactifs
-    inactive_clients = get_inactive_clients(customer_info_previous, customer_info_current)
+    # Clients actifs en juin mais pas en juillet
+    inactive_clients = get_inactive_clients(customer_spending_previous_account, customer_spending_current_account)
     inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
     inactive_clients['Total'] = inactive_clients['Total'].round()
 
     # Ajouter les colonnes manquantes
     if 'Restaurant' not in inactive_clients.columns:
         inactive_clients = inactive_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in inactive_clients.columns:
+        inactive_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in inactive_clients.columns:
+        inactive_clients['Spending Level'] = 'Unknown'
 
     inactive_clients = inactive_clients.drop_duplicates(subset='Restaurant ID')
-
     inactive_count = inactive_clients.shape[0]
 
     # Clients qui ont baissé dans le tiering
-    downgraded_clients = customer_info_previous[customer_info_previous['Restaurant ID'].isin(customer_info_current['Restaurant ID'])]
-    downgraded_clients = downgraded_clients.merge(customer_info_current, on='Restaurant ID', suffixes=('_Previous', '_Current'))
+    downgraded_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
+    downgraded_clients = downgraded_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Previous'] > downgraded_clients['Spending Level_Current']]
     downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
     downgraded_clients['Total_Previous'] = downgraded_clients['Total_Previous'].round()
@@ -149,14 +149,17 @@ def segmentation_page(df):
     # Ajouter les colonnes manquantes
     if 'Restaurant' not in downgraded_clients.columns:
         downgraded_clients = downgraded_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in downgraded_clients.columns:
+        downgraded_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in downgraded_clients.columns:
+        downgraded_clients['Spending Level'] = 'Unknown'
 
     downgraded_clients = downgraded_clients.drop_duplicates(subset='Restaurant ID')
-
     downgraded_count = downgraded_clients.shape[0]
 
     # Clients restés dans le même tiering mais dépensé moins en juillet
-    same_tier_less_spending_clients = customer_info_previous[customer_info_previous['Restaurant ID'].isin(customer_info_current['Restaurant ID'])]
-    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_info_current, on='Restaurant ID', suffixes=('_Previous', '_Current'))
+    same_tier_less_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
+    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Previous'] == same_tier_less_spending_clients['Spending Level_Current']) & (same_tier_less_spending_clients['Total_Previous'] > same_tier_less_spending_clients['Total_Current'])]
     same_tier_less_spending_clients = same_tier_less_spending_clients.merge(last_order_dates, on='Restaurant ID')
     same_tier_less_spending_clients['Total_Previous'] = same_tier_less_spending_clients['Total_Previous'].round()
@@ -166,14 +169,17 @@ def segmentation_page(df):
     # Ajouter les colonnes manquantes
     if 'Restaurant' not in same_tier_less_spending_clients.columns:
         same_tier_less_spending_clients = same_tier_less_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in same_tier_less_spending_clients.columns:
+        same_tier_less_spending_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in same_tier_less_spending_clients.columns:
+        same_tier_less_spending_clients['Spending Level'] = 'Unknown'
 
     same_tier_less_spending_clients = same_tier_less_spending_clients.drop_duplicates(subset='Restaurant ID')
-
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
     # Clients restés dans le même tiering mais dépensé plus en juillet
-    increased_spending_clients = customer_info_previous[customer_info_previous['Restaurant ID'].isin(customer_info_current['Restaurant ID'])]
-    increased_spending_clients = increased_spending_clients.merge(customer_info_current, on='Restaurant ID', suffixes=('_Previous', '_Current'))
+    increased_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
+    increased_spending_clients = increased_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Previous'] < increased_spending_clients['Total_Current'])]
     increased_spending_clients = increased_spending_clients.merge(last_order_dates, on='Restaurant ID')
     increased_spending_clients['Total_Previous'] = increased_spending_clients['Total_Previous'].round()
@@ -183,9 +189,12 @@ def segmentation_page(df):
     # Ajouter les colonnes manquantes
     if 'Restaurant' not in increased_spending_clients.columns:
         increased_spending_clients = increased_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
+    if 'Segment' not in increased_spending_clients.columns:
+        increased_spending_clients['Segment'] = 'Unknown'
+    if 'Spending Level' not in increased_spending_clients.columns:
+        increased_spending_clients['Spending Level'] = 'Unknown'
 
     increased_spending_clients = increased_spending_clients.drop_duplicates(subset='Restaurant ID')
-
     increased_spending_count = increased_spending_clients.shape[0]
 
     # Récapitulatif
