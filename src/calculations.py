@@ -97,3 +97,37 @@ def get_clients_by_segment_and_spending(df, target_month):
     total_clients = customer_spending['Restaurant ID'].nunique()
     
     return heatmap_pivot, total_clients, customer_spending
+
+# Fonction pour traiter les données par pays
+@st.cache_data
+def process_country_data(df, historical_data, country_code, region=None):
+    historical_results = historical_data[country_code]
+    df_country = df[df['Pays'] == country_code]
+    
+    if region:
+        if 'region' in df_country.columns:
+            df_country = df_country[df_country['region'] == region]
+        else:
+            raise KeyError(f"La colonne 'region' n'existe pas dans le DataFrame. Colonnes disponibles : {df_country.columns}")
+
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
+    recent_results = pd.concat([calculate_segments_for_month(df_country, month) for month in recent_months], ignore_index=True)
+    all_results = pd.concat([historical_results, recent_results], ignore_index=True)
+    
+    return all_results
+
+# Fonction pour traiter les données par région
+@st.cache_data
+def process_region_data(df, country_code, region):
+    df_region = df[(df['Pays'] == country_code) & (df['region'] == region)]
+    
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    start_month = (current_month - pd.DateOffset(months=2)).strftime('%Y-%m')
+    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
+    recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
+    
+    return recent_results
