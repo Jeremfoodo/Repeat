@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime
 from src.data_processing import load_objectifs, load_data
-from src.calculations import calculate_segments_for_month
+from src.calculations import get_active_clients
 
 # Fonction pour obtenir les clients actuels par segment et par pays
 @st.cache_data
@@ -13,9 +13,9 @@ def get_active_clients(df, target_month):
         country_df = df[df['Pays'] == country]
         active_clients = calculate_segments_for_month(country_df, target_month)
         result[country] = {
-            'Nouveaux Clients': active_clients[active_clients['Segment'] == 'Nouveaux Clients']['Nombre de Clients'].values[0],
-            'Clients Récents': active_clients[active_clients['Segment'] == 'Clients Récents']['Nombre de Clients'].values[0],
-            'Anciens Clients': active_clients[active_clients['Segment'] == 'Anciens Clients']['Nombre de Clients'].values[0],
+            'Nouveaux Clients': active_clients[active_clients['Segment'] == 'Nouveaux Clients']['Nombre de Clients'].values[0] if 'Nouveaux Clients' in active_clients['Segment'].values else 0,
+            'Clients Récents': active_clients[active_clients['Segment'] == 'Clients Récents']['Nombre de Clients'].values[0] if 'Clients Récents' in active_clients['Segment'].values else 0,
+            'Anciens Clients': active_clients[active_clients['Segment'] == 'Anciens Clients']['Nombre de Clients'].values[0] if 'Anciens Clients' in active_clients['Segment'].values else 0,
         }
     return result
 
@@ -26,7 +26,7 @@ def objectifs_page(df):
     # Récupérer les objectifs depuis le fichier Excel
     objectifs_df = load_objectifs()
 
-    # Calculer le mois actuel et le mois précédent
+    # Calculer le mois actuel
     today = datetime.today()
     current_month = today.replace(day=1)
     current_month_str = current_month.strftime('%Y-%m')
