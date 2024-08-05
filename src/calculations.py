@@ -142,3 +142,10 @@ def process_region_data(df, country_code, region):
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
     return recent_results
+
+@st.cache_data
+def get_segment_and_spending_info(df, target_month):
+    customer_spending = segment_customers(df, *map(int, target_month.split('-')))
+    segments_info = calculate_segments_for_month(df, target_month)
+    merged_info = pd.merge(customer_spending, segments_info, on='Restaurant ID', how='left')
+    return merged_info
