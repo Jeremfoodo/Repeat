@@ -49,10 +49,9 @@ def get_clients_by_segment_and_spending(df, target_month):
     )]
     anciens_clients = df[df['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
     
-    customer_spending.loc[customer_spending['Restaurant ID'].isin(acquisition['Restaurant ID']), 'Segment'] = 'Acquisition'
-    customer_spending.loc[customer_spending['Restaurant ID'].isin(nouveaux_clients['Restaurant ID']), 'Segment'] = 'Nouveaux Clients'
-    customer_spending.loc[customer_spending['Restaurant ID'].isin(clients_recents['Restaurant ID']), 'Segment'] = 'Clients Récents'
-    customer_spending.loc[customer_spending['Restaurant ID'].isin(anciens_clients['Restaurant ID']), 'Segment'] = 'Anciens Clients'
+    customer_spending['Segment'] = np.where(customer_spending['Restaurant ID'].isin(acquisition['Restaurant ID']), 'Acquisition',
+                               np.where(customer_spending['Restaurant ID'].isin(nouveaux_clients['Restaurant ID']), 'Nouveaux Clients',
+                               np.where(customer_spending['Restaurant ID'].isin(clients_recents['Restaurant ID']), 'Clients Récents', 'Anciens Clients')))
     
     # Compter les clients par segment et niveau de dépense
     heatmap_data = customer_spending.groupby(['Segment', 'Spending Level']).agg({'Restaurant ID': 'nunique'}).reset_index()
@@ -84,8 +83,11 @@ def calculate_segments_for_month(df, target_month):
     anciens_clients = target_orders[target_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(target_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]
     
     segment_counts = {
-        'Segment': ['Acquisition', 'Nouveaux Clients', 'Clients Récents', 'Anciens Clients'],
-        'Nombre de Clients': [len(acquisition['Restaurant ID'].unique()), len(nouveaux_clients['Restaurant ID'].unique()), len(clients_recents['Restaurant ID'].unique()), len(anciens_clients['Restaurant ID'].unique())]
+        'Restaurant ID': pd.concat([acquisition['Restaurant ID'], nouveaux_clients['Restaurant ID'], clients_recents['Restaurant ID'], anciens_clients['Restaurant ID']]).unique(),
+        'Segment': ['Acquisition'] * len(acquisition['Restaurant ID'].unique()) + 
+                   ['Nouveaux Clients'] * len(nouveaux_clients['Restaurant ID'].unique()) + 
+                   ['Clients Récents'] * len(clients_recents['Restaurant ID'].unique()) + 
+                   ['Anciens Clients'] * len(anciens_clients['Restaurant ID'].unique())
     }
     
     previous_orders = df[df['Date de commande'].dt.strftime('%Y-%m') == previous_month]
@@ -96,19 +98,9 @@ def calculate_segments_for_month(df, target_month):
     )]['Restaurant ID'].unique())
     old_clients_previous = len(previous_orders[previous_orders['date 1ere commande (Restaurant)'].dt.strftime('%Y-%m') < (pd.to_datetime(previous_month) - pd.DateOffset(months=6)).strftime('%Y-%m')]['Restaurant ID'].unique())
     
-    segment_counts['Nombre de Clients Actifs (Mois Précédent)'] = [
-        acquisition_previous,
-        new_clients_previous,
-        recent_clients_previous,
-        old_clients_previous
-    ]
+    segment_counts_df = pd.DataFrame(segment_counts)
     
-    segment_counts['Rapport (%)'] = np.round(np.divide(segment_counts['Nombre de Clients'], segment_counts['Nombre de Clients Actifs (Mois Précédent)'], out=np.zeros_like(segment_counts['Nombre de Clients'], dtype=float), where=np.array(segment_counts['Nombre de Clients Actifs (Mois Précédent)']) != 0) * 100, 1)
-    
-    results_df = pd.DataFrame(segment_counts)
-    results_df['Mois'] = target_month
-    
-    return results_df
+    return segment_counts_df
 
 @st.cache_data
 def process_country_data(df, historical_data, country_code, region=None):
@@ -146,6 +138,13 @@ def process_region_data(df, country_code, region):
 def get_segment_and_spending_info(df, target_month):
     customer_spending = segment_customers(df, *map(int, target_month.split('-')))
     segments_info = calculate_segments_for_month(df, target_month)
+    
+    # Vérifier la présence de 'Restaurant ID' dans les deux DataFrames avant la fusion
+    if 'Restaurant ID' not in customer_spending.columns:
+        raise KeyError("'Restaurant ID' column is missing in customer_spending DataFrame")
+    
+    if 'Restaurant ID' not in segments_info.columns:
+        raise KeyError("'Restaurant ID' column is missing in segments_info DataFrame")
     
     merged_info = pd.merge(customer_spending, segments_info, on='Restaurant ID', how='left')
     return merged_info
