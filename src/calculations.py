@@ -96,30 +96,17 @@ def calculate_segments_for_month(df, target_month):
         segment_counts['Restaurant ID'].extend(seg_df['Restaurant ID'].unique())
         segment_counts['Segment'].extend([seg_name] * seg_df['Restaurant ID'].nunique())
         segment_counts['Nombre de Clients'].extend([seg_df['Restaurant ID'].nunique()])
+
+    # Ensure all lists in segment_counts are of the same length
+    max_length = max(len(segment_counts['Restaurant ID']), len(segment_counts['Segment']), len(segment_counts['Nombre de Clients']))
+    for key in segment_counts:
+        while len(segment_counts[key]) < max_length:
+            segment_counts[key].append(None)
     
     results_df = pd.DataFrame(segment_counts)
     results_df['Mois'] = target_month
     return results_df
 
-@st.cache_data
-def process_country_data(df, historical_data, country_code, region=None):
-    historical_results = historical_data[country_code]
-    df_country = df[df['Pays'] == country_code]
-    
-    if region:
-        if 'region' in df_country.columns:
-            df_country = df_country[df_country['region'] == region]
-        else:
-            raise KeyError(f"La colonne 'region' n'existe pas dans le DataFrame. Colonnes disponibles : {df_country.columns}")
-
-    today = datetime.today()
-    current_month = today.replace(day=1)
-    start_month = (current_month - pd.DateOffset(months=3)).strftime('%Y-%m')
-    recent_months = pd.date_range(start=start_month, end=current_month, freq='MS').strftime('%Y-%m').tolist()
-    recent_results = pd.concat([calculate_segments_for_month(df_country, month) for month in recent_months], ignore_index=True)
-    all_results = pd.concat([historical_results, recent_results], ignore_index=True)
-    
-    return all_results
 
 @st.cache_data
 def process_region_data(df, country_code, region):
