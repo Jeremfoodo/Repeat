@@ -1,8 +1,9 @@
+# segmentation_page.py
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
-from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients
+from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients, get_segment_and_spending_info
 
 def segmentation_page(df):
     st.title('Segmentation')
@@ -24,9 +25,12 @@ def segmentation_page(df):
     current_month_str = current_month.strftime('%Y-%m')
     previous_month_str = previous_month.strftime('%Y-%m')
 
-    # Générer les heatmaps pour les mois dynamiques
-    heatmap_data_previous, total_clients_previous, customer_spending_previous = get_clients_by_segment_and_spending(df, previous_month_str)
-    heatmap_data_current, total_clients_current, customer_spending_current = get_clients_by_segment_and_spending(df, current_month_str)
+    # Obtenir les informations de segmentation et de niveau de dépense pour les mois dynamiques
+    customer_info_previous = get_segment_and_spending_info(df, previous_month_str)
+    customer_info_current = get_segment_and_spending_info(df, current_month_str)
+
+    heatmap_data_previous, total_clients_previous, _ = get_clients_by_segment_and_spending(df, previous_month_str)
+    heatmap_data_current, total_clients_current, _ = get_clients_by_segment_and_spending(df, current_month_str)
 
     col1, col2 = st.columns(2)
 
@@ -76,8 +80,11 @@ def segmentation_page(df):
     
     df_account = df[df['Owner email'] == account_manager]
     
-    heatmap_data_previous_account, total_clients_previous_account, customer_spending_previous_account = get_clients_by_segment_and_spending(df_account, previous_month_str)
-    heatmap_data_current_account, total_clients_current_account, customer_spending_current_account = get_clients_by_segment_and_spending(df_account, current_month_str)
+    customer_info_previous_account = get_segment_and_spending_info(df_account, previous_month_str)
+    customer_info_current_account = get_segment_and_spending_info(df_account, current_month_str)
+
+    heatmap_data_previous_account, total_clients_previous_account, _ = get_clients_by_segment_and_spending(df_account, previous_month_str)
+    heatmap_data_current_account, total_clients_current_account, _ = get_clients_by_segment_and_spending(df_account, current_month_str)
 
     col3, col4 = st.columns(2)
 
@@ -121,8 +128,8 @@ def segmentation_page(df):
         )
         st.plotly_chart(fig)
 
-    # Clients actifs en juin mais pas en juillet
-    inactive_clients = get_inactive_clients(customer_spending_previous_account, customer_spending_current_account)
+    # Clients inactifs
+    inactive_clients = get_inactive_clients(customer_info_previous_account, customer_info_current_account)
     inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
     inactive_clients['Total'] = inactive_clients['Total'].round()
 
@@ -138,8 +145,8 @@ def segmentation_page(df):
     inactive_count = inactive_clients.shape[0]
 
     # Clients qui ont baissé dans le tiering
-    downgraded_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
-    downgraded_clients = downgraded_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
+    downgraded_clients = customer_info_previous_account[customer_info_previous_account['Restaurant ID'].isin(customer_info_current_account['Restaurant ID'])]
+    downgraded_clients = downgraded_clients.merge(customer_info_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Previous'] > downgraded_clients['Spending Level_Current']]
     downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
     downgraded_clients['Total_Previous'] = downgraded_clients['Total_Previous'].round()
@@ -157,9 +164,9 @@ def segmentation_page(df):
     downgraded_clients = downgraded_clients.drop_duplicates(subset='Restaurant ID')
     downgraded_count = downgraded_clients.shape[0]
 
-    # Clients restés dans le même tiering mais dépensé moins en juillet
-    same_tier_less_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
-    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
+    # Clients restés dans le même tiering mais dépensé moins
+    same_tier_less_spending_clients = customer_info_previous_account[customer_info_previous_account['Restaurant ID'].isin(customer_info_current_account['Restaurant ID'])]
+    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_info_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Previous'] == same_tier_less_spending_clients['Spending Level_Current']) & (same_tier_less_spending_clients['Total_Previous'] > same_tier_less_spending_clients['Total_Current'])]
     same_tier_less_spending_clients = same_tier_less_spending_clients.merge(last_order_dates, on='Restaurant ID')
     same_tier_less_spending_clients['Total_Previous'] = same_tier_less_spending_clients['Total_Previous'].round()
@@ -177,9 +184,9 @@ def segmentation_page(df):
     same_tier_less_spending_clients = same_tier_less_spending_clients.drop_duplicates(subset='Restaurant ID')
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
-    # Clients restés dans le même tiering mais dépensé plus en juillet
-    increased_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
-    increased_spending_clients = increased_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
+    # Clients restés dans le même tiering mais dépensé plus
+    increased_spending_clients = customer_info_previous_account[customer_info_previous_account['Restaurant ID'].isin(customer_info_current_account['Restaurant ID'])]
+    increased_spending_clients = increased_spending_clients.merge(customer_info_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Previous'] < increased_spending_clients['Total_Current'])]
     increased_spending_clients = increased_spending_clients.merge(last_order_dates, on='Restaurant ID')
     increased_spending_clients['Total_Previous'] = increased_spending_clients['Total_Previous'].round()
