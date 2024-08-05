@@ -131,3 +131,15 @@ def process_region_data(df, country_code, region):
     recent_results = pd.concat([calculate_segments_for_month(df_region, month) for month in recent_months], ignore_index=True)
     
     return recent_results
+
+# Nouvelle fonction pour obtenir les clients actifs
+@st.cache_data
+def get_active_clients(df, target_month):
+    customer_spending = segment_customers(df, *map(int, target_month.split('-')))
+    segments_info = calculate_segments_for_month(df, target_month)
+    
+    merged_info = pd.merge(customer_spending, segments_info, on='Restaurant ID', how='left')
+    active_clients = merged_info.groupby('Segment').agg({'Restaurant ID': 'nunique'}).reset_index()
+    active_clients.columns = ['Segment', 'Nombre de Clients']
+    
+    return active_clients
