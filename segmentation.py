@@ -25,60 +25,55 @@ def categorize_customer(spent):
     else:
         return 'High Spenders'
 
-# Fonction pour obtenir la catégorie des clients
-def get_customer_category(first_order_date, current_month):
-    if first_order_date >= current_month:
-        return 'Acquisition'
-    elif first_order_date >= current_month - pd.DateOffset(months=1):
-        return 'Nouveau'
-    elif first_order_date >= current_month - pd.DateOffset(months=5):
-        return 'Récent'
-    else:
-        return 'Ancien'
-
-# Fonction principale pour créer le dataframe des clients avec les informations nécessaires
+# Créer le dataframe des clients
 @st.cache_data
 def create_customer_dataframe(df):
-    # Calcul des dates de mois en cours et précédent
-    today = datetime.today()
-    current_month = today.replace(day=1)
+    current_month = datetime.today().replace(day=1)
     previous_month = (current_month - timedelta(days=1)).replace(day=1)
-    
-    # Convertir les dates en périodes de type '%Y-%m'
-    current_month_period = current_month.strftime('%Y-%m')
-    previous_month_period = previous_month.strftime('%Y-%m')
-    
-    # Initialisation des colonnes de résultat
-    result = []
+
+    data = {
+        'Restaurant ID': [],
+        'Owner email': [],
+        'Total_Previous': [],
+        'Total_Current': [],
+        'Spending Level_Previous': [],
+        'Spending Level_Current': [],
+        'Segment': []
+    }
 
     for restaurant_id, group in df.groupby('Restaurant ID'):
-        account_manager = group.loc[group['Date de commande'].idxmax()]['Owner email']
-        total_current_month = group[group['Date de commande'].dt.strftime('%Y-%m') == current_month_period]['Total'].sum()
-        total_previous_month = group[group['Date de commande'].dt.strftime('%Y-%m') == previous_month_period]['Total'].sum()
-        
+        account_manager = group.loc[group['Date de commande'].idxmax(), 'Owner email']
+        total_current_month = group[group['Date de commande'].dt.to_period('M') == current_month.to_period('M')]['Total'].sum()
+        total_previous_month = group[group['Date de commande'].dt.to_period('M') == previous_month.to_period('M')]['Total'].sum()
+
         spending_level_current = categorize_customer(total_current_month)
         spending_level_previous = categorize_customer(total_previous_month)
-        
+
         first_order_date = group['date 1ere commande (Restaurant)'].min()
-        customer_category = get_customer_category(first_order_date, current_month)
-        
-        result.append({
-            'Restaurant ID': restaurant_id,
-            'Owner email': account_manager,
-            'Total Current Month': total_current_month,
-            'Total Previous Month': total_previous_month,
-            'Spending Level Current': spending_level_current,
-            'Spending Level Previous': spending_level_previous,
-            'Customer Category': customer_category
-        })
-    
-    result_df = pd.DataFrame(result)
-    return result_df
+        if first_order_date.to_period('M') == current_month.to_period('M'):
+            segment = 'Acquisition'
+        elif first_order_date.to_period('M') == previous_month.to_period('M'):
+            segment = 'Nouveau'
+        elif first_order_date.to_period('M') >= (previous_month - pd.DateOffset(months=4)).to_period('M'):
+            segment = 'Récent'
+        else:
+            segment = 'Ancien'
+
+        data['Restaurant ID'].append(restaurant_id)
+        data['Owner email'].append(account_manager)
+        data['Total_Previous'].append(total_previous_month)
+        data['Total_Current'].append(total_current_month)
+        data['Spending Level_Previous'].append(spending_level_previous)
+        data['Spending Level_Current'].append(spending_level_current)
+        data['Segment'].append(segment)
+
+    return pd.DataFrame(data)
 
 # Charger les données et créer le dataframe des clients
 df = load_data()
 customer_df = create_customer_dataframe(df)
 
+# Définir la fonction segmentation_page
 def segmentation_page(df, customer_df):
     st.title('Segmentation')
 
@@ -86,6 +81,7 @@ def segmentation_page(df, customer_df):
     selected_country = st.selectbox('Sélectionner un pays', ['Tous les pays', 'FR', 'US', 'GB', 'BE'])
     if selected_country != 'Tous les pays':
         df = df[df['Pays'] == selected_country]
+        customer_df = customer_df[customer_df['Pays'] == selected_country]
 
     # Sélectionner l'account manager
     account_manager = st.selectbox('Sélectionner un account manager', customer_df['Owner email'].unique())
