@@ -42,7 +42,7 @@ def create_customer_dataframe(df):
         'Segment': []
     }
 
-    df['Commande_Month'] = df['Date de commande'].dt.strftime('%Y-%m')
+    df['Commande_Month'] = df['Date de commande'].dt.to_period('M').astype(str)
     current_month_str = current_month.strftime('%Y-%m')
     previous_month_str = previous_month.strftime('%Y-%m')
 
