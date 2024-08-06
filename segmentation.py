@@ -97,14 +97,13 @@ def segmentation_page(df, customer_df):
     previous_month_str = previous_month.strftime('%Y-%m')
 
     # Générer les heatmaps pour les mois dynamiques
-    def generate_heatmap(data, month_start, month_end):
-        data = data.copy()  # Assurez-vous que la copie des données est faite avant la modification
-        month_data = data[(data['Date de commande'] >= month_start) & (data['Date de commande'] <= month_end)]
-        heatmap_data = month_data.groupby(['Segment', 'Spending Level_Current']).size().unstack(fill_value=0)
+    def generate_heatmap(data, month_str, spending_level_col):
+        data = data.copy()
+        heatmap_data = data.groupby(['Segment', spending_level_col]).size().unstack(fill_value=0)
         return heatmap_data
 
-    heatmap_data_previous = generate_heatmap(df, previous_month, previous_month + timedelta(days=30))
-    heatmap_data_current = generate_heatmap(df, current_month, current_month + timedelta(days=30))
+    heatmap_data_previous = generate_heatmap(customer_df, previous_month_str, 'Spending Level_Previous')
+    heatmap_data_current = generate_heatmap(customer_df, current_month_str, 'Spending Level_Current')
 
     col1, col2 = st.columns(2)
 
