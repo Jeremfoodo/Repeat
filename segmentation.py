@@ -97,6 +97,7 @@ def segmentation_page(df, customer_df):
 
     # Générer les heatmaps pour les mois dynamiques
     def generate_heatmap(data, month_str):
+        data = data.copy()  # Assurez-vous que la copie des données est faite avant la modification
         heatmap_data = data[data['Commande_Month'] == month_str].groupby(['Segment', 'Spending Level_Current']).size().unstack(fill_value=0)
         return heatmap_data
 
