@@ -42,24 +42,24 @@ def create_customer_dataframe(df):
         'Segment': []
     }
 
-    df['Commande_Month'] = df['Date de commande'].dt.to_period('M')
-    current_month_period = pd.Period(current_month.strftime('%Y-%m'))
-    previous_month_period = pd.Period(previous_month.strftime('%Y-%m'))
+    df['Commande_Month'] = df['Date de commande'].dt.strftime('%Y-%m')
+    current_month_str = current_month.strftime('%Y-%m')
+    previous_month_str = previous_month.strftime('%Y-%m')
 
     for restaurant_id, group in df.groupby('Restaurant ID'):
         account_manager = group.loc[group['Date de commande'].idxmax(), 'Owner email']
-        total_current_month = group[group['Commande_Month'] == current_month_period]['Total'].sum()
-        total_previous_month = group[group['Commande_Month'] == previous_month_period]['Total'].sum()
+        total_current_month = group[group['Commande_Month'] == current_month_str]['Total'].sum()
+        total_previous_month = group[group['Commande_Month'] == previous_month_str]['Total'].sum()
 
         spending_level_current = categorize_customer(total_current_month)
         spending_level_previous = categorize_customer(total_previous_month)
 
-        first_order_date = group['date 1ere commande (Restaurant)'].min().to_period('M')
-        if first_order_date == current_month_period:
+        first_order_date = group['date 1ere commande (Restaurant)'].min().strftime('%Y-%m')
+        if first_order_date == current_month_str:
             segment = 'Acquisition'
-        elif first_order_date == previous_month_period:
+        elif first_order_date == previous_month_str:
             segment = 'Nouveau'
-        elif first_order_date >= (previous_month - pd.DateOffset(months=4)).to_period('M'):
+        elif first_order_date >= (previous_month - pd.DateOffset(months=4)).strftime('%Y-%m'):
             segment = 'Récent'
         else:
             segment = 'Ancien'
