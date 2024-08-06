@@ -1,17 +1,15 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import gdown
 from datetime import datetime, timedelta
-from google_drive_downloader import GoogleDriveDownloader as gdd
 
 # Téléchargement et chargement des données
 @st.cache_data
 def load_data():
     prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
-    gdd.download_file_from_google_drive(file_id='1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM',
-                                        dest_path='./data/prepared_data.csv',
-                                        unzip=False)
-    df = pd.read_csv('./data/prepared_data.csv')
+    gdown.download(prepared_data_url, 'prepared_data.csv', quiet=False)
+    df = pd.read_csv('prepared_data.csv')
     df['Date de commande'] = pd.to_datetime(df['Date de commande'])
     df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'])
     return df
