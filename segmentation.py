@@ -42,24 +42,25 @@ def create_customer_dataframe(df):
         'Segment': []
     }
 
-    df['Commande_Month'] = df['Date de commande'].dt.to_period('M').astype(str)
-    current_month_str = current_month.strftime('%Y-%m')
-    previous_month_str = previous_month.strftime('%Y-%m')
+    current_month_start = current_month
+    current_month_end = (current_month + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
+    previous_month_start = previous_month
+    previous_month_end = (previous_month + timedelta(days=31)).replace(day=1) - timedelta(seconds=1)
 
     for restaurant_id, group in df.groupby('Restaurant ID'):
         account_manager = group.loc[group['Date de commande'].idxmax(), 'Owner email']
-        total_current_month = group[group['Commande_Month'] == current_month_str]['Total'].sum()
-        total_previous_month = group[group['Commande_Month'] == previous_month_str]['Total'].sum()
+        total_current_month = group[(group['Date de commande'] >= current_month_start) & (group['Date de commande'] <= current_month_end)]['Total'].sum()
+        total_previous_month = group[(group['Date de commande'] >= previous_month_start) & (group['Date de commande'] <= previous_month_end)]['Total'].sum()
 
         spending_level_current = categorize_customer(total_current_month)
         spending_level_previous = categorize_customer(total_previous_month)
 
-        first_order_date = group['date 1ere commande (Restaurant)'].min().strftime('%Y-%m')
-        if first_order_date == current_month_str:
+        first_order_date = group['date 1ere commande (Restaurant)'].min()
+        if first_order_date >= current_month_start:
             segment = 'Acquisition'
-        elif first_order_date == previous_month_str:
+        elif first_order_date >= previous_month_start and first_order_date < current_month_start:
             segment = 'Nouveau'
-        elif first_order_date >= (previous_month - pd.DateOffset(months=4)).strftime('%Y-%m'):
+        elif first_order_date >= (previous_month - pd.DateOffset(months=4)).to_pydatetime() and first_order_date < previous_month_start:
             segment = 'Récent'
         else:
             segment = 'Ancien'
@@ -96,13 +97,14 @@ def segmentation_page(df, customer_df):
     previous_month_str = previous_month.strftime('%Y-%m')
 
     # Générer les heatmaps pour les mois dynamiques
-    def generate_heatmap(data, month_str):
+    def generate_heatmap(data, month_start, month_end):
         data = data.copy()  # Assurez-vous que la copie des données est faite avant la modification
-        heatmap_data = data[data['Commande_Month'] == month_str].groupby(['Segment', 'Spending Level_Current']).size().unstack(fill_value=0)
+        month_data = data[(data['Date de commande'] >= month_start) & (data['Date de commande'] <= month_end)]
+        heatmap_data = month_data.groupby(['Segment', 'Spending Level_Current']).size().unstack(fill_value=0)
         return heatmap_data
 
-    heatmap_data_previous = generate_heatmap(customer_df, previous_month_str)
-    heatmap_data_current = generate_heatmap(customer_df, current_month_str)
+    heatmap_data_previous = generate_heatmap(df, previous_month, previous_month + timedelta(days=30))
+    heatmap_data_current = generate_heatmap(df, current_month, current_month + timedelta(days=30))
 
     col1, col2 = st.columns(2)
 
@@ -178,7 +180,7 @@ def segmentation_page(df, customer_df):
     # Clients restés dans le même tiering mais dépensé plus en juillet
     st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
     st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo !")
-    increased_spending_clients = df_account[df_account['Total_Current'] > df_account['Total_Previous']]
+    increased_spending_clients = df_account[(df_account['Total_Previous'] < df_account['Total_Current'])]
     render_clients_table(increased_spending_clients, "Clients qui ont augmenté leurs dépenses")
     st.markdown("</div>", unsafe_allow_html=True)
 
