@@ -44,13 +44,17 @@ def create_customer_dataframe(df):
     current_month = today.replace(day=1)
     previous_month = (current_month - timedelta(days=1)).replace(day=1)
     
+    # Convertir les dates en périodes de type '%Y-%m'
+    current_month_period = current_month.strftime('%Y-%m')
+    previous_month_period = previous_month.strftime('%Y-%m')
+    
     # Initialisation des colonnes de résultat
     result = []
 
     for restaurant_id, group in df.groupby('Restaurant ID'):
         account_manager = group.loc[group['Date de commande'].idxmax()]['Owner email']
-        total_current_month = group[group['Date de commande'].dt.to_period('M') == current_month.to_period('M')]['Total'].sum()
-        total_previous_month = group[group['Date de commande'].dt.to_period('M') == previous_month.to_period('M')]['Total'].sum()
+        total_current_month = group[group['Date de commande'].dt.strftime('%Y-%m') == current_month_period]['Total'].sum()
+        total_previous_month = group[group['Date de commande'].dt.strftime('%Y-%m') == previous_month_period]['Total'].sum()
         
         spending_level_current = categorize_customer(total_current_month)
         spending_level_previous = categorize_customer(total_previous_month)
