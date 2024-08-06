@@ -1,10 +1,83 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+import numpy as np
 from datetime import datetime, timedelta
-from src.calculations import get_clients_by_segment_and_spending, get_inactive_clients
+from google_drive_downloader import GoogleDriveDownloader as gdd
 
-def segmentation_page(df):
+# Téléchargement et chargement des données
+@st.cache_data
+def load_data():
+    prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
+    gdd.download_file_from_google_drive(file_id='1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM',
+                                        dest_path='./data/prepared_data.csv',
+                                        unzip=False)
+    df = pd.read_csv('./data/prepared_data.csv')
+    df['Date de commande'] = pd.to_datetime(df['Date de commande'])
+    df['date 1ere commande (Restaurant)'] = pd.to_datetime(df['date 1ere commande (Restaurant)'])
+    return df
+
+# Fonction de catégorisation des clients par niveau de dépense
+def categorize_customer(spent):
+    if spent <= 500:
+        return 'Basic'
+    elif 500 < spent <= 1500:
+        return 'Silver'
+    elif 1500 < spent <= 2000:
+        return 'Gold'
+    else:
+        return 'High Spenders'
+
+# Fonction pour obtenir la catégorie des clients
+def get_customer_category(first_order_date, current_month):
+    if first_order_date >= current_month:
+        return 'Acquisition'
+    elif first_order_date >= current_month - pd.DateOffset(months=1):
+        return 'Nouveau'
+    elif first_order_date >= current_month - pd.DateOffset(months=5):
+        return 'Récent'
+    else:
+        return 'Ancien'
+
+# Fonction principale pour créer le dataframe des clients avec les informations nécessaires
+@st.cache_data
+def create_customer_dataframe(df):
+    # Calcul des dates de mois en cours et précédent
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    previous_month = (current_month - timedelta(days=1)).replace(day=1)
+    
+    # Initialisation des colonnes de résultat
+    result = []
+
+    for restaurant_id, group in df.groupby('Restaurant ID'):
+        account_manager = group.loc[group['Date de commande'].idxmax()]['Owner email']
+        total_current_month = group[group['Date de commande'].dt.to_period('M') == current_month.to_period('M')]['Total'].sum()
+        total_previous_month = group[group['Date de commande'].dt.to_period('M') == previous_month.to_period('M')]['Total'].sum()
+        
+        spending_level_current = categorize_customer(total_current_month)
+        spending_level_previous = categorize_customer(total_previous_month)
+        
+        first_order_date = group['date 1ere commande (Restaurant)'].min()
+        customer_category = get_customer_category(first_order_date, current_month)
+        
+        result.append({
+            'Restaurant ID': restaurant_id,
+            'Owner email': account_manager,
+            'Total Current Month': total_current_month,
+            'Total Previous Month': total_previous_month,
+            'Spending Level Current': spending_level_current,
+            'Spending Level Previous': spending_level_previous,
+            'Customer Category': customer_category
+        })
+    
+    result_df = pd.DataFrame(result)
+    return result_df
+
+# Charger les données et créer le dataframe des clients
+df = load_data()
+customer_df = create_customer_dataframe(df)
+
+def segmentation_page(df, customer_df):
     st.title('Segmentation')
 
     # Sélectionner le pays
@@ -12,192 +85,31 @@ def segmentation_page(df):
     if selected_country != 'Tous les pays':
         df = df[df['Pays'] == selected_country]
 
-    # Ajouter la colonne de la dernière commande pour chaque Restaurant ID
-    df['Date de commande'] = pd.to_datetime(df['Date de commande'])
-    last_order_dates = df.groupby('Restaurant ID')['Date de commande'].max().reset_index()
-    last_order_dates.columns = ['Restaurant ID', 'Dernière commande']
+    # Sélectionner l'account manager
+    account_manager = st.selectbox('Sélectionner un account manager', customer_df['Owner email'].unique())
+    df_account = customer_df[customer_df['Owner email'] == account_manager]
 
-    # Calculer les mois dynamiques
-    today = datetime.today()
-    current_month = today.replace(day=1)
-    previous_month = (current_month - timedelta(days=1)).replace(day=1)
-    current_month_str = current_month.strftime('%Y-%m')
-    previous_month_str = previous_month.strftime('%Y-%m')
+    # Clients inactifs
+    inactive_clients = df_account[(df_account['Total Previous Month'] > 0) & (df_account['Total Current Month'] == 0)]
 
-    # Générer les heatmaps pour les mois dynamiques
-    heatmap_data_previous, total_clients_previous, customer_spending_previous = get_clients_by_segment_and_spending(df, previous_month_str)
-    heatmap_data_current, total_clients_current, customer_spending_current = get_clients_by_segment_and_spending(df, current_month_str)
+    # Clients downgraded
+    downgraded_clients = df_account[(df_account['Spending Level Previous'] > df_account['Spending Level Current'])]
 
-    col1, col2 = st.columns(2)
+    # Clients same tier less spending
+    same_tier_less_spending_clients = df_account[
+        (df_account['Spending Level Previous'] == df_account['Spending Level Current']) & 
+        (df_account['Total Previous Month'] > df_account['Total Current Month'])
+    ]
 
-    with col1:
-        st.subheader(f'{previous_month.strftime("%B %Y")}')
-        st.write(f"Nombre total de clients actifs: {total_clients_previous}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_previous.values,
-            x=heatmap_data_previous.columns,
-            y=heatmap_data_previous.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_previous.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
-        st.plotly_chart(fig)
-
-    with col2:
-        st.subheader(f'{current_month.strftime("%B %Y")}')
-        st.write(f"Nombre total de clients actifs: {total_clients_current}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_current.values,
-            x=heatmap_data_current.columns,
-            y=heatmap_data_current.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_current.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
-        st.plotly_chart(fig)
-
-    # Segmentation par account manager
-    st.header('Segmentation par Account Manager')
-    account_manager = st.selectbox('Sélectionner un account manager', df['Owner email'].unique())
-    
-    df_account = df[df['Owner email'] == account_manager]
-    
-    heatmap_data_previous_account, total_clients_previous_account, customer_spending_previous_account = get_clients_by_segment_and_spending(df_account, previous_month_str)
-    heatmap_data_current_account, total_clients_current_account, customer_spending_current_account = get_clients_by_segment_and_spending(df_account, current_month_str)
-
-    col3, col4 = st.columns(2)
-
-    with col3:
-        st.subheader(f'{previous_month.strftime("%B %Y")} - {account_manager}')
-        st.write(f"Nombre total de clients actifs: {total_clients_previous_account}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_previous_account.values,
-            x=heatmap_data_previous_account.columns,
-            y=heatmap_data_previous_account.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_previous_account.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
-        st.plotly_chart(fig)
-
-    with col4:
-        st.subheader(f'{current_month.strftime("%B %Y")} - {account_manager}')
-        st.write(f"Nombre total de clients actifs: {total_clients_current_account}")
-        fig = go.Figure(data=go.Heatmap(
-            z=heatmap_data_current_account.values,
-            x=heatmap_data_current_account.columns,
-            y=heatmap_data_current_account.index,
-            colorscale='Greens',
-            hoverongaps=False,
-            showscale=False,
-            text=heatmap_data_current_account.values,
-            texttemplate="%{text}"
-        ))
-        fig.update_layout(
-            title='Nombre de Clients par Segment et Niveau de Dépense',
-            xaxis_title='Niveau de Dépense',
-            yaxis_title='Segment',
-        )
-        st.plotly_chart(fig)
-
-    # Clients actifs en juin mais pas en juillet
-    inactive_clients = get_inactive_clients(customer_spending_previous_account, customer_spending_current_account)
-    inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
-    inactive_clients['Total'] = inactive_clients['Total'].round()
-
-    # Ajouter les colonnes manquantes
-    if 'Restaurant' not in inactive_clients.columns:
-        inactive_clients = inactive_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in inactive_clients.columns:
-        inactive_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in inactive_clients.columns:
-        inactive_clients['Spending Level'] = 'Unknown'
-
-    inactive_clients = inactive_clients.drop_duplicates(subset='Restaurant ID')
-    inactive_count = inactive_clients.shape[0]
-
-    # Clients qui ont baissé dans le tiering
-    downgraded_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
-    downgraded_clients = downgraded_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
-    downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Previous'] > downgraded_clients['Spending Level_Current']]
-    downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
-    downgraded_clients['Total_Previous'] = downgraded_clients['Total_Previous'].round()
-    downgraded_clients['Total_Current'] = downgraded_clients['Total_Current'].round()
-    downgraded_clients['Total'] = downgraded_clients['Total_Current']
-
-    # Ajouter les colonnes manquantes
-    if 'Restaurant' not in downgraded_clients.columns:
-        downgraded_clients = downgraded_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in downgraded_clients.columns:
-        downgraded_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in downgraded_clients.columns:
-        downgraded_clients['Spending Level'] = 'Unknown'
-
-    downgraded_clients = downgraded_clients.drop_duplicates(subset='Restaurant ID')
-    downgraded_count = downgraded_clients.shape[0]
-
-    # Clients restés dans le même tiering mais dépensé moins en juillet
-    same_tier_less_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
-    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
-    same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Previous'] == same_tier_less_spending_clients['Spending Level_Current']) & (same_tier_less_spending_clients['Total_Previous'] > same_tier_less_spending_clients['Total_Current'])]
-    same_tier_less_spending_clients = same_tier_less_spending_clients.merge(last_order_dates, on='Restaurant ID')
-    same_tier_less_spending_clients['Total_Previous'] = same_tier_less_spending_clients['Total_Previous'].round()
-    same_tier_less_spending_clients['Total_Current'] = same_tier_less_spending_clients['Total_Current'].round()
-    same_tier_less_spending_clients['Total'] = same_tier_less_spending_clients['Total_Current']
-
-    # Ajouter les colonnes manquantes
-    if 'Restaurant' not in same_tier_less_spending_clients.columns:
-        same_tier_less_spending_clients = same_tier_less_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in same_tier_less_spending_clients.columns:
-        same_tier_less_spending_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in same_tier_less_spending_clients.columns:
-        same_tier_less_spending_clients['Spending Level'] = 'Unknown'
-
-    same_tier_less_spending_clients = same_tier_less_spending_clients.drop_duplicates(subset='Restaurant ID')
-    same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
-
-    # Clients restés dans le même tiering mais dépensé plus en juillet
-    increased_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
-    increased_spending_clients = increased_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
-    increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Previous'] < increased_spending_clients['Total_Current'])]
-    increased_spending_clients = increased_spending_clients.merge(last_order_dates, on='Restaurant ID')
-    increased_spending_clients['Total_Previous'] = increased_spending_clients['Total_Previous'].round()
-    increased_spending_clients['Total_Current'] = increased_spending_clients['Total_Current'].round()
-    increased_spending_clients['Total'] = increased_spending_clients['Total_Current']
-
-    # Ajouter les colonnes manquantes
-    if 'Restaurant' not in increased_spending_clients.columns:
-        increased_spending_clients = increased_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in increased_spending_clients.columns:
-        increased_spending_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in increased_spending_clients.columns:
-        increased_spending_clients['Spending Level'] = 'Unknown'
-
-    increased_spending_clients = increased_spending_clients.drop_duplicates(subset='Restaurant ID')
-    increased_spending_count = increased_spending_clients.shape[0]
+    # Clients increased spending
+    increased_spending_clients = df_account[df_account['Total Current Month'] > df_account['Total Previous Month']]
 
     # Récapitulatif
+    inactive_count = inactive_clients.shape[0]
+    downgraded_count = downgraded_clients.shape[0]
+    same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
+    increased_spending_count = increased_spending_clients.shape[0]
+
     st.markdown(f"""
     <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
         <h4>Recap : où sont vos clients en {current_month.strftime("%B %Y")}</h4>
@@ -229,7 +141,7 @@ def segmentation_page(df):
     # Afficher les tables de clients
     def render_clients_table(clients, title):
         st.markdown(f"### {title}")
-        st.dataframe(clients[['Restaurant ID', 'Restaurant', 'Segment', 'Spending Level', 'Total', 'Dernière commande']])
+        st.dataframe(clients[['Restaurant ID', 'Owner email', 'Spending Level Previous', 'Spending Level Current', 'Total Previous Month', 'Total Current Month', 'Customer Category']])
 
     # Box rouge pour les clients inactifs en juillet
     st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
@@ -281,3 +193,7 @@ def segmentation_page(df):
         mime='text/csv'
     )
     st.markdown("</div>", unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    # Charger les données et afficher la page de segmentation
+    segmentation_page(df, customer_df)
