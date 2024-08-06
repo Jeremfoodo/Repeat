@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import gdown
 from datetime import datetime, timedelta
+from plotly import graph_objects as go
 
 # Téléchargement et chargement des données
 @st.cache_data
@@ -41,18 +42,22 @@ def create_customer_dataframe(df):
         'Segment': []
     }
 
+    df['Commande_Month'] = df['Date de commande'].dt.to_period('M')
+    current_month_period = current_month.to_period('M')
+    previous_month_period = previous_month.to_period('M')
+
     for restaurant_id, group in df.groupby('Restaurant ID'):
         account_manager = group.loc[group['Date de commande'].idxmax(), 'Owner email']
-        total_current_month = group[group['Date de commande'].dt.to_period('M') == current_month.to_period('M')]['Total'].sum()
-        total_previous_month = group[group['Date de commande'].dt.to_period('M') == previous_month.to_period('M')]['Total'].sum()
+        total_current_month = group[group['Commande_Month'] == current_month_period]['Total'].sum()
+        total_previous_month = group[group['Commande_Month'] == previous_month_period]['Total'].sum()
 
         spending_level_current = categorize_customer(total_current_month)
         spending_level_previous = categorize_customer(total_previous_month)
 
         first_order_date = group['date 1ere commande (Restaurant)'].min()
-        if first_order_date.to_period('M') == current_month.to_period('M'):
+        if first_order_date.to_period('M') == current_month_period:
             segment = 'Acquisition'
-        elif first_order_date.to_period('M') == previous_month.to_period('M'):
+        elif first_order_date.to_period('M') == previous_month_period:
             segment = 'Nouveau'
         elif first_order_date.to_period('M') >= (previous_month - pd.DateOffset(months=4)).to_period('M'):
             segment = 'Récent'
@@ -81,117 +86,100 @@ def segmentation_page(df, customer_df):
     selected_country = st.selectbox('Sélectionner un pays', ['Tous les pays', 'FR', 'US', 'GB', 'BE'])
     if selected_country != 'Tous les pays':
         df = df[df['Pays'] == selected_country]
-        customer_df = customer_df[customer_df['Pays'] == selected_country]
+        customer_df = customer_df[customer_df['Restaurant ID'].isin(df['Restaurant ID'])]
 
-    # Sélectionner l'account manager
+    # Calculer les mois dynamiques
+    today = datetime.today()
+    current_month = today.replace(day=1)
+    previous_month = (current_month - timedelta(days=1)).replace(day=1)
+    current_month_str = current_month.strftime('%Y-%m')
+    previous_month_str = previous_month.strftime('%Y-%m')
+
+    # Générer les heatmaps pour les mois dynamiques
+    def generate_heatmap(data, month_str):
+        heatmap_data = data[data['Commande_Month'] == month_str].groupby(['Segment', 'Spending Level_Current']).size().unstack(fill_value=0)
+        return heatmap_data
+
+    heatmap_data_previous = generate_heatmap(customer_df, previous_month_str)
+    heatmap_data_current = generate_heatmap(customer_df, current_month_str)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader(f'{previous_month.strftime("%B %Y")}')
+        fig = go.Figure(data=go.Heatmap(
+            z=heatmap_data_previous.values,
+            x=heatmap_data_previous.columns,
+            y=heatmap_data_previous.index,
+            colorscale='Greens',
+            hoverongaps=False,
+            showscale=False,
+            text=heatmap_data_previous.values,
+            texttemplate="%{text}"
+        ))
+        fig.update_layout(
+            title='Nombre de Clients par Segment et Niveau de Dépense',
+            xaxis_title='Niveau de Dépense',
+            yaxis_title='Segment',
+        )
+        st.plotly_chart(fig)
+
+    with col2:
+        st.subheader(f'{current_month.strftime("%B %Y")}')
+        fig = go.Figure(data=go.Heatmap(
+            z=heatmap_data_current.values,
+            x=heatmap_data_current.columns,
+            y=heatmap_data_current.index,
+            colorscale='Greens',
+            hoverongaps=False,
+            showscale=False,
+            text=heatmap_data_current.values,
+            texttemplate="%{text}"
+        ))
+        fig.update_layout(
+            title='Nombre de Clients par Segment et Niveau de Dépense',
+            xaxis_title='Niveau de Dépense',
+            yaxis_title='Segment',
+        )
+        st.plotly_chart(fig)
+
+    # Segmentation par account manager
+    st.header('Segmentation par Account Manager')
     account_manager = st.selectbox('Sélectionner un account manager', customer_df['Owner email'].unique())
+    
     df_account = customer_df[customer_df['Owner email'] == account_manager]
 
-    # Clients inactifs
-    inactive_clients = df_account[(df_account['Total Previous Month'] > 0) & (df_account['Total Current Month'] == 0)]
-
-    # Clients downgraded
-    downgraded_clients = df_account[(df_account['Spending Level Previous'] > df_account['Spending Level Current'])]
-
-    # Clients same tier less spending
-    same_tier_less_spending_clients = df_account[
-        (df_account['Spending Level Previous'] == df_account['Spending Level Current']) & 
-        (df_account['Total Previous Month'] > df_account['Total Current Month'])
-    ]
-
-    # Clients increased spending
-    increased_spending_clients = df_account[df_account['Total Current Month'] > df_account['Total Previous Month']]
-
-    # Récapitulatif
-    inactive_count = inactive_clients.shape[0]
-    downgraded_count = downgraded_clients.shape[0]
-    same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
-    increased_spending_count = increased_spending_clients.shape[0]
-
-    st.markdown(f"""
-    <div style='background-color: #f8f9fa; padding: 10px; border-radius: 5px;'>
-        <h4>Recap : où sont vos clients en {current_month.strftime("%B %Y")}</h4>
-        <p><span style='color: #dc3545;'>Rouge</span> : clients qui n'ont pas fait de repeat vs {previous_month.strftime("%B %Y")}</p>
-        <p><span style='color: #fd7e14;'>Orange</span> : clients qui ont baissé de catégorie de dépense vs {previous_month.strftime("%B %Y")}</p>
-        <p><span style='color: #ffc107;'>Jaune</span> : clients qui ont gardé la catégorie de dépense mais dépensé moins depuis {previous_month.strftime("%B %Y")}</p>
-        <p><span style='color: #28a745;'>Vert</span> : clients en augmentation de dépense.</p>
-        <div style='display: flex; justify-content: space-around;'>
-            <div style='background-color: #f8d7da; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #000000;'>{inactive_count}</strong>
-                <p>Inactifs en {current_month.strftime("%B %Y")}</p>
-            </div>
-            <div style='background-color: #fd7e14; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #000000;'>{downgraded_count}</strong>
-                <p>Baissé de catégorie</p>
-            </div>
-            <div style='background-color: #ffebcc; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #000000;'>{same_tier_less_spending_count}</strong>
-                <p>Dépensé moins</p>
-            </div>
-            <div style='background-color: #d4edda; padding: 10px; border-radius: 5px; text-align: center;'>
-                <strong style='color: #000000;'>{increased_spending_count}</strong>
-                <p>Augmentation de dépense</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Afficher les tables de clients
     def render_clients_table(clients, title):
         st.markdown(f"### {title}")
-        st.dataframe(clients[['Restaurant ID', 'Owner email', 'Spending Level Previous', 'Spending Level Current', 'Total Previous Month', 'Total Current Month', 'Customer Category']])
+        st.dataframe(clients[['Restaurant ID', 'Owner email', 'Segment', 'Spending Level_Previous', 'Spending Level_Current', 'Total_Previous', 'Total_Current']])
 
     # Box rouge pour les clients inactifs en juillet
     st.markdown("<div style='background-color: #f8d7da; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
-    st.subheader(f"🔴 Clients actifs en {previous_month.strftime('%B %Y')} mais inactifs en {current_month.strftime('%B %Y')} ({inactive_count})")
-    st.markdown("<small>Ces clients n'ont pas refait d'achat en juillet, essayer un repeat ou comprendre les raisons du churn.</small>", unsafe_allow_html=True)
+    st.subheader(f"🔴 Clients actifs en {previous_month.strftime('%B %Y')} mais inactifs en {current_month.strftime('%B %Y')}")
+    inactive_clients = df_account[df_account['Total_Current'] == 0]
     render_clients_table(inactive_clients, f"Clients inactifs en {current_month.strftime('%B %Y')}")
-    st.download_button(
-        label=f'Télécharger la liste des clients inactifs en {current_month.strftime("%B %Y")}',
-        data=inactive_clients.to_csv(index=False),
-        file_name=f'clients_inactifs_{current_month.strftime("%B_%Y")}.csv',
-        mime='text/csv'
-    )
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Clients qui ont baissé dans le tiering
     st.markdown("<div style='background-color: #fd7e14; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
-    st.subheader(f"🟠 Clients actifs en {current_month.strftime('%B %Y')} mais qui ont baissé dans le tiering ({downgraded_count})")
-    st.markdown("<small>Ces clients ont baissé de catégorie de dépense, normalement ils peuvent acheter davantage, vérifiez qu'ils ont bien fait leur commande et si non faites un repeat. Si oui, vérifiez qu'ils ont bien acheté suffisamment et proposez un upsell.</small>", unsafe_allow_html=True)
+    st.subheader(f"🟠 Clients actifs en {current_month.strftime('%B %Y')} mais qui ont baissé dans le tiering")
+    downgraded_clients = df_account[df_account['Spending Level_Previous'] > df_account['Spending Level_Current']]
     render_clients_table(downgraded_clients, "Clients qui ont baissé dans le tiering")
-    st.download_button(
-        label=f'Télécharger la liste des clients qui ont baissé dans le tiering',
-        data=downgraded_clients.to_csv(index=False),
-        file_name=f'clients_baisse_tiering_{current_month.strftime("%B_%Y")}.csv',
-        mime='text/csv'
-    )
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Clients restés dans le même tiering mais dépensé moins en juillet
     st.markdown("<div style='background-color: #ffebcc; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
-    st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en {current_month.strftime('%B %Y')} ({same_tier_less_spending_count})")
-    st.markdown("<small>Ces clients ont dépensé un peu moins en juillet, même s'ils sont restés dans le même segment. Vous pouvez sans doute voir s'ils peuvent racheter un peu plus.</small>", unsafe_allow_html=True)
+    st.subheader(f"🟡 Clients restés dans le même tiering mais dépensé moins en {current_month.strftime('%B %Y')}")
+    same_tier_less_spending_clients = df_account[(df_account['Spending Level_Previous'] == df_account['Spending Level_Current']) & (df_account['Total_Previous'] > df_account['Total_Current'])]
     render_clients_table(same_tier_less_spending_clients, "Clients restés dans le même tiering mais dépensé moins en juillet")
-    st.download_button(
-        label=f'Télécharger la liste des clients restés dans le même tiering mais dépensé moins en {current_month.strftime("%B %Y")}',
-        data=same_tier_less_spending_clients.to_csv(index=False),
-        file_name=f'clients_meme_tiering_depense_moins_{current_month.strftime("%B_%Y")}.csv',
-        mime='text/csv'
-    )
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Clients restés dans le même tiering mais dépensé plus en juillet
     st.markdown("<div style='background-color: #d4edda; padding: 10px; border-radius: 5px;'>", unsafe_allow_html=True)
-    st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo ! ({increased_spending_count})")
+    st.subheader(f"🟢 Clients qui ont augmenté leurs dépenses, bravo !")
+    increased_spending_clients = df_account[df_account['Total_Current'] > df_account['Total_Previous']]
     render_clients_table(increased_spending_clients, "Clients qui ont augmenté leurs dépenses")
-    st.download_button(
-        label=f'Télécharger la liste des clients restés dans le même tiering mais dépensé plus en {current_month.strftime("%B %Y")}',
-        data=increased_spending_clients.to_csv(index=False),
-        file_name=f'clients_meme_tiering_depense_plus_{current_month.strftime("%B_%Y")}.csv',
-        mime='text/csv'
-    )
     st.markdown("</div>", unsafe_allow_html=True)
 
-if __name__ == "__main__":
-    # Charger les données et afficher la page de segmentation
-    segmentation_page(df, customer_df)
+# Appel de la fonction segmentation_page
+segmentation_page(df, customer_df)
