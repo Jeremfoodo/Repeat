@@ -126,19 +126,21 @@ def segmentation_page(df):
     inactive_clients = inactive_clients.merge(last_order_dates, on='Restaurant ID')
     inactive_clients['Total'] = inactive_clients['Total'].round()
 
-    # Ajouter les colonnes manquantes
+    # Ajouter les colonnes manquantes après calcul
     if 'Restaurant' not in inactive_clients.columns:
         inactive_clients = inactive_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in inactive_clients.columns:
+    if 'Segment' not in inactive_clients.columns or inactive_clients['Segment'].isnull().all():
         inactive_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in inactive_clients.columns:
+    if 'Spending Level' not in inactive_clients.columns or inactive_clients['Spending Level'].isnull().all():
         inactive_clients['Spending Level'] = 'Unknown'
 
     inactive_clients = inactive_clients.drop_duplicates(subset='Restaurant ID')
     inactive_count = inactive_clients.shape[0]
 
     # Clients qui ont baissé dans le tiering
-    downgraded_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
+    downgraded_clients = customer_spending_previous_account[
+        customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])
+    ]
     downgraded_clients = downgraded_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
     downgraded_clients = downgraded_clients[downgraded_clients['Spending Level_Previous'] > downgraded_clients['Spending Level_Current']]
     downgraded_clients = downgraded_clients.merge(last_order_dates, on='Restaurant ID')
@@ -146,52 +148,61 @@ def segmentation_page(df):
     downgraded_clients['Total_Current'] = downgraded_clients['Total_Current'].round()
     downgraded_clients['Total'] = downgraded_clients['Total_Current']
 
-    # Ajouter les colonnes manquantes
+    # Ajouter les colonnes manquantes après calcul
     if 'Restaurant' not in downgraded_clients.columns:
         downgraded_clients = downgraded_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in downgraded_clients.columns:
+    if 'Segment' not in downgraded_clients.columns or downgraded_clients['Segment'].isnull().all():
         downgraded_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in downgraded_clients.columns:
+    if 'Spending Level' not in downgraded_clients.columns or downgraded_clients['Spending Level'].isnull().all():
         downgraded_clients['Spending Level'] = 'Unknown'
 
     downgraded_clients = downgraded_clients.drop_duplicates(subset='Restaurant ID')
     downgraded_count = downgraded_clients.shape[0]
 
     # Clients restés dans le même tiering mais dépensé moins en juillet
-    same_tier_less_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
+    same_tier_less_spending_clients = customer_spending_previous_account[
+        customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])
+    ]
     same_tier_less_spending_clients = same_tier_less_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
-    same_tier_less_spending_clients = same_tier_less_spending_clients[(same_tier_less_spending_clients['Spending Level_Previous'] == same_tier_less_spending_clients['Spending Level_Current']) & (same_tier_less_spending_clients['Total_Previous'] > same_tier_less_spending_clients['Total_Current'])]
+    same_tier_less_spending_clients = same_tier_less_spending_clients[
+        (same_tier_less_spending_clients['Spending Level_Previous'] == same_tier_less_spending_clients['Spending Level_Current']) & 
+        (same_tier_less_spending_clients['Total_Previous'] > same_tier_less_spending_clients['Total_Current'])
+    ]
     same_tier_less_spending_clients = same_tier_less_spending_clients.merge(last_order_dates, on='Restaurant ID')
     same_tier_less_spending_clients['Total_Previous'] = same_tier_less_spending_clients['Total_Previous'].round()
     same_tier_less_spending_clients['Total_Current'] = same_tier_less_spending_clients['Total_Current'].round()
     same_tier_less_spending_clients['Total'] = same_tier_less_spending_clients['Total_Current']
 
-    # Ajouter les colonnes manquantes
+    # Ajouter les colonnes manquantes après calcul
     if 'Restaurant' not in same_tier_less_spending_clients.columns:
         same_tier_less_spending_clients = same_tier_less_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in same_tier_less_spending_clients.columns:
+    if 'Segment' not in same_tier_less_spending_clients.columns or same_tier_less_spending_clients['Segment'].isnull().all():
         same_tier_less_spending_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in same_tier_less_spending_clients.columns:
+    if 'Spending Level' not in same_tier_less_spending_clients.columns or same_tier_less_spending_clients['Spending Level'].isnull().all():
         same_tier_less_spending_clients['Spending Level'] = 'Unknown'
 
     same_tier_less_spending_clients = same_tier_less_spending_clients.drop_duplicates(subset='Restaurant ID')
     same_tier_less_spending_count = same_tier_less_spending_clients.shape[0]
 
     # Clients restés dans le même tiering mais dépensé plus en juillet
-    increased_spending_clients = customer_spending_previous_account[customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])]
+    increased_spending_clients = customer_spending_previous_account[
+        customer_spending_previous_account['Restaurant ID'].isin(customer_spending_current_account['Restaurant ID'])
+    ]
     increased_spending_clients = increased_spending_clients.merge(customer_spending_current_account, on='Restaurant ID', suffixes=('_Previous', '_Current'))
-    increased_spending_clients = increased_spending_clients[(increased_spending_clients['Total_Previous'] < increased_spending_clients['Total_Current'])]
+    increased_spending_clients = increased_spending_clients[
+        increased_spending_clients['Total_Previous'] < increased_spending_clients['Total_Current']
+    ]
     increased_spending_clients = increased_spending_clients.merge(last_order_dates, on='Restaurant ID')
     increased_spending_clients['Total_Previous'] = increased_spending_clients['Total_Previous'].round()
     increased_spending_clients['Total_Current'] = increased_spending_clients['Total_Current'].round()
     increased_spending_clients['Total'] = increased_spending_clients['Total_Current']
 
-    # Ajouter les colonnes manquantes
+    # Ajouter les colonnes manquantes après calcul
     if 'Restaurant' not in increased_spending_clients.columns:
         increased_spending_clients = increased_spending_clients.merge(df[['Restaurant ID', 'Restaurant']], on='Restaurant ID', how='left')
-    if 'Segment' not in increased_spending_clients.columns:
+    if 'Segment' not in increased_spending_clients.columns or increased_spending_clients['Segment'].isnull().all():
         increased_spending_clients['Segment'] = 'Unknown'
-    if 'Spending Level' not in increased_spending_clients.columns:
+    if 'Spending Level' not in increased_spending_clients.columns or increased_spending_clients['Spending Level'].isnull().all():
         increased_spending_clients['Spending Level'] = 'Unknown'
 
     increased_spending_clients = increased_spending_clients.drop_duplicates(subset='Restaurant ID')
