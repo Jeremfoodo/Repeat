@@ -76,8 +76,13 @@ def segmentation_page(df):
     
     df_account = df[df['Owner email'] == account_manager]
     
+    # Réappliquer le calcul du segment et du spending level ici même pour les clients du mois en cours
     heatmap_data_previous_account, total_clients_previous_account, customer_spending_previous_account = get_clients_by_segment_and_spending(df_account, previous_month_str)
     heatmap_data_current_account, total_clients_current_account, customer_spending_current_account = get_clients_by_segment_and_spending(df_account, current_month_str)
+
+    # Maintenant, s'assurer que les colonnes Segment et Spending Level sont bien mises à jour
+    customer_spending_current_account['Segment'] = customer_spending_current_account['Segment'].fillna('Unknown')
+    customer_spending_current_account['Spending Level'] = customer_spending_current_account['Spending Level'].fillna('Unknown')
 
     col3, col4 = st.columns(2)
 
