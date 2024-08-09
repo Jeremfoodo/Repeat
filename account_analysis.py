@@ -78,10 +78,14 @@ def account_analysis(df):
 
     # Afficher les boîtes dans une grille 2x2 ou une seule rangée
     col1, col2, col3, col4 = st.columns(4)
-    col1.markdown(summary_boxes_account[0], unsafe_allow_html=True)
-    col2.markdown(summary_boxes_account[1], unsafe_allow_html=True)
-    col3.markdown(summary_boxes_account[2], unsafe_allow_html=True)
-    col4.markdown(summary_boxes_account[3], unsafe_allow_html=True)
+    if len(summary_boxes_account) > 0:
+        col1.markdown(summary_boxes_account[0], unsafe_allow_html=True)
+    if len(summary_boxes_account) > 1:
+        col2.markdown(summary_boxes_account[1], unsafe_allow_html=True)
+    if len(summary_boxes_account) > 2:
+        col3.markdown(summary_boxes_account[2], unsafe_allow_html=True)
+    if len(summary_boxes_account) > 3:
+        col4.markdown(summary_boxes_account[3], unsafe_allow_html=True)
 
     for segment in ['Nouveaux Clients', 'Clients Récents', 'Anciens Clients']:
         fig = plot_ratios(segment, account_results, account_manager)
@@ -92,12 +96,12 @@ def account_analysis(df):
     df_latest = df[df['Owner email'] == account_manager].drop_duplicates('Restaurant ID')
 
     def client_type(row):
-        last_order_month = row['Derniere commande'].strftime('%Y-%m')
-        if last_order_month == current_month_str:
+        first_order_month = row['date 1ere commande (Restaurant)'].strftime('%Y-%m')
+        if first_order_month == current_month_str:
             return 'Acquisition'
-        elif last_order_month == (current_month - pd.DateOffset(months=1)).strftime('%Y-%m'):
+        elif first_order_month == (current_month - pd.DateOffset(months=1)).strftime('%Y-%m'):
             return 'Nouveaux Clients'
-        elif last_order_month == (current_month - pd.DateOffset(months=2)).strftime('%Y-%m'):
+        elif first_order_month in [(current_month - pd.DateOffset(months=i)).strftime('%Y-%m') for i in range(2, 6)]:
             return 'Clients Récents'
         else:
             return 'Anciens Clients'
