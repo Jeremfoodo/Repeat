@@ -6,7 +6,7 @@ import streamlit as st
 # URL de Google Drive pour les fichiers
 prepared_data_url = 'https://drive.google.com/uc?id=1krOrcWcYr2F_shA4gUYZ1AQFsuWja9dM'
 objectifs_url = 'https://drive.google.com/uc?id=17TDM9d4MqXxmj1JC4pv0G9nDjRqKEtXK'
-recent_purchases_url = 'https://docs.google.com/spreadsheets/d/1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA/export?format=xlsx'
+recent_purchases_url = 'https://drive.google.com/uc?id=1sv6E1UsMV3fe-T_3p94uAUt1kz4xlXZA'
 segmentation_url = 'https://drive.google.com/uc?id=1lCVTDYtM_SWj1W5OqTr15-56K4BCWPqf'
 
 @st.cache_data
